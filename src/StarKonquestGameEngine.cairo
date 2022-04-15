@@ -5,8 +5,12 @@
 %builtins pedersen range_check
 
 # Starkware dependencies
+from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_not_zero
+
+# Openzepppelin dependencies
+from openzeppelin.introspection.ERC165 import ERC165_supports_interface
 
 # ------------
 # EVENT

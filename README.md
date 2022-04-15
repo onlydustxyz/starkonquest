@@ -33,7 +33,7 @@
 ### ⛏️ Compile
 
 ```bash
-protostar build
+protostar build --cairo-path ./lib/cairo_contracts/src
 ```
 
 ### 🌡️ Test
