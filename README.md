@@ -30,16 +30,22 @@
 
 - [protostar](https://github.com/software-mansion/protostar) >= 0.1.0
 
+#### 📦 Install
+
+```bash
+protostar install
+```
+
 ### ⛏️ Compile
 
 ```bash
-protostar build
+protostar build --cairo-path ./lib/cairo_contracts/src
 ```
 
 ### 🌡️ Test
 
 ```bash
-protostar test ./tests
+protostar test ./tests --cairo-path ./lib/cairo_contracts/src
 ```
 
 ### 🚀 Deploy
