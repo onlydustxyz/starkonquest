@@ -30,6 +30,12 @@
 
 - [protostar](https://github.com/software-mansion/protostar) >= 0.1.0
 
+#### 📦 Install
+
+```bash
+protostar install
+```
+
 ### ⛏️ Compile
 
 ```bash
