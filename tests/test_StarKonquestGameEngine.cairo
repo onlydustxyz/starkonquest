@@ -9,6 +9,11 @@ namespace StarKonquestGameEngine:
         game_id : felt, player_id: felt, move_intention: felt
     ):
     end
+
+    func submit_move(
+        game_id : felt, player_id: felt, move_intention: felt
+    ):
+    end
 end
 
 @external

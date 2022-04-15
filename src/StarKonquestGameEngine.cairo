@@ -6,6 +6,7 @@
 
 # Starkware dependencies
 from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.math import assert_not_zero
 
 # ------------
 # EVENT
@@ -77,12 +78,31 @@ end
 func create_game{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     game_id: felt, player1_account: felt, player2_account: felt
 ):
+    alloc_locals
+    let (existing_game) = games_storage.read(game_id)
+    # Check if game already exist
+    with_attr error_message("StarKonquestGameEngine: game already exist"):
+        assert existing_game.intialized = 1
+    end
+    with_attr error_message("StarKonquestGameEngine: cannot set player1 to zero address"):
+        assert_not_zero(player1_account)
+    end
+    with_attr error_message("StarKonquestGameEngine: cannot set player2 to zero address"):
+        assert_not_zero(player2_account)
+    end 
     return ()
 end
 
 @external
 func submit_move_intention{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     game_id: felt, player_id: felt,  move_intention: felt
+):
+    return ()
+end
+
+@external
+func submit_move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    game_id: felt, player_id: felt,  move: felt
 ):
     return ()
 end
