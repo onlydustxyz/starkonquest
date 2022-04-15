@@ -15,6 +15,9 @@ from openzeppelin.introspection.ERC165 import ERC165_supports_interface
 # ------------
 # EVENT
 # ------------
+@event
+func GameCreated(game_id: felt, player1_account: felt, player2_account: felt):
+end
 
 # ------------
 # STRUCTS
@@ -40,7 +43,7 @@ struct Game:
     # TODO: must be an array of moves
     member player2_move: felt
     # status of the current game
-    member game_status: felt
+    member status: felt
 end
 
 
@@ -81,7 +84,7 @@ end
 @external
 func create_game{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     game_id: felt, player1_account: felt, player2_account: felt
-):
+) -> (success: felt):
     alloc_locals
     let (existing_game) = games_storage.read(game_id)
     # Check if game already exist
@@ -93,8 +96,27 @@ func create_game{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     end
     with_attr error_message("StarKonquestGameEngine: cannot set player2 to zero address"):
         assert_not_zero(player2_account)
-    end 
-    return ()
+    end
+
+    # Initialize Game stuct
+    local game: Game
+    assert game.intialized = TRUE
+    assert game.turn_counter = 0
+    assert game.player1_account = player1_account
+    assert game.player2_account = player2_account
+    assert game.player1_move_intention = 0
+    assert game.player2_move_intention = 0
+    assert game.player1_move = 0
+    assert game.player2_move = 0
+    assert game.status = 0
+
+    # Write Game struct in storage
+    games_storage.write(game_id, game)
+
+    # Emit event
+    GameCreated.emit(game_id, player1_account, player1_account)
+    
+    return (TRUE)
 end
 
 @external

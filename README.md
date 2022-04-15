@@ -45,7 +45,7 @@ protostar build --cairo-path ./lib/cairo_contracts/src
 ### 🌡️ Test
 
 ```bash
-protostar test ./tests
+protostar test ./tests --cairo-path ./lib/cairo_contracts/src
 ```
 
 ### 🚀 Deploy
