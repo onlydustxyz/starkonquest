@@ -8,9 +8,14 @@
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_not_zero
+from starkware.cairo.common.hash import hash2
+from starkware.starknet.common.syscalls import  get_caller_address
 
 # Openzepppelin dependencies
 from openzeppelin.introspection.ERC165 import ERC165_supports_interface
+
+const PLAYER_1_ID = 1
+const PLAYER_2_ID = 2
 
 # ------------
 # EVENT
@@ -89,7 +94,7 @@ func create_game{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     let (existing_game) = games_storage.read(game_id)
     # Check if game already exist
     with_attr error_message("StarKonquestGameEngine: game already exist"):
-        assert existing_game.intialized = 1
+        assert existing_game.intialized = FALSE
     end
     with_attr error_message("StarKonquestGameEngine: cannot set player1 to zero address"):
         assert_not_zero(player1_account)
@@ -123,12 +128,77 @@ end
 func submit_move_intention{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     game_id: felt, player_id: felt,  move_intention: felt
 ):
+    alloc_locals
+    let (game) = games_storage.read(game_id)
+    # Check if game exist
+    with_attr error_message("StarKonquestGameEngine: game does not exist"):
+        assert game.intialized = TRUE
+    end
+    let (player_address) = get_caller_address()
+    local expecter_player_address = 0
+    local is_player_1 = FALSE
+    if player_id == PLAYER_1_ID:
+        is_player_1 = TRUE
+        expecter_player_address = game.player1_account
+    end
+    if player_id == PLAYER_2_ID:
+        expecter_player_address = game.player2_account
+    end
+    with_attr error_message("StarKonquestGameEngine: invalid player id"):
+        assert_not_zero(expecter_player_address)
+    end
+    with_attr error_message("StarKonquestGameEngine: invalid player address"):
+        assert player_address = expecter_player_address
+    end
+    if is_player_1 == TRUE:
+        assert game.player1_move_intention = move_intention
+    else:
+        assert game.player2_move_intention = move_intention
+    end
+    
     return ()
 end
 
 @external
 func submit_move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    game_id: felt, player_id: felt,  move: felt
+    game_id: felt, player_id: felt,  move1: felt, move2: felt, move3: felt
 ):
+    alloc_locals
+    let (game) = games_storage.read(game_id)
+    # Check if game exist
+    with_attr error_message("StarKonquestGameEngine: game does not exist"):
+        assert game.intialized = TRUE
+    end
+    let (player_address) = get_caller_address()
+    local expecter_player_address = 0
+    local is_player_1 = FALSE
+    if player_id == PLAYER_1_ID:
+        is_player_1 = TRUE
+        expecter_player_address = game.player1_account
+    end
+    if player_id == PLAYER_2_ID:
+        expecter_player_address = game.player2_account
+    end
+    with_attr error_message("StarKonquestGameEngine: invalid player id"):
+        assert_not_zero(expecter_player_address)
+    end
+    with_attr error_message("StarKonquestGameEngine: invalid player address"):
+        assert player_address = expecter_player_address
+    end
+    # Compute move integrity hash
+    let (moves_integrity_hash) = hash2{hash_ptr=pedersen_ptr}(
+        move1, move2)
+    let (moves_integrity_hash) = hash2{hash_ptr=pedersen_ptr}(
+        moves_integrity_hash, move3)
+
+    if is_player_1 == TRUE:
+        with_attr error_message("StarKonquestGameEngine: move intention mismatch"):
+            assert moves_integrity_hash = game.player1_move_intention
+        end
+    else:
+        with_attr error_message("StarKonquestGameEngine: move intention mismatch"):
+            assert moves_integrity_hash = game.player2_move_intention
+        end
+    end
     return ()
 end
