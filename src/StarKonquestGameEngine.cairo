@@ -9,19 +9,16 @@ from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_not_zero
 from starkware.cairo.common.hash import hash2
-from starkware.starknet.common.syscalls import  get_caller_address
+from starkware.starknet.common.syscalls import get_caller_address
 
 # Openzepppelin dependencies
 from openzeppelin.introspection.ERC165 import ERC165_supports_interface
-
-const PLAYER_1_ID = 1
-const PLAYER_2_ID = 2
 
 # ------------
 # EVENT
 # ------------
 @event
-func GameCreated(game_id: felt, player1_account: felt, player2_account: felt):
+func GameCreated(game_id : felt, player1_account : felt, player2_account : felt):
 end
 
 # ------------
@@ -29,46 +26,40 @@ end
 # ------------
 
 struct Game:
-    member intialized: felt
-    member turn_counter: felt
-    # account address of player 1
-    member player1_account: felt
-    # account address of player 2
-    member player2_account: felt
-    # player 1 move intention
-    # TODO: must be an array of intentions
-    member player1_move_intention: felt
-    # player 2 move intention
-    # TODO: must be an array of intentions
-    member player2_move_intention: felt
-    # player 1 move
-    # TODO: must be an array of moves
-    member player1_move: felt
-    # player 2 move
-    # TODO: must be an array of moves
-    member player2_move: felt
+    member intialized : felt
+    member turn_counter : felt
     # status of the current game
-    member status: felt
+    member status : felt
 end
-
 
 # ------------
 # STORAGE VARS
 # ------------
 
 @storage_var
-func games_storage(game_id: felt) -> (game: Game):
+func games_storage(game_id : felt) -> (game : Game):
 end
 
+@storage_var
+func players_account(game_id : felt, player_id : felt) -> (account : felt):
+end
+
+@storage_var
+func players_intention(game_id : felt, player_id : felt) -> (intention : felt):
+end
+
+@storage_var
+func players_moves(game_id : felt, player_id : felt, move_idx : felt) -> (move : felt):
+end
 
 # -----
 # VIEWS
 # -----
 
 @view
-func game{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    game_id: felt
-) -> (game: Game):
+func game{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(game_id : felt) -> (
+    game : Game
+):
     let (game) = games_storage.read(game_id)
     return (game=game)
 end
@@ -87,9 +78,9 @@ end
 # ------------------
 
 @external
-func create_game{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    game_id: felt, player1_account: felt, player2_account: felt
-) -> (success: felt):
+func create_game{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    game_id : felt, player1_account : felt, player2_account : felt
+) -> (success : felt):
     alloc_locals
     let (existing_game) = games_storage.read(game_id)
     # Check if game already exist
@@ -104,101 +95,88 @@ func create_game{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     end
 
     # Initialize Game stuct
-    local game: Game
+    local game : Game
     assert game.intialized = TRUE
     assert game.turn_counter = 0
-    assert game.player1_account = player1_account
-    assert game.player2_account = player2_account
-    assert game.player1_move_intention = 0
-    assert game.player2_move_intention = 0
-    assert game.player1_move = 0
-    assert game.player2_move = 0
     assert game.status = 0
+
+    players_account.write(game_id, 1, player1_account)
+    players_account.write(game_id, 2, player2_account)
 
     # Write Game struct in storage
     games_storage.write(game_id, game)
 
     # Emit event
     GameCreated.emit(game_id, player1_account, player1_account)
-    
+
     return (TRUE)
 end
 
 @external
 func submit_move_intention{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    game_id: felt, player_id: felt,  move_intention: felt
+    game_id : felt, player_id : felt, move_intention : felt
 ):
-    alloc_locals
-    let (game) = games_storage.read(game_id)
-    # Check if game exist
-    with_attr error_message("StarKonquestGameEngine: game does not exist"):
-        assert game.intialized = TRUE
-    end
-    let (player_address) = get_caller_address()
-    local expecter_player_address = 0
-    local is_player_1 = FALSE
-    if player_id == PLAYER_1_ID:
-        is_player_1 = TRUE
-        expecter_player_address = game.player1_account
-    end
-    if player_id == PLAYER_2_ID:
-        expecter_player_address = game.player2_account
-    end
-    with_attr error_message("StarKonquestGameEngine: invalid player id"):
-        assert_not_zero(expecter_player_address)
-    end
-    with_attr error_message("StarKonquestGameEngine: invalid player address"):
-        assert player_address = expecter_player_address
-    end
-    if is_player_1 == TRUE:
-        assert game.player1_move_intention = move_intention
-    else:
-        assert game.player2_move_intention = move_intention
-    end
-    
+    _assert_game_exists(game_id)
+    _only_player(game_id, player_id)
+
+    players_intention.write(game_id, player_id, move_intention)
     return ()
 end
 
 @external
-func submit_move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    game_id: felt, player_id: felt,  move1: felt, move2: felt, move3: felt
+func submit_moves{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    game_id : felt, player_id : felt, moves_len : felt, moves : felt*
 ):
-    alloc_locals
+    _assert_game_exists(game_id)
+    _only_player(game_id, player_id)
+
+    # Compute move integrity hash
+    assert_not_zero(moves_len)
+    let (moves_integrity_hash) = _compute_integrity_hash(moves[0], moves_len - 1, &moves[1])
+
+    let (intention) = players_intention.read(game_id, player_id)
+
+    with_attr error_message("StarKonquestGameEngine: move intention mismatch"):
+        assert moves_integrity_hash = intention
+    end
+    return ()
+end
+
+# ------------------
+# INTERNAL FUNCTIONS
+# ------------------
+
+func _compute_integrity_hash{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    hash : felt, moves_len : felt, moves : felt*
+) -> (integrity_hash : felt):
+    if moves_len == 0:
+        return (hash)
+    end
+    let (new_hash) = hash2{hash_ptr=pedersen_ptr}(hash, moves[0])
+    let (rest) = _compute_integrity_hash(new_hash, moves_len - 1, &moves[1])
+    return (rest)
+end
+
+func _assert_game_exists{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    game_id : felt
+):
     let (game) = games_storage.read(game_id)
-    # Check if game exist
     with_attr error_message("StarKonquestGameEngine: game does not exist"):
         assert game.intialized = TRUE
     end
+    return ()
+end
+
+func _only_player{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    game_id : felt, player_id : felt
+):
     let (player_address) = get_caller_address()
-    local expecter_player_address = 0
-    local is_player_1 = FALSE
-    if player_id == PLAYER_1_ID:
-        is_player_1 = TRUE
-        expecter_player_address = game.player1_account
-    end
-    if player_id == PLAYER_2_ID:
-        expecter_player_address = game.player2_account
-    end
+    let (expecter_player_address) = players_account.read(game_id, player_id)
     with_attr error_message("StarKonquestGameEngine: invalid player id"):
         assert_not_zero(expecter_player_address)
     end
     with_attr error_message("StarKonquestGameEngine: invalid player address"):
         assert player_address = expecter_player_address
-    end
-    # Compute move integrity hash
-    let (moves_integrity_hash) = hash2{hash_ptr=pedersen_ptr}(
-        move1, move2)
-    let (moves_integrity_hash) = hash2{hash_ptr=pedersen_ptr}(
-        moves_integrity_hash, move3)
-
-    if is_player_1 == TRUE:
-        with_attr error_message("StarKonquestGameEngine: move intention mismatch"):
-            assert moves_integrity_hash = game.player1_move_intention
-        end
-    else:
-        with_attr error_message("StarKonquestGameEngine: move intention mismatch"):
-            assert moves_integrity_hash = game.player2_move_intention
-        end
     end
     return ()
 end
