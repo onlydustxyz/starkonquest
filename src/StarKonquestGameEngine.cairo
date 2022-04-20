@@ -18,7 +18,15 @@ from openzeppelin.introspection.ERC165 import ERC165_supports_interface
 # EVENT
 # ------------
 @event
-func GameCreated(game_id : felt, player1_account : felt, player2_account : felt):
+func GameCreated(game_id : felt):
+end
+
+@event
+func PlayerAdded(game_id : felt, player_account : felt, player_id : felt):
+end
+
+@event
+func MoveSubmitted(game_id : felt, player_id : felt):
 end
 
 # ------------
@@ -41,7 +49,15 @@ func games_storage(game_id : felt) -> (game : Game):
 end
 
 @storage_var
+func players_counter(game_id : felt) -> (count : felt):
+end
+
+@storage_var
 func players_account(game_id : felt, player_id : felt) -> (account : felt):
+end
+
+@storage_var
+func players_index(game_id : felt, account : felt) -> (player_id : felt):
 end
 
 @storage_var
@@ -79,19 +95,13 @@ end
 
 @external
 func create_game{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    game_id : felt, player1_account : felt, player2_account : felt
+    game_id : felt
 ) -> (success : felt):
     alloc_locals
     let (existing_game) = games_storage.read(game_id)
     # Check if game already exist
     with_attr error_message("StarKonquestGameEngine: game already exist"):
         assert existing_game.intialized = FALSE
-    end
-    with_attr error_message("StarKonquestGameEngine: cannot set player1 to zero address"):
-        assert_not_zero(player1_account)
-    end
-    with_attr error_message("StarKonquestGameEngine: cannot set player2 to zero address"):
-        assert_not_zero(player2_account)
     end
 
     # Initialize Game stuct
@@ -100,24 +110,47 @@ func create_game{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     assert game.turn_counter = 0
     assert game.status = 0
 
-    players_account.write(game_id, 1, player1_account)
-    players_account.write(game_id, 2, player2_account)
-
     # Write Game struct in storage
     games_storage.write(game_id, game)
 
     # Emit event
-    GameCreated.emit(game_id, player1_account, player1_account)
+    GameCreated.emit(game_id)
 
     return (TRUE)
 end
 
 @external
+func add_player{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    game_id : felt, player_account : felt
+) -> (player_id : felt):
+    with_attr error_message("StarKonquestGameEngine: cannot add player with zero address"):
+        assert_not_zero(player_account)
+    end
+    _assert_game_exists(game_id)
+
+    let (existing_player_id) = players_index.read(game_id, player_account)
+    with_attr error_message("StarKonquestGameEngine: player already added"):
+        assert existing_player_id = 0
+    end
+
+    let (count) = players_counter.read(game_id)
+    let player_id = count + 1
+    players_account.write(game_id, player_id, player_account)
+    players_index.write(game_id, player_account, player_id)
+    players_counter.write(game_id, count + 1)
+
+    # Emit event
+    PlayerAdded.emit(game_id, player_account, player_id)
+
+    return (player_id)
+end
+
+@external
 func submit_move_intention{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    game_id : felt, player_id : felt, move_intention : felt
+    game_id : felt, move_intention : felt
 ):
     _assert_game_exists(game_id)
-    _only_player(game_id, player_id)
+    let (player_id) = _only_player(game_id)
 
     players_intention.write(game_id, player_id, move_intention)
     return ()
@@ -125,26 +158,45 @@ end
 
 @external
 func submit_moves{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    game_id : felt, player_id : felt, moves_len : felt, moves : felt*
+    game_id : felt, moves_len : felt, moves : felt*
 ):
+    alloc_locals
     _assert_game_exists(game_id)
-    _only_player(game_id, player_id)
+    let (local player_id) = _only_player(game_id)
 
     # Compute move integrity hash
     assert_not_zero(moves_len)
-    let (moves_integrity_hash) = _compute_integrity_hash(moves[0], moves_len - 1, &moves[1])
+    let (moves_integrity_hash) = _compute_integrity_hash(0, moves_len, moves)
 
     let (intention) = players_intention.read(game_id, player_id)
 
     with_attr error_message("StarKonquestGameEngine: move intention mismatch"):
         assert moves_integrity_hash = intention
     end
+
+    _store_moves(game_id, player_id, 0, moves_len, moves)
+
+    # Emit event
+    MoveSubmitted.emit(game_id, player_id)
+
     return ()
 end
 
 # ------------------
 # INTERNAL FUNCTIONS
 # ------------------
+
+func _store_moves{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    game_id : felt, player_id : felt, index : felt, moves_len : felt, moves : felt*
+):
+    if moves_len == 0:
+        return ()
+    end
+
+    players_moves.write(game_id, player_id, index, moves[0])
+    _store_moves(game_id, player_id, index + 1, moves_len - 1, &moves[1])
+    return ()
+end
 
 func _compute_integrity_hash{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     hash : felt, moves_len : felt, moves : felt*
@@ -168,15 +220,12 @@ func _assert_game_exists{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
 end
 
 func _only_player{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    game_id : felt, player_id : felt
-):
+    game_id : felt
+) -> (player_id : felt):
     let (player_address) = get_caller_address()
-    let (expecter_player_address) = players_account.read(game_id, player_id)
-    with_attr error_message("StarKonquestGameEngine: invalid player id"):
-        assert_not_zero(expecter_player_address)
-    end
+    let (player_id) = players_index.read(game_id, player_address)
     with_attr error_message("StarKonquestGameEngine: invalid player address"):
-        assert player_address = expecter_player_address
+        assert_not_zero(player_id)
     end
-    return ()
+    return (player_id)
 end
