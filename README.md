@@ -28,30 +28,67 @@
 
 #### Requirements
 
-- [protostar](https://github.com/software-mansion/protostar) >= 0.1.0
+- [Protostar](https://github.com/software-mansion/protostar) >= 0.1.0
+- [Python <=3.8](https://www.python.org/downloads/)
 
 #### 📦 Install
 
 ```bash
 protostar install
+python -m venv env
+source env/bin/activate
+pip install -r requirements.txt
+nile install
 ```
 
 ### ⛏️ Compile
 
 ```bash
-protostar build --cairo-path ./lib/cairo_contracts/src
+make
 ```
 
-### 🌡️ Test
+## Goal
+
+Implement your ship to catch as much dust as possible.
+
+## Get started
+
+To add your ship, compile it and deploy it
 
 ```bash
-protostar test ./tests --cairo-path ./lib/cairo_contracts/src
+nile compile
+nile deploy <my-ship-contract>
 ```
 
-### 🚀 Deploy
+Keep the addresses of the contracts, you'll need them later.
+
+Then, add the ship to the game's space
 
 ```bash
+nile invoke <space-contract-address> add_ship <x> <y> <ship-contract-address>
+```
 
+Finally, call `next_turn` to let the game computes the next turn
+
+```bash
+nile invoke <space-contract-address> next_turn
+```
+
+## Testing
+
+```bash
+make test
+pytest tests
+```
+
+Coding your ship logic can be tricky, we suggest you use tests to check your code.
+
+You can get inspiration from the [static ship tests](https://github.com/onlydustxyz/starknet-onboarding/blob/main/tests/test_space.py#L188) and run this specific test with `pytest tests -k "test_next_turn_with_ship"`.
+
+## CLI
+
+```bash
+make cli
 ```
 
 ## 📄 License
