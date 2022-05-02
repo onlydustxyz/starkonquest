@@ -3,14 +3,14 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.starknet.common.syscalls import get_contract_address, get_caller_address
 from starkware.cairo.common.alloc import alloc
-from contracts.ships.random_move_ship.library import _move, _set_random_contract
+from contracts.ships.random_move_ship.library import RandomMoveShip
 from contracts.models.common import Cell, Dust, Vector2
 
 const RANDOM_CONTRACT_ADDRESS = 0x123
 
 @external
 func test_move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-    _set_random_contract(RANDOM_CONTRACT_ADDRESS)
+    RandomMoveShip.constructor(RANDOM_CONTRACT_ADDRESS)
 
     let grid : Cell* = alloc()
     assert [grid] = Cell(Dust(1, Vector2(0, 0)), 0)
@@ -20,7 +20,7 @@ func test_move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
 
     # Generate a first round of random numbers
     %{ mock_call(ids.RANDOM_CONTRACT_ADDRESS, "generate_random_numbers", [1, 1, 1, 1, 1]) %}
-    let (next_direction) = _move(grid_len, grid, 1)
+    let (next_direction) = RandomMoveShip.move(grid_len, grid, 1)
 
     # Assert next_direction = Vector2(0, 0)
     assert next_direction.x = 0
@@ -28,7 +28,7 @@ func test_move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
 
     # Change the generated random numbers to get a different random direction
     %{ mock_call(ids.RANDOM_CONTRACT_ADDRESS, "generate_random_numbers", [3, 3, 3, 3, 3]) %}
-    let (next_direction) = _move(grid_len, grid, 1)
+    let (next_direction) = RandomMoveShip.move(grid_len, grid, 1)
 
     # Assert next_direction = Vector2(-1, -1)
     assert next_direction.x + 1 = 0

@@ -14,19 +14,25 @@ from contracts.core.library import MathUtils_random_direction
 func random_contract() -> (random_contract : felt):
 end
 
-func _set_random_contract{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        random_contract_ : felt) -> ():
-    random_contract.write(random_contract_)
-    return ()
-end
+namespace RandomMoveShip:
+    func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+            random_contract_ : felt) -> ():
+        random_contract.write(random_contract_)
+        return ()
+    end
 
-func _move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        grid_state_len : felt, grid_state : Cell*, ship_id : felt) -> (new_direction : Vector2):
-    let (random_contract_address) = random_contract.read()
-    let (block_timestamp) = get_block_timestamp()
-    let (r1, r2, _, _, _) = IRandom.generate_random_numbers(
-        random_contract_address, block_timestamp)
-    let (random_direction) = MathUtils_random_direction(r1, r2)
+    # ---------
+    # EXTERNALS
+    # ---------
 
-    return (new_direction=random_direction)
+    func move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+            grid_state_len : felt, grid_state : Cell*, ship_id : felt) -> (new_direction : Vector2):
+        let (random_contract_address) = random_contract.read()
+        let (block_timestamp) = get_block_timestamp()
+        let (r1, r2, _, _, _) = IRandom.generate_random_numbers(
+            random_contract_address, block_timestamp)
+        let (random_direction) = MathUtils_random_direction(r1, r2)
+
+        return (new_direction=random_direction)
+    end
 end
