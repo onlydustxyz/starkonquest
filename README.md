@@ -62,18 +62,6 @@ nile deploy <my-ship-contract>
 
 Keep the addresses of the contracts, you'll need them later.
 
-Then, add the ship to the game's space
-
-```bash
-nile invoke <space-contract-address> add_ship <x> <y> <ship-contract-address>
-```
-
-Finally, call `next_turn` to let the game computes the next turn
-
-```bash
-nile invoke <space-contract-address> next_turn
-```
-
 ## Testing
 
 ```bash
