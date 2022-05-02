@@ -11,6 +11,9 @@ space = [
 random = [
     "./contracts/core/random/random.cairo",
 ]
+random_move_ship = [
+    "./contracts/ships/random_move_ship/ship.cairo",
+]
 static_ship = [
     "./contracts/ships/static_ship/ship.cairo",
 ]
