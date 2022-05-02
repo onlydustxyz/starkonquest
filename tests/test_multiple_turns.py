@@ -16,7 +16,7 @@ MAX_FELT = 2**251 + 17 * 2**192 + 1
 
 @pytest.fixture
 async def space_factory(starknet: Starknet) -> StarknetContract:
-    space = await deploy_contract(starknet, "core/space.cairo")
+    space = await deploy_contract(starknet, "core/space/space.cairo")
     return space
 
 

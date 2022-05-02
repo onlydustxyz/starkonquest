@@ -20,7 +20,7 @@ MAX_FELT = 2**251 + 17 * 2**192 + 1
 @pytest.fixture
 async def space_factory(starknet: Starknet) -> StarknetContract:
     rand = await deploy_contract(starknet, "test/fake_rand.cairo")
-    space = await deploy_contract(starknet, "core/space.cairo")
+    space = await deploy_contract(starknet, "core/space/space.cairo")
     await space.initialize(
         rand.contract_address, SPACE_SIZE, MAX_TURN, MAX_DUST
     ).invoke(caller_address=ADMIN)
@@ -30,7 +30,7 @@ async def space_factory(starknet: Starknet) -> StarknetContract:
 @pytest.mark.asyncio
 async def test_turn_count(starknet: Starknet):
     rand = await deploy_contract(starknet, "test/fake_rand.cairo")
-    space = await deploy_contract(starknet, "core/space.cairo")
+    space = await deploy_contract(starknet, "core/space/space.cairo")
 
     MAX_TURN = 2
     await space.initialize(
