@@ -18,7 +18,7 @@ static_ship = [
     "./contracts/ships/static_ship/ship.cairo",
 ]
 basic_ship = [
-    "./contracts/ships/basic_ship.cairo",
+    "./contracts/ships/basic_ship/ship.cairo",
 ]
 only_dust = [
     "./contracts/token/only_dust.cairo",
