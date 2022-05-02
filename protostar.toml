@@ -12,7 +12,7 @@ rand = [
     "./contracts/core/rand.cairo",
 ]
 static_ship = [
-    "./contracts/ships/static_ship.cairo",
+    "./contracts/ships/static_ship/ship.cairo",
 ]
 basic_ship = [
     "./contracts/ships/basic_ship.cairo",
