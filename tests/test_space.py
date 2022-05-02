@@ -119,7 +119,9 @@ async def test_add_ship(starknet: Starknet, space_factory):
 @pytest.mark.asyncio
 async def test_next_turn_with_ship(starknet: Starknet, space_factory):
     space = space_factory
-    ship: StarknetContract = await deploy_contract(starknet, "ships/static_ship/ship.cairo")
+    ship: StarknetContract = await deploy_contract(
+        starknet, "ships/static_ship/ship.cairo"
+    )
     await space.add_ship(0, 3, ship.contract_address).invoke(caller_address=ADMIN)
     ship_assertion = Cell(Vector2(0, 3), 0, 1)
 
@@ -162,7 +164,9 @@ async def test_next_turn_with_ship(starknet: Starknet, space_factory):
 @pytest.mark.asyncio
 async def test_play_game(starknet: Starknet, space_factory):
     space = space_factory
-    ship: StarknetContract = await deploy_contract(starknet, "ships/static_ship/ship.cairo")
+    ship: StarknetContract = await deploy_contract(
+        starknet, "ships/static_ship/ship.cairo"
+    )
     await space.add_ship(0, 3, ship.contract_address).invoke(caller_address=ADMIN)
     ship_assertion = Cell(Vector2(0, 3), 0, 1)
 
