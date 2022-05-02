@@ -44,7 +44,7 @@ async def tournament_factory(starknet: Starknet) -> StarknetContract:
     recipient = ADMIN
     onlyDust = await deploy_contract(
         starknet,
-        "token/only_dust.cairo",
+        "token/only_dust/only_dust.cairo",
         constructor_calldata=[name, symbol, decimals, 1000000, 0, recipient],
     )
 
@@ -53,7 +53,7 @@ async def tournament_factory(starknet: Starknet) -> StarknetContract:
     owner = ADMIN
     starKonquestBoardingPass = await deploy_contract(
         starknet,
-        "token/stakonquest_boarding_pass.cairo",
+        "token/stakonquest_boarding_pass/stakonquest_boarding_pass.cairo",
         constructor_calldata=[name, symbol, owner],
     )
     await starKonquestBoardingPass.mint(PLAYER1, (1, 0)).invoke(caller_address=ADMIN)

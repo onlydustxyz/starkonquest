@@ -7,6 +7,10 @@ from starkware.cairo.common.hash import hash2
 from starkware.starknet.common.syscalls import get_block_number, get_block_timestamp, get_tx_info
 
 namespace Random:
+    # ---------
+    # EXTERNALS
+    # ---------
+
     func generate_random_numbers{
             pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr,
             bitwise_ptr : BitwiseBuiltin*}(seed : felt) -> (r1, r2, r3, r4, r5):

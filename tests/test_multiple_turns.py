@@ -25,7 +25,7 @@ async def test_multiple_turns(starknet: Starknet, space_factory):
     space = space_factory
 
     rand = await deploy_contract(starknet, "core/rand.cairo")
-    ship = await deploy_contract(starknet, "ships/basic_ship.cairo")
+    ship = await deploy_contract(starknet, "ships/basic_ship/ship.cairo")
 
     await space.play_game(
         rand.contract_address,
