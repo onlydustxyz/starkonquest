@@ -6,7 +6,7 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.bool import TRUE
 from starkware.cairo.common.uint256 import Uint256
-from contracts.token.only_dust.library import OnlyDust
+from contracts.tokens.only_dust.library import OnlyDust
 
 # -----------
 # CONSTRUCTOR

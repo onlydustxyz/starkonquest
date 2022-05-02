@@ -21,8 +21,11 @@ basic_ship = [
     "./contracts/ships/basic_ship/ship.cairo",
 ]
 only_dust = [
-    "./contracts/token/only_dust.cairo",
+    "./contracts/tokens/only_dust/only_dust.cairo",
 ]
 tournament = [
     "./contracts/tournament/tournament.cairo",
+]
+starkonquest_boarding_pass = [
+    "./contracts/tokens/starkonquest_boarding_pass/starkonquest_boarding_pass.cairo",
 ]

@@ -5,7 +5,7 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.uint256 import Uint256
 
-from contracts.token.starkonquest_boarding_pass.library import StarkonquestBoardingPass
+from contracts.tokens.starkonquest_boarding_pass.library import StarkonquestBoardingPass
 
 # -----------
 # CONSTRUCTOR
