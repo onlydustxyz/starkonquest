@@ -8,8 +8,8 @@ libs_path = "lib"
 space = [
     "./contracts/core/space.cairo",
 ]
-rand = [
-    "./contracts/core/rand.cairo",
+random = [
+    "./contracts/core/random/random.cairo",
 ]
 static_ship = [
     "./contracts/ships/static_ship/ship.cairo",

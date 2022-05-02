@@ -62,7 +62,7 @@ async def tournament_factory(starknet: Starknet) -> StarknetContract:
     await starKonquestBoardingPass.mint(PLAYER4, (4, 0)).invoke(caller_address=ADMIN)
 
     space = await deploy_contract(starknet, "core/space.cairo")
-    rand = await deploy_contract(starknet, "core/rand.cairo")
+    rand = await deploy_contract(starknet, "core/random/random.cairo")
     space = await deploy_contract(starknet, "test/fake_space.cairo")
 
     owner = ADMIN
