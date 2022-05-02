@@ -61,7 +61,7 @@ async def tournament_factory(starknet: Starknet) -> StarknetContract:
     await starKonquestBoardingPass.mint(PLAYER3, (3, 0)).invoke(caller_address=ADMIN)
     await starKonquestBoardingPass.mint(PLAYER4, (4, 0)).invoke(caller_address=ADMIN)
 
-    space = await deploy_contract(starknet, "core/space.cairo")
+    space = await deploy_contract(starknet, "core/space/space.cairo")
     rand = await deploy_contract(starknet, "core/random/random.cairo")
     space = await deploy_contract(starknet, "test/fake_space.cairo")
 

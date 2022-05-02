@@ -2,7 +2,7 @@
 
 from contracts.interfaces.ispace import ISpace
 from contracts.models.common import Cell, Vector2, ShipInit
-from contracts.core.space import play_game
+from contracts.core.space.library import Space
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.starknet.common.syscalls import get_contract_address, get_caller_address
@@ -32,7 +32,7 @@ func test_game{
     assert ship.position.y = 1
     assert ship.address = random_move_ship_address
 
-    play_game(
+    Space.play_game(
         rand_contract_address=rand_address,
         size=5,
         turn_count=10,

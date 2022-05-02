@@ -6,7 +6,7 @@ libs_path = "lib"
 
 ["protostar.contracts"]
 space = [
-    "./contracts/core/space.cairo",
+    "./contracts/core/space/space.cairo",
 ]
 random = [
     "./contracts/core/random/random.cairo",
