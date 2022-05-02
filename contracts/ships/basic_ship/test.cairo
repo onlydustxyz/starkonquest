@@ -1,7 +1,7 @@
 %lang starknet
 
 from contracts.models.common import Cell, Vector2
-from contracts.ships.basic_ship import move
+from contracts.ships.basic_ship.library import BasicShip
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.alloc import alloc
 
@@ -22,7 +22,7 @@ func test_no_move_if_no_dust{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     %}
 
     %{ stop_expecting_revert = expect_revert(error_message="I am lost in space") %}
-    let (direction) = move(grid_len, grid, 1)
+    let (direction) = BasicShip.move(grid_len, grid, 1)
     %{ stop_expecting_revert() %}
 
     return ()
@@ -49,7 +49,7 @@ func test_move_towards_single_dust_above{
         store_grid(grid, ids, segments, memory)
     %}
 
-    let (direction) = move(grid_len, grid, 1)
+    let (direction) = BasicShip.move(grid_len, grid, 1)
     assert direction = Vector2(0, -1)
 
     return ()
@@ -76,7 +76,7 @@ func test_move_towards_single_dust_below{
         store_grid(grid, ids, segments, memory)
     %}
 
-    let (direction) = move(grid_len, grid, 1)
+    let (direction) = BasicShip.move(grid_len, grid, 1)
     assert direction = Vector2(0, 1)
 
     return ()
@@ -103,7 +103,7 @@ func test_move_towards_single_dust_on_the_left{
         store_grid(grid, ids, segments, memory)
     %}
 
-    let (direction) = move(grid_len, grid, 1)
+    let (direction) = BasicShip.move(grid_len, grid, 1)
     assert direction = Vector2(-1, 0)
 
     return ()
@@ -130,7 +130,7 @@ func test_move_towards_single_dust_on_the_right{
         store_grid(grid, ids, segments, memory)
     %}
 
-    let (direction) = move(grid_len, grid, 1)
+    let (direction) = BasicShip.move(grid_len, grid, 1)
     assert direction = Vector2(1, 0)
 
     return ()
@@ -157,7 +157,7 @@ func test_move_towards_single_dust_on_top_left{
         store_grid(grid, ids, segments, memory)
     %}
 
-    let (direction) = move(grid_len, grid, 1)
+    let (direction) = BasicShip.move(grid_len, grid, 1)
     assert direction = Vector2(-1, -1)
 
     return ()
@@ -184,7 +184,7 @@ func test_move_towards_single_dust_on_top_right{
         store_grid(grid, ids, segments, memory)
     %}
 
-    let (direction) = move(grid_len, grid, 1)
+    let (direction) = BasicShip.move(grid_len, grid, 1)
     assert direction = Vector2(1, -1)
 
     return ()
@@ -211,7 +211,7 @@ func test_move_towards_single_dust_on_bottom_left{
         store_grid(grid, ids, segments, memory)
     %}
 
-    let (direction) = move(grid_len, grid, 1)
+    let (direction) = BasicShip.move(grid_len, grid, 1)
     assert direction = Vector2(-1, 1)
 
     return ()
@@ -238,7 +238,7 @@ func test_move_towards_single_dust_on_bottom_right{
         store_grid(grid, ids, segments, memory)
     %}
 
-    let (direction) = move(grid_len, grid, 1)
+    let (direction) = BasicShip.move(grid_len, grid, 1)
     assert direction = Vector2(1, 1)
 
     return ()
@@ -271,7 +271,7 @@ func test_move_towards_nearest_dust{
         store_grid(grid, ids, segments, memory)
     %}
 
-    let (direction) = move(grid_len, grid, 1)
+    let (direction) = BasicShip.move(grid_len, grid, 1)
     assert direction = Vector2(1, 1)
 
     return ()
