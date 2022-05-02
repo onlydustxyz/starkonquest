@@ -15,7 +15,7 @@ def run(nre: NileRuntimeEnvironment):
     print("Compiling contracts…")
 
     nre.compile(
-        ["contracts/tournament/Tournament.cairo", "contracts/core/random/random.cairo"]
+        ["contracts/tournament/tournament.cairo", "contracts/core/random/random.cairo"]
     )
 
     print("Deploying contracts…")

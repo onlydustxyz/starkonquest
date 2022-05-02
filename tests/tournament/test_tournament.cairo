@@ -20,9 +20,9 @@ func test_tournament{syscall_ptr : felt*, range_check_ptr}():
     tempvar space_address = SPACE_ADDRESS
 
     local tournament_address : felt
-    %{ 
+    %{
         ids.tournament_address = deploy_contract(
-            "./contracts/tournament/Tournament.cairo", 
+            "./contracts/tournament/tournament.cairo",
             [
                 42, # Owner
                 2, # Tournament Id
@@ -37,12 +37,12 @@ func test_tournament{syscall_ptr : felt*, range_check_ptr}():
                 3, # turn_count
                 2, # max_dust
             ]
-        ).contract_address 
+        ).contract_address
     %}
     %{ mock_call(ids.only_dust_token_address, "balanceOf", [100, 0]) %}
     let (reward_total_amount) = ITournament.reward_total_amount(tournament_address)
     assert reward_total_amount.low = 100
-    assert reward_total_amount.high = 0  
+    assert reward_total_amount.high = 0
 
     # Start registration
     %{ start_prank(42) %}
@@ -54,7 +54,6 @@ func test_tournament{syscall_ptr : felt*, range_check_ptr}():
     let (is_open) = ITournament.are_tournament_registrations_open(tournament_address)
     assert is_open = TRUE
     %{ stop_prank() %}
-
 
     # Player 1 registers ship 1
     %{ start_prank(1) %}
