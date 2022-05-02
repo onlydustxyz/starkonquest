@@ -4,13 +4,13 @@ from nile.nre import NileRuntimeEnvironment
 from nile.core.call_or_invoke import call_or_invoke
 
 
-def run(nre : NileRuntimeEnvironment):
+def run(nre: NileRuntimeEnvironment):
 
-    admin = os.environ['ADMIN']
+    admin = os.environ["ADMIN"]
 
     print("Compiling contracts…")
 
-    nre.compile(["contracts/token/OnlyDust.cairo"])
+    nre.compile(["contracts/token/only_dust.cairo"])
 
     print("Deploying contracts…")
 
@@ -19,12 +19,15 @@ def run(nre : NileRuntimeEnvironment):
     decimals = "18"
     recipient = admin
     params = [name, symbol, decimals, "1000000", "0", recipient]
-    address, abi = nre.deploy("OnlyDust", params, alias="only_dust_token")
+    address, abi = nre.deploy("only_dust", params, alias="only_dust_token")
     print(f"ABI: {abi},\nContract address: {address}")
+
 
 # Auxiliary functions
 def str_to_felt(text):
     b_text = bytes(text, "ascii")
     return int.from_bytes(b_text, "big")
+
+
 def uint(a):
-    return(a, 0)
+    return (a, 0)
