@@ -10,7 +10,7 @@ def run(nre: NileRuntimeEnvironment):
 
     print("Compiling contracts…")
 
-    nre.compile(["contracts/token/only_dust.cairo"])
+    nre.compile(["contracts/token/only_dust/only_dust.cairo"])
 
     print("Deploying contracts…")
 
