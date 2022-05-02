@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: Apache-2.0
-# StarKonquest smart contracts written in Cairo v0.1.0 (tournament/Tournament.cairo)
 
 %lang starknet
 

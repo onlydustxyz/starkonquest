@@ -87,7 +87,7 @@ async def tournament_factory(starknet: Starknet) -> StarknetContract:
         2,
     ]
     tournament = await deploy_contract(
-        starknet, "tournament/Tournament.cairo", constructor_calldata=params
+        starknet, "tournament/tournament.cairo", constructor_calldata=params
     )
 
     return tournament
