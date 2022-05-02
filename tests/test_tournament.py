@@ -63,7 +63,7 @@ async def tournament_factory(starknet: Starknet) -> StarknetContract:
 
     space = await deploy_contract(starknet, "core/space/space.cairo")
     rand = await deploy_contract(starknet, "core/random/random.cairo")
-    space = await deploy_contract(starknet, "test/fake_space.cairo")
+    space = await deploy_contract(starknet, "mocks/space_mock.cairo")
 
     owner = ADMIN
     season_id = 1

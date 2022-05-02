@@ -23,7 +23,7 @@ func test_game{
     local __fp__ = fp_and_pc.fp_val  # A.
 
     # We deploy contract and put its address into a local variable. Second argument is calldata array
-    %{ ids.rand_address = deploy_contract("./contracts/test/fake_rand.cairo", []).contract_address %}
+    %{ ids.rand_address = deploy_contract("./contracts/mocks/random_mock.cairo", []).contract_address %}
     %{ ids.random_move_ship_address = deploy_contract("./contracts/ships/random_move_ship/ship.cairo", [ids.rand_address]).contract_address %}
 
     local ship : ShipInit
