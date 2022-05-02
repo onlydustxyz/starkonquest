@@ -49,7 +49,7 @@ func test_tournament{syscall_ptr : felt*, range_check_ptr}():
     let (is_open) = ITournament.are_tournament_registrations_open(tournament_address)
     assert is_open = FALSE
 
-    ITournament.open_tournament_registrations(tournament_address)
+    ITournament.open_registrations(tournament_address)
 
     let (is_open) = ITournament.are_tournament_registrations_open(tournament_address)
     assert is_open = TRUE
@@ -72,7 +72,7 @@ func test_tournament{syscall_ptr : felt*, range_check_ptr}():
 
     # Close registration
     %{ start_prank(42) %}
-    ITournament.close_tournament_registrations(tournament_address)
+    ITournament.close_registrations(tournament_address)
     let (is_open) = ITournament.are_tournament_registrations_open(tournament_address)
     assert is_open = FALSE
     %{ stop_prank() %}

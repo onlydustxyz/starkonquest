@@ -11,7 +11,7 @@ def run(nre: NileRuntimeEnvironment):
     print("Compiling contracts…")
 
     nre.compile(
-        ["contracts/token/starkonquest_boarding_pass/starkonquest_boarding_pass.cairo"]
+        ["contracts/tokens/starkonquest_boarding_pass/starkonquest_boarding_pass.cairo"]
     )
 
     print("Deploying contracts…")

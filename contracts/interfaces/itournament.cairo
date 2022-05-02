@@ -7,10 +7,10 @@ namespace ITournament:
     func start() -> ():
     end
 
-    func open_tournament_registrations() -> ():
+    func open_registrations() -> ():
     end
 
-    func close_tournament_registrations() -> ():
+    func close_registrations() -> ():
     end
 
     func register(ship_address) -> ():
