@@ -127,109 +127,120 @@ namespace Tournament:
     # -----
 
     func tournament_id{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            tournament_id : felt):
+        tournament_id : felt
+    ):
         let (tournament_id) = tournament_id_.read()
         return (tournament_id)
     end
 
     func tournament_name{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            tournament_name : felt):
+        tournament_name : felt
+    ):
         let (tournament_name) = tournament_name_.read()
         return (tournament_name)
     end
 
     func reward_token_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ) -> (reward_token_address : felt):
+        ) -> (reward_token_address : felt):
         let (reward_token_address) = reward_token_address_.read()
         return (reward_token_address)
     end
 
     func boarding_pass_token_address{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            boarding_pass_token_address : felt):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }() -> (boarding_pass_token_address : felt):
         let (boarding_pass_token_address) = boarding_pass_token_address_.read()
         return (boarding_pass_token_address)
     end
 
     func rand_contract_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ) -> (rand_contract_address : felt):
+        ) -> (rand_contract_address : felt):
         let (rand_contract_address) = rand_contract_address_.read()
         return (rand_contract_address)
     end
 
     func are_tournament_registrations_open{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            are_tournament_registrations_open : felt):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }() -> (are_tournament_registrations_open : felt):
         let (are_tournament_registrations_open) = are_tournament_registrations_open_.read()
         return (are_tournament_registrations_open)
     end
 
     func reward_total_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ) -> (reward_total_amount : Uint256):
+        ) -> (reward_total_amount : Uint256):
         let (reward_token_address) = reward_token_address_.read()
         let (contract_address) = get_contract_address()
         let (reward_total_amount) = IERC20.balanceOf(
-            contract_address=reward_token_address, account=contract_address)
+            contract_address=reward_token_address, account=contract_address
+        )
         return (reward_total_amount)
     end
 
     func ships_per_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            ships_per_battle : felt):
+        ships_per_battle : felt
+    ):
         let (ships_per_battle) = ships_per_battle_.read()
         return (ships_per_battle)
     end
 
     func max_ships_per_tournament{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            max_ships_per_tournament : felt):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }() -> (max_ships_per_tournament : felt):
         let (max_ships_per_tournament) = max_ships_per_tournament_.read()
         return (max_ships_per_tournament)
     end
 
     func grid_size{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            grid_size : felt):
+        grid_size : felt
+    ):
         let (grid_size) = grid_size_.read()
         return (grid_size)
     end
 
     func turn_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            turn_count : felt):
+        turn_count : felt
+    ):
         let (turn_count) = turn_count_.read()
         return (turn_count)
     end
 
     func max_dust{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            max_dust : felt):
+        max_dust : felt
+    ):
         let (max_dust) = max_dust_.read()
         return (max_dust)
     end
 
     func player_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            player_count : felt):
+        player_count : felt
+    ):
         let (player_count) = player_count_.read()
         return (player_count)
     end
 
     func player_ship{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            player_address : felt) -> (player_ship : felt):
+        player_address : felt
+    ) -> (player_ship : felt):
         let (player_ship) = player_ship_.read(player_address)
         return (player_ship)
     end
 
     func ship_player{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ship_address : felt) -> (ship_player : felt):
+        ship_address : felt
+    ) -> (ship_player : felt):
         let (ship_player) = ship_player_.read(ship_address)
         return (ship_player)
     end
 
     func player_score{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            player_address : felt) -> (player_score : felt):
+        player_address : felt
+    ) -> (player_score : felt):
         let (player_score) = player_score_.read(player_address)
         return (player_score)
     end
 
     func played_battle_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ) -> (played_battle_count : felt):
+        ) -> (played_battle_count : felt):
         let (played_battle_count) = played_battle_count_.read()
         return (played_battle_count)
     end
@@ -239,10 +250,19 @@ namespace Tournament:
     # -----------
 
     func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            owner : felt, tournament_id : felt, tournament_name : felt, reward_token_address : felt,
-            boarding_pass_token_address : felt, rand_contract_address : felt,
-            space_contract_address : felt, ships_per_battle : felt, max_ships_per_tournament : felt,
-            grid_size : felt, turn_count : felt, max_dust : felt):
+        owner : felt,
+        tournament_id : felt,
+        tournament_name : felt,
+        reward_token_address : felt,
+        boarding_pass_token_address : felt,
+        rand_contract_address : felt,
+        space_contract_address : felt,
+        ships_per_battle : felt,
+        max_ships_per_tournament : felt,
+        grid_size : felt,
+        turn_count : felt,
+        max_dust : felt,
+    ):
         Ownable_initializer(owner)
         tournament_id_.write(tournament_id)
         tournament_name_.write(tournament_name)
@@ -265,7 +285,7 @@ namespace Tournament:
 
     # Open tournament registrations
     func open_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ) -> (success : felt):
+        ) -> (success : felt):
         # TODO: add Ownable_only_owner()
         _only_tournament_registrations_closed()
         are_tournament_registrations_open_.write(TRUE)
@@ -274,7 +294,7 @@ namespace Tournament:
 
     # Close tournament registrations
     func close_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ) -> (success : felt):
+        ) -> (success : felt):
         # TODO: add Ownable_only_owner()
         _only_tournament_registrations_open()
         are_tournament_registrations_open_.write(FALSE)
@@ -283,7 +303,8 @@ namespace Tournament:
 
     # Start the tournament
     func start{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            success : felt):
+        success : felt
+    ):
         # TODO: add Ownable_only_owner()
         _only_tournament_registrations_closed()
 
@@ -295,14 +316,16 @@ namespace Tournament:
     # Register a ship for the caller address
     # @param ship_address: the address of the ship smart contract
     func register{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ship_address : felt) -> (success : felt):
+        ship_address : felt
+    ) -> (success : felt):
         alloc_locals
         _only_tournament_registrations_open()
         let (player_address) = get_caller_address()
         let (boarding_pass_token_address) = boarding_pass_token_address_.read()
         # Check access control with NFT boarding pass
         let (player_boarding_pass_balance) = IERC721.balanceOf(
-            contract_address=boarding_pass_token_address, owner=player_address)
+            contract_address=boarding_pass_token_address, owner=player_address
+        )
         let one = Uint256(1, 0)
         let (is_allowed) = uint256_le(one, player_boarding_pass_balance)
         with_attr error_message("Tournament: player is not allowed to register"):
@@ -340,7 +363,8 @@ namespace Tournament:
     # ---------
 
     func _increase_score{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            player_address : felt, points : felt):
+        player_address : felt, points : felt
+    ):
         let (current_score) = player_score_.read(player_address)
         tempvar new_score
         assert new_score = current_score + points
@@ -349,7 +373,8 @@ namespace Tournament:
     end
 
     func _decrease_score{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            player_address : felt, points : felt):
+        player_address : felt, points : felt
+    ):
         let (current_score) = player_score_.read(player_address)
         tempvar new_score
         assert new_score = current_score - points
@@ -358,7 +383,8 @@ namespace Tournament:
     end
 
     func _only_tournament_registrations_open{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }():
         let (are_tournament_registrations_open) = are_tournament_registrations_open_.read()
         with_attr error_message("Tournament: tournament is open"):
             assert are_tournament_registrations_open = TRUE
@@ -367,7 +393,8 @@ namespace Tournament:
     end
 
     func _only_tournament_registrations_closed{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }():
         let (are_tournament_registrations_open) = are_tournament_registrations_open_.read()
         with_attr error_message("Tournament: tournament is closed"):
             assert are_tournament_registrations_open = FALSE
@@ -395,8 +422,8 @@ namespace Tournament:
 
     # Play all battles of the current round
     func _play_current_round_battles{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-            winner_ships_len : felt, winner_ships : felt*):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }() -> (winner_ships_len : felt, winner_ships : felt*):
         alloc_locals
         let (winner_ships : felt*) = alloc()
         let (winner_ships_len) = _recursive_play_current_round_battles(0, 0, winner_ships)
@@ -404,9 +431,10 @@ namespace Tournament:
     end
 
     func _recursive_play_current_round_battles{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ship_index : felt, winner_ships_len : felt, winner_ships : felt*) -> (
-            new_winner_ships_len : felt):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }(ship_index : felt, winner_ships_len : felt, winner_ships : felt*) -> (
+        new_winner_ships_len : felt
+    ):
         alloc_locals
 
         let (local ships_len : felt, ships : ShipInit*) = _build_battle_ship_array(ship_index)
@@ -421,12 +449,14 @@ namespace Tournament:
         assert winner_ships[winner_ships_len] = winner_ship
 
         return _recursive_play_current_round_battles(
-            ship_index + ships_len, winner_ships_len + 1, winner_ships)
+            ship_index + ships_len, winner_ships_len + 1, winner_ships
+        )
     end
 
     # Play the battle entirely
     func _play_next_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ships_len : felt, ships : ShipInit*) -> (winner_ship : felt):
+        ships_len : felt, ships : ShipInit*
+    ) -> (winner_ship : felt):
         alloc_locals
         let (space_contract) = space_contract_address_.read()
         let (rand_contract) = rand_contract_address_.read()
@@ -435,7 +465,8 @@ namespace Tournament:
         let (max_dust) = max_dust_.read()
 
         ISpace.play_game(
-            space_contract, rand_contract, grid_size, turn_count, max_dust, ships_len, ships)
+            space_contract, rand_contract, grid_size, turn_count, max_dust, ships_len, ships
+        )
 
         let (played_battle_count) = played_battle_count_.read()
         played_battle_count_.write(played_battle_count + 1)
@@ -449,8 +480,8 @@ namespace Tournament:
 
     # Get the ships that will participate in the next battle
     func _build_battle_ship_array{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ship_index : felt) -> (ships_len : felt, ships : ShipInit*):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }(ship_index : felt) -> (ships_len : felt, ships : ShipInit*):
         alloc_locals
 
         let (local ships : ShipInit*) = alloc()
@@ -461,8 +492,8 @@ namespace Tournament:
     end
 
     func _recursive_build_battle_ship_array{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            ship_index : felt, ships_len : felt, ships : ShipInit*) -> (len : felt):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }(ship_index : felt, ships_len : felt, ships : ShipInit*) -> (len : felt):
         alloc_locals
         let (ships_per_battle) = ships_per_battle_.read()
         if ships_len == ships_per_battle:
@@ -485,8 +516,8 @@ namespace Tournament:
     end
 
     func _get_initial_ship_position{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            battle_ship_index : felt) -> (initial_position : Vector2):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }(battle_ship_index : felt) -> (initial_position : Vector2):
         let (grid_size) = grid_size_.read()
 
         let (y, x) = unsigned_div_rem(battle_ship_index, grid_size)
@@ -496,8 +527,8 @@ namespace Tournament:
 
     # Update the list of ships that will be playing in the next ground
     func _update_playing_ships_for_next_round{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            winner_ships_len : felt, winner_ships : felt*):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }(winner_ships_len : felt, winner_ships : felt*):
         playing_ship_count_.write(winner_ships_len)
 
         _recursive_update_playing_ships_for_next_round(0, winner_ships_len, winner_ships)
@@ -505,8 +536,8 @@ namespace Tournament:
     end
 
     func _recursive_update_playing_ships_for_next_round{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            index : felt, winner_ships_len : felt, winner_ships : felt*):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }(index : felt, winner_ships_len : felt, winner_ships : felt*):
         if winner_ships_len == 0:
             return ()
         end
@@ -515,7 +546,8 @@ namespace Tournament:
         playing_ships_.write(index, ship_address)
 
         _recursive_update_playing_ships_for_next_round(
-            index + 1, winner_ships_len - 1, &winner_ships[1])
+            index + 1, winner_ships_len - 1, &winner_ships[1]
+        )
         return ()
     end
 end

@@ -13,12 +13,30 @@ from contracts.models.common import Vector2, Dust, Cell, Context, ShipInit
 from contracts.interfaces.iship import IShip
 from contracts.interfaces.irand import IRandom
 from contracts.core.library import (
-    MathUtils_clamp_value, MathUtils_random_in_range, MathUtils_random_direction)
+    MathUtils_clamp_value,
+    MathUtils_random_in_range,
+    MathUtils_random_direction,
+)
 from contracts.libraries.grid import (
-    _get_grid_size, _get_ship_at, _get_dust_at, _get_next_turn_dust_at, _get_next_turn_ship_at,
-    _set_dust_at, _set_ship_at, _set_next_turn_dust_at, _set_next_turn_ship_at, _get_grid_state,
-    _clear_next_turn_dust_at, _clear_dust_at, _get_next_cell_at, _get_cell_at, _set_cell_at,
-    _set_next_cell_at, _init_grid, _increment_ship_score)
+    _get_grid_size,
+    _get_ship_at,
+    _get_dust_at,
+    _get_next_turn_dust_at,
+    _get_next_turn_ship_at,
+    _set_dust_at,
+    _set_ship_at,
+    _set_next_turn_dust_at,
+    _set_next_turn_ship_at,
+    _get_grid_state,
+    _clear_next_turn_dust_at,
+    _clear_dust_at,
+    _get_next_cell_at,
+    _get_cell_at,
+    _set_cell_at,
+    _set_next_cell_at,
+    _init_grid,
+    _increment_ship_score,
+)
 
 # ------
 # EVENTS
@@ -42,8 +60,8 @@ end
 
 @event
 func ship_moved(
-        space_contract_address : felt, ship_id : felt, previous_position : Vector2,
-        position : Vector2):
+    space_contract_address : felt, ship_id : felt, previous_position : Vector2, position : Vector2
+):
 end
 
 @event
@@ -64,10 +82,18 @@ namespace Space:
     # ---------
 
     func play_game{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*,
-            range_check_ptr}(
-            rand_contract_address : felt, size : felt, turn_count : felt, max_dust : felt,
-            ships_len : felt, ships : ShipInit*):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        bitwise_ptr : BitwiseBuiltin*,
+        range_check_ptr,
+    }(
+        rand_contract_address : felt,
+        size : felt,
+        turn_count : felt,
+        max_dust : felt,
+        ships_len : felt,
+        ships : ShipInit*,
+    ):
         alloc_locals
 
         local context : Context
@@ -103,8 +129,12 @@ namespace Space:
     # ---------
 
     func _add_ships{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr,
-            bitwise_ptr : BitwiseBuiltin*, context : Context}(ships_len : felt, ships : ShipInit*):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        bitwise_ptr : BitwiseBuiltin*,
+        context : Context,
+    }(ships_len : felt, ships : ShipInit*):
         if ships_len == 0:
             return ()
         end
@@ -113,14 +143,20 @@ namespace Space:
             [ships].position.x,
             [ships].position.y,
             [ships].address,
-            context.ships_len - ships_len + 1)
+            context.ships_len - ships_len + 1,
+        )
         return _add_ships(ships_len - 1, ships + ShipInit.SIZE)
     end
 
     func _rec_play_turns{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr,
-            bitwise_ptr : BitwiseBuiltin*, context : Context, dust_count : felt, scores : felt*}(
-            current_turn : felt):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        bitwise_ptr : BitwiseBuiltin*,
+        context : Context,
+        dust_count : felt,
+        scores : felt*,
+    }(current_turn : felt):
         let (is_finished) = _next_turn(current_turn)
         if is_finished == TRUE:
             let (space_contract_address) = get_contract_address()
@@ -135,9 +171,14 @@ namespace Space:
 
     # This function must be invoked to process the next turn of the game.
     func _next_turn{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr,
-            bitwise_ptr : BitwiseBuiltin*, context : Context, dust_count : felt, scores : felt*}(
-            current_turn : felt) -> (is_finished : felt):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        bitwise_ptr : BitwiseBuiltin*,
+        context : Context,
+        dust_count : felt,
+        scores : felt*,
+    }(current_turn : felt) -> (is_finished : felt):
         alloc_locals
 
         let max_turn = context.max_turn_count
@@ -165,8 +206,8 @@ namespace Space:
     end
 
     func _add_ship{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-            x : felt, y : felt, ship_contract : felt, ship_id : felt):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+    }(x : felt, y : felt, ship_contract : felt, ship_id : felt):
         alloc_locals
 
         # Check other ship
@@ -194,9 +235,14 @@ namespace Space:
     end
 
     func _spawn_dust{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr,
-            bitwise_ptr : BitwiseBuiltin*, context : Context, dust_count : felt,
-            current_turn : felt}():
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        bitwise_ptr : BitwiseBuiltin*,
+        context : Context,
+        dust_count : felt,
+        current_turn : felt,
+    }():
         alloc_locals
         let (local size) = _get_grid_size()
         let max_dust = context.max_dust
@@ -231,8 +277,13 @@ namespace Space:
 
     # Recursive function that goes through the entire grid and updates dusts position
     func _move_dust{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context,
-            dust_count : felt, scores : felt*}(x : felt, y : felt):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        context : Context,
+        dust_count : felt,
+        scores : felt*,
+    }(x : felt, y : felt):
         alloc_locals
         let (size) = _get_grid_size()
 
@@ -302,8 +353,8 @@ namespace Space:
     end
 
     func _update_grid{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-            x : felt, y : felt):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+    }(x : felt, y : felt):
         let (size) = _get_grid_size()
 
         # We reached the last cell, this is the end
@@ -326,9 +377,15 @@ namespace Space:
 
     # Recursive function that goes through the entire grid and updates ships position
     func _move_ships{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_state_len,
-            grid_state : Cell*, context : Context, dust_count : felt, scores : felt*}(
-            x : felt, y : felt):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_state_len,
+        grid_state : Cell*,
+        context : Context,
+        dust_count : felt,
+        scores : felt*,
+    }(x : felt, y : felt):
         alloc_locals
         let (size) = _get_grid_size()
 
@@ -353,7 +410,8 @@ namespace Space:
         # Call ship contract
         let ship_contract = [context.ships + ship_id - 1]
         let (local new_direction : Vector2) = IShip.move(
-            ship_contract, grid_state_len, grid_state, ship_id)
+            ship_contract, grid_state_len, grid_state, ship_id
+        )
         let (direction_x) = MathUtils_clamp_value(new_direction.x, -1, 1)
         let (direction_y) = MathUtils_clamp_value(new_direction.y, -1, 1)
 
@@ -406,8 +464,8 @@ namespace Space:
     end
 
     func _handle_collision_with_other_ship{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-            old_x : felt, old_y : felt, new_x : felt, new_y : felt) -> (x : felt, y : felt):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+    }(old_x : felt, old_y : felt, new_x : felt, new_y : felt) -> (x : felt, y : felt):
         let (other_ship : felt) = _get_next_turn_ship_at(new_x, new_y)
         if other_ship != 0:
             return (old_x, old_y)
@@ -416,8 +474,13 @@ namespace Space:
     end
 
     func _catch_dust{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context,
-            dust_count : felt, scores : felt*}(dust : Dust, position : Vector2, ship_id : felt):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        context : Context,
+        dust_count : felt,
+        scores : felt*,
+    }(dust : Dust, position : Vector2, ship_id : felt):
         alloc_locals
         _burn_dust(dust, position)
         local dust_count = dust_count
@@ -427,8 +490,12 @@ namespace Space:
     end
 
     func _burn_dust{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context,
-            dust_count : felt}(dust : Dust, position : Vector2):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        context : Context,
+        dust_count : felt,
+    }(dust : Dust, position : Vector2):
         assert dust.present = TRUE
 
         assert_nn(dust_count)
@@ -442,15 +509,20 @@ namespace Space:
 
     # Generate random dust given a space size
     func _generate_random_dust_on_border{
-            pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr,
-            bitwise_ptr : BitwiseBuiltin*, context : Context, current_turn : felt}() -> (
-            dust : Dust, position : Vector2):
+        pedersen_ptr : HashBuiltin*,
+        syscall_ptr : felt*,
+        range_check_ptr,
+        bitwise_ptr : BitwiseBuiltin*,
+        context : Context,
+        current_turn : felt,
+    }() -> (dust : Dust, position : Vector2):
         alloc_locals
         local dust : Dust
         assert dust.present = TRUE
 
         let (r1, r2, r3, r4, r5) = IRandom.generate_random_numbers(
-            context.rand_contract, current_turn)
+            context.rand_contract, current_turn
+        )
 
         let (direction : Vector2) = MathUtils_random_direction(r1, r2)
         assert dust.direction = direction
@@ -462,8 +534,8 @@ namespace Space:
 
     # Generate a random position on a given border (top, left, right, bottom)
     func _generate_random_position_on_border{
-            pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr, context : Context}(
-            r1, r2, r3) -> (position : Vector2):
+        pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr, context : Context
+    }(r1, r2, r3) -> (position : Vector2):
         alloc_locals
         let (space_size) = _get_grid_size()
 
@@ -479,8 +551,8 @@ namespace Space:
 
     # given x, y return randomly Position(x,y) or Position(y,x)
     func _shuffled_position{
-            pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr, context : Context}(
-            x : felt, y : felt, r) -> (position : Vector2):
+        pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr, context : Context
+    }(x : felt, y : felt, r) -> (position : Vector2):
         alloc_locals
         local position : Vector2
 
@@ -497,8 +569,8 @@ namespace Space:
     end
 
     func _compute_new_dust_position{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-            dust : Dust, current_position : Vector2) -> (new_position : Vector2):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+    }(dust : Dust, current_position : Vector2) -> (new_position : Vector2):
         alloc_locals
 
         let (new_hdir) = _get_new_hdir(dust, current_position)
@@ -511,8 +583,8 @@ namespace Space:
     end
 
     func _get_new_hdir{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-            dust : Dust, current_position : Vector2) -> (hdir : felt):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+    }(dust : Dust, current_position : Vector2) -> (hdir : felt):
         alloc_locals
         let (space_size) = _get_grid_size()
 
@@ -532,8 +604,8 @@ namespace Space:
     end
 
     func _get_new_vdir{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-            dust : Dust, current_position : Vector2) -> (vdir : felt):
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+    }(dust : Dust, current_position : Vector2) -> (vdir : felt):
         alloc_locals
         let (space_size) = _get_grid_size()
 

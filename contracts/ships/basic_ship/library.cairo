@@ -11,7 +11,8 @@ namespace BasicShip:
     # ---------
 
     func move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            grid_len : felt, grid : Cell*, self : felt) -> (new_direction : Vector2):
+        grid_len : felt, grid : Cell*, self : felt
+    ) -> (new_direction : Vector2):
         with grid_len, grid, self:
             let (new_direction) = _move()
         end
@@ -23,8 +24,13 @@ namespace BasicShip:
     # ---------
 
     func _move{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}() -> (new_direction : Vector2):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }() -> (new_direction : Vector2):
         alloc_locals
 
         let (local my_position) = _find_me()
@@ -43,22 +49,36 @@ namespace BasicShip:
     end
 
     func _find_me{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}() -> (position : Vector2):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }() -> (position : Vector2):
         let (position) = _find_ship(self)
         return (position=position)
     end
 
     func _find_ship{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}(ship_id : felt) -> (position : Vector2):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }(ship_id : felt) -> (position : Vector2):
         return _find_ship_loop(grid_len, grid, ship_id)
     end
 
     func _find_ship_loop{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}(
-            current_grid_len : felt, current_grid : Cell*, ship_id : felt) -> (position : Vector2):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }(current_grid_len : felt, current_grid : Cell*, ship_id : felt) -> (position : Vector2):
         if current_grid_len == 0:
             return (position=Vector2(-1, -1))  # Not found
         end
@@ -72,16 +92,26 @@ namespace BasicShip:
     end
 
     func _find_nearest_dust{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}(from_ : Vector2) -> (position : Vector2):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }(from_ : Vector2) -> (position : Vector2):
         return _find_nearest_dust_loop(grid_len, grid, from_, Vector2(-1, -1))
     end
 
     func _find_nearest_dust_loop{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}(
-            current_grid_len : felt, current_grid : Cell*, from_ : Vector2,
-            nearest_dust : Vector2) -> (position : Vector2):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }(current_grid_len : felt, current_grid : Cell*, from_ : Vector2, nearest_dust : Vector2) -> (
+        position : Vector2
+    ):
         alloc_locals
 
         if current_grid_len == 0:
@@ -89,18 +119,25 @@ namespace BasicShip:
         end
 
         let (nearest_dust) = _try_select_nearest_dust(
-            current_grid_len, current_grid, from_, nearest_dust)
+            current_grid_len, current_grid, from_, nearest_dust
+        )
 
         # Keep searching
         return _find_nearest_dust_loop(
-            current_grid_len - 1, current_grid + Cell.SIZE, from_, nearest_dust)
+            current_grid_len - 1, current_grid + Cell.SIZE, from_, nearest_dust
+        )
     end
 
     func _try_select_nearest_dust{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}(
-            current_grid_len : felt, current_grid : Cell*, from_ : Vector2,
-            nearest_dust : Vector2) -> (new_nearest_dust : Vector2):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }(current_grid_len : felt, current_grid : Cell*, from_ : Vector2, nearest_dust : Vector2) -> (
+        new_nearest_dust : Vector2
+    ):
         if [current_grid].dust.present == 0:
             # No dust in current cell, keep the previous one
             return (new_nearest_dust=nearest_dust)
@@ -114,10 +151,13 @@ namespace BasicShip:
     end
 
     func _select_nearest_dust{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}(
-            from_ : Vector2, nearest_dust : Vector2, candidate_dust : Vector2) -> (
-            position : Vector2):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }(from_ : Vector2, nearest_dust : Vector2, candidate_dust : Vector2) -> (position : Vector2):
         alloc_locals
 
         let (is_valid) = is_nn(nearest_dust.x)
@@ -137,8 +177,13 @@ namespace BasicShip:
     end
 
     func _to_position{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}(cell_id : felt) -> (position : Vector2):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }(cell_id : felt) -> (position : Vector2):
         let (nb_rows) = sqrt(grid_len)
         with_attr error_message("Invalid grid size, should be perfect square"):
             assert_le(nb_rows, grid_len)
@@ -148,8 +193,13 @@ namespace BasicShip:
     end
 
     func _compute_direction{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}(from_ : Vector2, to_ : Vector2) -> (direction : Vector2):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }(from_ : Vector2, to_ : Vector2) -> (direction : Vector2):
         alloc_locals
 
         let (local x) = _get_linear_direction(from_.x, to_.x)
@@ -159,8 +209,13 @@ namespace BasicShip:
     end
 
     func _compute_distance{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}(from_ : Vector2, to_ : Vector2) -> (distance : felt):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }(from_ : Vector2, to_ : Vector2) -> (distance : felt):
         let dist_x = to_.x - from_.x
         let dist_y = to_.y - from_.y
 
@@ -168,8 +223,13 @@ namespace BasicShip:
     end
 
     func _get_linear_direction{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}(from_ : felt, to_ : felt) -> (direction : felt):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }(from_ : felt, to_ : felt) -> (direction : felt):
         alloc_locals
 
         let (local towards) = is_le(from_, to_)
@@ -179,8 +239,13 @@ namespace BasicShip:
     end
 
     func _found{
-            syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, grid_len : felt,
-            grid : Cell*, self : felt}(position : Vector2) -> (found : felt):
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        grid_len : felt,
+        grid : Cell*,
+        self : felt,
+    }(position : Vector2) -> (found : felt):
         alloc_locals
 
         let (local x_valid) = is_nn(position.x)

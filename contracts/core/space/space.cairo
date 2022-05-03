@@ -11,9 +11,14 @@ from contracts.core.space.library import Space
 
 @external
 func play_game{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*,
-        range_check_ptr}(
-        rand_contract_address : felt, size : felt, turn_count : felt, max_dust : felt,
-        ships_len : felt, ships : ShipInit*):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*, range_check_ptr
+}(
+    rand_contract_address : felt,
+    size : felt,
+    turn_count : felt,
+    max_dust : felt,
+    ships_len : felt,
+    ships : ShipInit*,
+):
     return Space.play_game(rand_contract_address, size, turn_count, max_dust, ships_len, ships)
 end

@@ -14,7 +14,8 @@ from contracts.tokens.only_dust.library import OnlyDust
 
 @constructor
 func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        name : felt, symbol : felt, decimals : felt, initial_supply : Uint256, recipient : felt):
+    name : felt, symbol : felt, decimals : felt, initial_supply : Uint256, recipient : felt
+):
     return OnlyDust.constructor(name, symbol, decimals, initial_supply, recipient)
 end
 
@@ -34,25 +35,29 @@ end
 
 @view
 func totalSupply{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-        totalSupply : Uint256):
+    totalSupply : Uint256
+):
     return OnlyDust.totalSupply()
 end
 
 @view
 func decimals{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-        decimals : felt):
+    decimals : felt
+):
     return OnlyDust.decimals()
 end
 
 @view
 func balanceOf{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        account : felt) -> (balance : Uint256):
+    account : felt
+) -> (balance : Uint256):
     return OnlyDust.balanceOf(account)
 end
 
 @view
 func allowance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        owner : felt, spender : felt) -> (remaining : Uint256):
+    owner : felt, spender : felt
+) -> (remaining : Uint256):
     return OnlyDust.allowance(owner, spender)
 end
 
@@ -62,30 +67,35 @@ end
 
 @external
 func transfer{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        recipient : felt, amount : Uint256) -> (success : felt):
+    recipient : felt, amount : Uint256
+) -> (success : felt):
     return OnlyDust.transfer(recipient, amount)
 end
 
 @external
 func transferFrom{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        sender : felt, recipient : felt, amount : Uint256) -> (success : felt):
+    sender : felt, recipient : felt, amount : Uint256
+) -> (success : felt):
     return OnlyDust.transferFrom(sender, recipient, amount)
 end
 
 @external
 func approve{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        spender : felt, amount : Uint256) -> (success : felt):
+    spender : felt, amount : Uint256
+) -> (success : felt):
     return OnlyDust.approve(spender, amount)
 end
 
 @external
 func increaseAllowance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        spender : felt, added_value : Uint256) -> (success : felt):
+    spender : felt, added_value : Uint256
+) -> (success : felt):
     return OnlyDust.increaseAllowance(spender, added_value)
 end
 
 @external
 func decreaseAllowance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        spender : felt, subtracted_value : Uint256) -> (success : felt):
+    spender : felt, subtracted_value : Uint256
+) -> (success : felt):
     return OnlyDust.decreaseAllowance(spender, subtracted_value)
 end
