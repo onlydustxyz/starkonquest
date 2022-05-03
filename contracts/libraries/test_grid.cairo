@@ -7,9 +7,7 @@ from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin, BitwiseBuiltin
 
 @external
-func test_grid_create_init_with_empty_cell{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*, range_check_ptr
-}():
+func test_grid_create_init_with_empty_cell():
     alloc_locals
 
     let (empty_grid) = grid.create(2)
@@ -43,9 +41,7 @@ func test_grid_create_different_arrays{
 end
 
 @external
-func test_grid_set_and_get_dust{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*, range_check_ptr
-}():
+func test_grid_set_and_get_dust():
     alloc_locals
 
     let (current_grid) = grid.create(3)
@@ -94,9 +90,7 @@ func test_grid_set_and_get_dust{
 end
 
 @external
-func test_grid_set_and_get_ship{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*, range_check_ptr
-}():
+func test_grid_set_and_get_ship():
     alloc_locals
 
     let (current_grid) = grid.create(3)
@@ -139,9 +133,7 @@ func test_grid_set_and_get_ship{
 end
 
 @external
-func test_grid_set_clear_should_preserve_other_objects{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*, range_check_ptr
-}():
+func test_grid_set_clear_should_preserve_other_objects():
     alloc_locals
 
     let (current_grid) = grid.create(2)
