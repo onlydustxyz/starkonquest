@@ -30,7 +30,8 @@ end
 
 @external
 func test_move_towards_single_dust_above{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
     alloc_locals
 
     local grid : Cell*
@@ -57,7 +58,8 @@ end
 
 @external
 func test_move_towards_single_dust_below{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
     alloc_locals
 
     local grid : Cell*
@@ -84,7 +86,8 @@ end
 
 @external
 func test_move_towards_single_dust_on_the_left{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
     alloc_locals
 
     local grid : Cell*
@@ -111,7 +114,8 @@ end
 
 @external
 func test_move_towards_single_dust_on_the_right{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
     alloc_locals
 
     local grid : Cell*
@@ -138,7 +142,8 @@ end
 
 @external
 func test_move_towards_single_dust_on_top_left{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
     alloc_locals
 
     local grid : Cell*
@@ -165,7 +170,8 @@ end
 
 @external
 func test_move_towards_single_dust_on_top_right{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
     alloc_locals
 
     local grid : Cell*
@@ -192,7 +198,8 @@ end
 
 @external
 func test_move_towards_single_dust_on_bottom_left{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
     alloc_locals
 
     local grid : Cell*
@@ -219,7 +226,8 @@ end
 
 @external
 func test_move_towards_single_dust_on_bottom_right{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
     alloc_locals
 
     local grid : Cell*
@@ -246,7 +254,8 @@ end
 
 @external
 func test_move_towards_nearest_dust{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
     alloc_locals
 
     local grid : Cell*

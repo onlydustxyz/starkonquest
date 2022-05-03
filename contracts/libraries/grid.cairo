@@ -7,84 +7,84 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import unsigned_div_rem
 
 func _get_grid_size{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}() -> (
-        size : felt):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}() -> (size : felt):
     return (context.grid_size)
 end
 
 func _get_dust_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt) -> (dust : Dust):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt) -> (dust : Dust):
     let (cell) = _get_cell_at(x, y)
     return (dust=cell.dust)
 end
 
 func _get_ship_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt) -> (ship_id : felt):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt) -> (ship_id : felt):
     let (cell) = _get_cell_at(x, y)
     return (cell.ship_id)
 end
 
 func _get_next_turn_ship_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt) -> (ship_id : felt):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt) -> (ship_id : felt):
     let (cell) = _get_next_cell_at(x, y)
     return (cell.ship_id)
 end
 
 func _get_next_turn_dust_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt) -> (dust : Dust):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt) -> (dust : Dust):
     let (cell) = _get_next_cell_at(x, y)
     return (dust=cell.dust)
 end
 
 func _set_ship_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt, ship_id : felt):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt, ship_id : felt):
     _set_cell_at(x, y, Cell(Dust(FALSE, Vector2(0, 0)), ship_id))
     return ()
 end
 
 func _set_next_turn_ship_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt, ship_id : felt):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt, ship_id : felt):
     _set_next_cell_at(x, y, Cell(Dust(FALSE, Vector2(0, 0)), ship_id))
     return ()
 end
 
 func _set_dust_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt, dust : Dust):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt, dust : Dust):
     _set_cell_at(x, y, Cell(dust, 0))
     return ()
 end
 
 func _clear_dust_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt):
     _set_cell_at(x, y, Cell(Dust(FALSE, Vector2(0, 0)), 0))
     return ()
 end
 
 func _set_next_turn_dust_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt, dust : Dust):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt, dust : Dust):
     _set_next_cell_at(x, y, Cell(dust, 0))
     return ()
 end
 
 func _clear_next_turn_dust_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt):
     _set_next_cell_at(x, y, Cell(Dust(FALSE, Vector2(0, 0)), 0))
     return ()
 end
 
 func _get_grid_state{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}() -> (
-        grid_state_len : felt, grid_state : Cell*):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}() -> (grid_state_len : felt, grid_state : Cell*):
     alloc_locals
 
     let (local grid_state : Cell*) = alloc()
@@ -95,8 +95,8 @@ func _get_grid_state{
 end
 
 func _rec_fill_grid_state{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        grid_state_len : felt, grid_state : Cell*) -> (len : felt):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(grid_state_len : felt, grid_state : Cell*) -> (len : felt):
     let size = context.grid_size
     if size * size == grid_state_len:
         return (grid_state_len)
@@ -110,14 +110,14 @@ func _rec_fill_grid_state{
 end
 
 func _to_grid_index{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt) -> (index : felt):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt) -> (index : felt):
     return (y * context.grid_size + x)
 end
 
 func _set_cell_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt, new_cell : Cell):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt, new_cell : Cell):
     alloc_locals
     let (index) = _to_grid_index(x, y)
 
@@ -133,14 +133,15 @@ func _set_cell_at{
     assert new_context.ships = context.ships
 
     _get_updated_grid(
-        new_context.grid_size * new_context.grid_size, new_context.grid, index, new_cell)
+        new_context.grid_size * new_context.grid_size, new_context.grid, index, new_cell
+    )
     let context = new_context
     return ()
 end
 
 func _set_next_cell_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt, new_cell : Cell):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt, new_cell : Cell):
     alloc_locals
     let (index) = _to_grid_index(x, y)
 
@@ -156,14 +157,15 @@ func _set_next_cell_at{
     assert new_context.ships = context.ships
 
     _get_updated_grid(
-        new_context.grid_size * new_context.grid_size, new_context.next_grid, index, new_cell)
+        new_context.grid_size * new_context.grid_size, new_context.next_grid, index, new_cell
+    )
     let context = new_context
     return ()
 end
 
 func _get_updated_grid{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        grid_len : felt, grid : Cell*, index : felt, new_cell : Cell):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(grid_len : felt, grid : Cell*, index : felt, new_cell : Cell):
     if grid_len == 0:
         return ()
     end
@@ -179,8 +181,8 @@ func _get_updated_grid{
 end
 
 func _get_cell_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt) -> (cell : Cell):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt) -> (cell : Cell):
     # %{ print('Get cell at({},{}) with grid size: {}'.format(ids.x, ids.y, ids.context.grid_size)) %}
     let (index) = _to_grid_index(x, y)
     # %{ print("Index: {}".format(ids.index)) %}
@@ -189,8 +191,8 @@ func _get_cell_at{
 end
 
 func _get_next_cell_at{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context}(
-        x : felt, y : felt) -> (cell : Cell):
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+}(x : felt, y : felt) -> (cell : Cell):
     # %{ print('Get next cell at({},{}) with grid size: {}'.format(ids.x, ids.y, ids.context.grid_size)) %}
     let (index) = _to_grid_index(x, y)
     # %{ print("Index: {}".format(ids.index)) %}
@@ -199,7 +201,8 @@ func _get_next_cell_at{
 end
 
 func _init_grid{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        grid_len : felt, grid : Cell*):
+    grid_len : felt, grid : Cell*
+):
     if grid_len == 0:
         return ()
     end
@@ -211,8 +214,12 @@ func _init_grid{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
 end
 
 func _increment_ship_score{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context,
-        scores : felt*}(ship_id : felt):
+    syscall_ptr : felt*,
+    pedersen_ptr : HashBuiltin*,
+    range_check_ptr,
+    context : Context,
+    scores : felt*,
+}(ship_id : felt):
     alloc_locals
 
     let (local new_scores : felt*) = alloc()
@@ -223,8 +230,12 @@ func _increment_ship_score{
 end
 
 func _get_incremented_scores{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context,
-        scores : felt*}(ships_len : felt, ship_id : felt, new_scores : felt*):
+    syscall_ptr : felt*,
+    pedersen_ptr : HashBuiltin*,
+    range_check_ptr,
+    context : Context,
+    scores : felt*,
+}(ships_len : felt, ship_id : felt, new_scores : felt*):
     if ships_len == 0:
         return ()
     end

@@ -15,7 +15,8 @@ from contracts.ships.random_move_ship.library import RandomMoveShip
 
 @constructor
 func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        random_contract_address : felt):
+    random_contract_address : felt
+):
     RandomMoveShip.constructor(random_contract_address)
     return ()
 end
@@ -26,6 +27,7 @@ end
 
 @external
 func move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        grid_state_len : felt, grid_state : Cell*, ship_id : felt) -> (new_direction : Vector2):
+    grid_state_len : felt, grid_state : Cell*, ship_id : felt
+) -> (new_direction : Vector2):
     return RandomMoveShip.move(grid_state_len, grid_state, ship_id)
 end

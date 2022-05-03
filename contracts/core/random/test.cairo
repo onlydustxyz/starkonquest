@@ -11,8 +11,8 @@ const SEED = 1
 
 @external
 func test_random_generation{
-        pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr,
-        bitwise_ptr : BitwiseBuiltin*}():
+    pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr, bitwise_ptr : BitwiseBuiltin*
+}():
     %{ roll(ids.BLOCK_NUMBER) %}
     %{ warp(ids.BLOCK_TIMESTAMP) %}
 

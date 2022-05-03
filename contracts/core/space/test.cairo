@@ -11,8 +11,8 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin,
 
 @external
 func test_game{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*,
-        range_check_ptr}():
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*, range_check_ptr
+}():
     alloc_locals
 
     local space_address : felt
@@ -38,7 +38,8 @@ func test_game{
         turn_count=10,
         max_dust=10,
         ships_len=1,
-        ships=&ship)
+        ships=&ship,
+    )
 
     return ()
 end
