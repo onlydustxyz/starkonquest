@@ -15,10 +15,13 @@ struct Cell:
     member ship_id : felt
 end
 
+struct Grid:
+    member cells : Cell*
+    member size : felt
+    member nb_cells : felt
+end
+
 struct Context:
-    member grid_size : felt
-    member grid : Cell*
-    member next_grid : Cell*
     member max_turn_count : felt
     member max_dust : felt
     member rand_contract : felt

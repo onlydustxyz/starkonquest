@@ -2,17 +2,11 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.bool import TRUE, FALSE
-from contracts.models.common import Vector2, Dust, Cell, Context
+from contracts.models.common import Vector2, Dust, Cell, Context, Grid
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import assert_nn_le
 
 namespace grid_manip:
-    struct Grid:
-        member cells : Cell*
-        member size : felt
-        member nb_cells : felt
-    end
-
     # Create a new square grid of size*size cells stored in a single-dimension array
     # params:
     #   - grid_size: The number of rows/columns
@@ -89,42 +83,6 @@ namespace grid_manip:
         let (dust) = get_dust_at(x, y)
         return internal.set_cell_at(x, y, Cell(dust, NO_SHIP))
     end
-
-    # func _increment_ship_score{
-    #     syscall_ptr : felt*,
-    #     pedersen_ptr : HashBuiltin*,
-    #     range_check_ptr,
-    #     context : Context,
-    #     scores : felt*,
-    # }(ship_id : felt):
-    #     alloc_locals
-
-    # let (local new_scores : felt*) = alloc()
-    #     _get_incremented_scores(context.ships_len, ship_id, new_scores)
-
-    # let scores = new_scores
-    #     return ()
-    # end
-
-    # func _get_incremented_scores{
-    #     syscall_ptr : felt*,
-    #     pedersen_ptr : HashBuiltin*,
-    #     range_check_ptr,
-    #     context : Context,
-    #     scores : felt*,
-    # }(ships_len : felt, ship_id : felt, new_scores : felt*):
-    #     if ships_len == 0:
-    #         return ()
-    #     end
-
-    # if ship_id == context.ships_len - ships_len + 1:
-    #         assert [new_scores] = [scores + ship_id - 1] + 1
-    #     else:
-    #         assert [new_scores] = [scores + ship_id - 1]
-    #     end
-
-    # return _get_incremented_scores(ships_len - 1, ship_id, new_scores + 1)
-    # end
 
     namespace internal:
         func init_grid_loop(grid : Grid, index : felt, init_cell : Cell):
