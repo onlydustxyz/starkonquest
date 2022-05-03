@@ -48,6 +48,20 @@ namespace grid:
         return internal.set_cell_at(x, y, Cell(NO_DUST, 0))
     end
 
+    func set_ship_at{grid : Grid}(x : felt, y : felt, ship_id : felt):
+        return internal.set_cell_at(x, y, Cell(Dust(FALSE, Vector2(0, 0)), ship_id))
+    end
+
+    func get_ship_at{grid : Grid}(x : felt, y : felt) -> (ship_id : felt):
+        let (cell) = internal.get_cell_at(x, y)
+        return (ship_id=cell.ship_id)
+    end
+
+    func clear_ship_at{grid : Grid}(x : felt, y : felt):
+        let NO_SHIP = 0
+        return internal.set_cell_at(x, y, Cell(Dust(FALSE, Vector2(0, 0)), NO_SHIP))
+    end
+
     # func _get_grid_size{
     #     syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
     # }() -> (size : felt):
