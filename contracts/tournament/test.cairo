@@ -16,25 +16,32 @@ const ADMIN = 42
 @external
 func test_tournament{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
     alloc_locals
-    local only_dust_token_address = ONLY_DUST_TOKEN_ADDRESS
-    local boarding_pass_token_address = BOARDING_TOKEN_ADDRESS
-    local rand_address = RAND_ADDRESS
-    local space_address = SPACE_ADDRESS
+    local only_dust_token_address = ONLY_DUST_TOKEN_ADDRESS  # ERC20 token address of the reward
+    local boarding_pass_token_address = BOARDING_TOKEN_ADDRESS  # ERC721 token address for access control
+    local rand_address = RAND_ADDRESS  # Random generator contract address
+    local space_address = SPACE_ADDRESS  # Space contract address
     local admin = ADMIN
+    local tournament_id = 420
+    local tournament_name = 69
+    local ships_per_battle = 2
+    local max_ships_per_tournament = 8
+    local grid_size = 5
+    local turn_count = 10
+    local max_dust = 2
 
     Tournament.constructor(
-        ADMIN, # Owner
-        2, # Tournament Id
-        3, # Tournament Name
-        ONLY_DUST_TOKEN_ADDRESS, # ERC20 token address of the reward
-        BOARDING_TOKEN_ADDRESS, # ERC721 token address for access control
-        RAND_ADDRESS, # Random generator contract address
-        SPACE_ADDRESS, # Space contract address
-        2, # Ships per battle
-        8, # Maximum Ships per tournament
-        5, # grid_size
-        3, # turn_count
-        2, # max_dust
+        ADMIN,
+        tournament_id,
+        tournament_name,
+        ONLY_DUST_TOKEN_ADDRESS,
+        BOARDING_TOKEN_ADDRESS,
+        RAND_ADDRESS,
+        SPACE_ADDRESS,
+        ships_per_battle,
+        max_ships_per_tournament,
+        grid_size,
+        turn_count,
+        max_dust,
     )
 
     %{ mock_call(ids.only_dust_token_address, "balanceOf", [100, 0]) %}
@@ -103,7 +110,9 @@ func test_tournament{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_che
     return ()
 end
 
-func _test_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(expected_played_battle_count : felt, expected_round_before : felt, expected_round_after : felt):
+func _test_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    expected_played_battle_count : felt, expected_round_before : felt, expected_round_after : felt
+):
     alloc_locals
     local space_address = SPACE_ADDRESS
     local admin = ADMIN
