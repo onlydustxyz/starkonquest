@@ -15,7 +15,7 @@ namespace grid:
 
     # Create a new square grid of size*size cells stored in a single-dimension array
     # params:
-    #   - grid_size - The number of rows/columns
+    #   - grid_size: The number of rows/columns
     # returns:
     #   - grid: The created grid
     func create(size : felt) -> (grid : Grid):
@@ -34,32 +34,56 @@ namespace grid:
         return (grid=grid)
     end
 
+    # Set a dust on a given cell
+    # params:
+    #   - x, y: The coordinates of the cell to modify
+    #   - dust: The dust to set
     func set_dust_at{grid : Grid}(x : felt, y : felt, dust : Dust):
         let (ship_id) = get_ship_at(x, y)
         return internal.set_cell_at(x, y, Cell(dust, ship_id))
     end
 
+    # Get the dust on a given cell
+    # params:
+    #   - x, y: The coordinates of the cell to modify
+    # Returns:
+    #   - dust: The dust to set
     func get_dust_at{grid : Grid}(x : felt, y : felt) -> (dust : Dust):
         let (cell) = internal.get_cell_at(x, y)
         return (dust=cell.dust)
     end
 
+    # Remove a dust on a given cell
+    # params:
+    #   - x, y: The coordinates of the cell to modify
     func clear_dust_at{grid : Grid}(x : felt, y : felt):
         let (ship_id) = get_ship_at(x, y)
         let NO_DUST = Dust(FALSE, Vector2(0, 0))
         return internal.set_cell_at(x, y, Cell(NO_DUST, ship_id))
     end
 
+    # Set a ship on a given cell
+    # params:
+    #   - x, y: The coordinates of the cell to modify
+    #   - ship_id: The ship to set
     func set_ship_at{grid : Grid}(x : felt, y : felt, ship_id : felt):
         let (dust) = get_dust_at(x, y)
         return internal.set_cell_at(x, y, Cell(dust, ship_id))
     end
 
+    # Get the ship on a given cell
+    # params:
+    #   - x, y: The coordinates of the cell to modify
+    # Returns:
+    #   - ship_id: The ship to set
     func get_ship_at{grid : Grid}(x : felt, y : felt) -> (ship_id : felt):
         let (cell) = internal.get_cell_at(x, y)
         return (ship_id=cell.ship_id)
     end
 
+    # Remove a ship on a given cell
+    # params:
+    #   - x, y: The coordinates of the cell to modify
     func clear_ship_at{grid : Grid}(x : felt, y : felt):
         let NO_SHIP = 0
         let (dust) = get_dust_at(x, y)
