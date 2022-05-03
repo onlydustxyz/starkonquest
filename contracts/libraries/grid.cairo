@@ -6,7 +6,7 @@ from contracts.models.common import Vector2, Dust, Cell, Context
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import unsigned_div_rem
 
-namespace Grid:
+namespace grid:
     # Create a new square grid of size*size cells stored in a single-dimension array
     # params:
     #   - grid_size - The number of rows/columns
