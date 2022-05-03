@@ -95,3 +95,51 @@ func test_grid_set_and_get_dust{
 
     return ()
 end
+
+@external
+func test_grid_set_and_get_ship{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*, range_check_ptr
+}():
+    alloc_locals
+
+    let (current_grid) = grid.create(3)
+
+    grid.set_ship_at{grid=current_grid}(0, 1, 1)
+    grid.set_ship_at{grid=current_grid}(1, 1, 2)
+    grid.set_ship_at{grid=current_grid}(2, 0, 3)
+
+    let empty_cell = Cell(Dust(FALSE, Vector2(0, 0)), 0)
+
+    assert current_grid.size = 3
+    assert current_grid.nb_cells = 9
+
+    with_attr error_message("current_grid not updated correctly"):
+        assert current_grid.cells[0] = empty_cell
+        assert current_grid.cells[1] = empty_cell
+        assert current_grid.cells[2] = Cell(Dust(FALSE, Vector2(0, 0)), 3)
+        assert current_grid.cells[3] = Cell(Dust(FALSE, Vector2(0, 0)), 1)
+        assert current_grid.cells[4] = Cell(Dust(FALSE, Vector2(0, 0)), 2)
+        assert current_grid.cells[5] = empty_cell
+        assert current_grid.cells[6] = empty_cell
+        assert current_grid.cells[7] = empty_cell
+        assert current_grid.cells[8] = empty_cell
+    end
+
+    grid.clear_ship_at{grid=current_grid}(1, 1)
+
+    with_attr error_message("get_ship_at returns wrong value"):
+        let (ship_0_0) = grid.get_ship_at{grid=current_grid}(0, 0)
+        assert ship_0_0 = 0
+
+        let (ship_0_1) = grid.get_ship_at{grid=current_grid}(0, 1)
+        assert ship_0_1 = 1
+
+        let (ship_1_1) = grid.get_ship_at{grid=current_grid}(1, 1)
+        assert ship_1_1 = 0
+
+        let (ship_2_0) = grid.get_ship_at{grid=current_grid}(2, 0)
+        assert ship_2_0 = 3
+    end
+
+    return ()
+end
