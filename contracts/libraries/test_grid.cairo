@@ -1,6 +1,6 @@
 %lang starknet
 
-from contracts.libraries.grid import Grid
+from contracts.libraries.grid import grid
 from contracts.models.common import Cell, Vector2, Dust
 
 from starkware.cairo.common.bool import TRUE, FALSE
@@ -12,7 +12,7 @@ func test_grid_create_init_with_empty_cell{
 }():
     alloc_locals
 
-    let (empty_grid) = Grid.create(2)
+    let (empty_grid) = grid.create(2)
     let empty_cell = Cell(Dust(FALSE, Vector2(0, 0)), 0)
 
     assert empty_grid[0] = empty_cell
