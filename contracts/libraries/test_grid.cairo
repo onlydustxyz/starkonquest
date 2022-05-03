@@ -60,9 +60,6 @@ func test_grid_set_and_get_dust{
 
     let empty_cell = Cell(Dust(FALSE, Vector2(0, 0)), 0)
 
-    assert current_grid.size = 3
-    assert current_grid.nb_cells = 9
-
     with_attr error_message("current_grid not updated correctly"):
         assert current_grid.cells[0] = empty_cell
         assert current_grid.cells[1] = empty_cell
@@ -110,9 +107,6 @@ func test_grid_set_and_get_ship{
 
     let empty_cell = Cell(Dust(FALSE, Vector2(0, 0)), 0)
 
-    assert current_grid.size = 3
-    assert current_grid.nb_cells = 9
-
     with_attr error_message("current_grid not updated correctly"):
         assert current_grid.cells[0] = empty_cell
         assert current_grid.cells[1] = empty_cell
@@ -139,6 +133,45 @@ func test_grid_set_and_get_ship{
 
         let (ship_2_0) = grid.get_ship_at{grid=current_grid}(2, 0)
         assert ship_2_0 = 3
+    end
+
+    return ()
+end
+
+@external
+func test_grid_set_clear_should_preserve_other_objects{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*, range_check_ptr
+}():
+    alloc_locals
+
+    let (current_grid) = grid.create(2)
+
+    let dust1 = Dust(TRUE, Vector2(1, 1))
+    let dust2 = Dust(TRUE, Vector2(-1, -1))
+
+    let ship1 = 11
+    let ship2 = 22
+
+    grid.set_dust_at{grid=current_grid}(0, 0, dust1)
+    grid.set_ship_at{grid=current_grid}(0, 0, ship1)
+
+    grid.set_dust_at{grid=current_grid}(1, 1, dust2)
+    grid.set_ship_at{grid=current_grid}(1, 1, ship2)
+
+    with_attr error_message("current_grid not updated correctly"):
+        assert current_grid.cells[0] = Cell(dust1, ship1)
+        assert current_grid.cells[3] = Cell(dust2, ship2)
+    end
+
+    grid.clear_ship_at{grid=current_grid}(0, 0)
+    grid.clear_dust_at{grid=current_grid}(1, 1)
+
+    with_attr error_message("clear_ship/dust removed other objects"):
+        let no_dust = Dust(FALSE, Vector2(0, 0))
+        let no_ship = 0
+
+        assert current_grid.cells[0] = Cell(dust1, no_ship)
+        assert current_grid.cells[3] = Cell(no_dust, ship2)
     end
 
     return ()

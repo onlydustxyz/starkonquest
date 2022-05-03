@@ -35,7 +35,8 @@ namespace grid:
     end
 
     func set_dust_at{grid : Grid}(x : felt, y : felt, dust : Dust):
-        return internal.set_cell_at(x, y, Cell(dust, 0))
+        let (ship_id) = get_ship_at(x, y)
+        return internal.set_cell_at(x, y, Cell(dust, ship_id))
     end
 
     func get_dust_at{grid : Grid}(x : felt, y : felt) -> (dust : Dust):
@@ -44,12 +45,14 @@ namespace grid:
     end
 
     func clear_dust_at{grid : Grid}(x : felt, y : felt):
+        let (ship_id) = get_ship_at(x, y)
         let NO_DUST = Dust(FALSE, Vector2(0, 0))
-        return internal.set_cell_at(x, y, Cell(NO_DUST, 0))
+        return internal.set_cell_at(x, y, Cell(NO_DUST, ship_id))
     end
 
     func set_ship_at{grid : Grid}(x : felt, y : felt, ship_id : felt):
-        return internal.set_cell_at(x, y, Cell(Dust(FALSE, Vector2(0, 0)), ship_id))
+        let (dust) = get_dust_at(x, y)
+        return internal.set_cell_at(x, y, Cell(dust, ship_id))
     end
 
     func get_ship_at{grid : Grid}(x : felt, y : felt) -> (ship_id : felt):
@@ -59,7 +62,8 @@ namespace grid:
 
     func clear_ship_at{grid : Grid}(x : felt, y : felt):
         let NO_SHIP = 0
-        return internal.set_cell_at(x, y, Cell(Dust(FALSE, Vector2(0, 0)), NO_SHIP))
+        let (dust) = get_dust_at(x, y)
+        return internal.set_cell_at(x, y, Cell(dust, NO_SHIP))
     end
 
     # func _get_grid_size{
