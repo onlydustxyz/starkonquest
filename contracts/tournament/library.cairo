@@ -103,12 +103,30 @@ end
 func ships_(index : felt) -> (ship_address : felt):
 end
 
-# Array of playing ships
+# Array of ships playing during the current round
 @storage_var
 func playing_ships_(index : felt) -> (ship_address : felt):
 end
 @storage_var
 func playing_ship_count_() -> (res : felt):
+end
+
+# Index in playing_ships_ array pointing to the first ship that will play the next battle
+@storage_var
+func next_playing_ship_index_() -> (index : felt):
+end
+
+# Array of ships that won their battle in the current round
+@storage_var
+func winning_ships_(index : felt) -> (ship_address : felt):
+end
+@storage_var
+func winning_ship_count_() -> (res : felt):
+end
+
+# Current round number
+@storage_var
+func current_round_() -> (res : felt):
 end
 
 # Player scores
@@ -245,6 +263,13 @@ namespace Tournament:
         return (played_battle_count)
     end
 
+    func current_round{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+        current_round : felt
+    ):
+        let (current_round) = current_round_.read()
+        return (current_round)
+    end
+
     # -----------
     # CONSTRUCTOR
     # -----------
@@ -307,10 +332,32 @@ namespace Tournament:
     ):
         # TODO: add Ownable_only_owner()
         _only_tournament_registrations_closed()
+        _only_tournament_not_started()
 
-        _recursive_start()
+        # Prepare the first round
+        current_round_.write(1)
+        next_playing_ship_index_.write(0)
+        winning_ship_count_.write(0)
 
         return (TRUE)
+    end
+
+    # Play the next battle of the tournament
+    func play_next_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+        # TODO: add Ownable_only_owner()
+        _only_tournament_in_progress()
+
+        let (round_finished) = _play_next_battle()
+        if round_finished == TRUE:
+            # Prepare the next round
+            let (round) = current_round_.read()
+            current_round_.write(round + 1)
+            next_playing_ship_index_.write(0)
+            _update_playing_ships_for_next_round()
+            return ()
+        end
+
+        return ()
     end
 
     # Register a ship for the caller address
@@ -402,59 +449,75 @@ namespace Tournament:
         return ()
     end
 
-    # Recursively plays all battles until there is only one winner
-    func _recursive_start{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-        let (ship_count) = playing_ship_count_.read()
-        assert_not_zero(ship_count)
-
-        let (winner_ships_len : felt, winner_ships : felt*) = _play_current_round_battles()
-        assert_not_zero(winner_ships_len)
-
-        if winner_ships_len == 1:
-            # This is the end! We have a single winner!
-            return ()
+    func _only_tournament_started{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }():
+        let (round) = current_round_.read()
+        with_attr error_message("Tournament: tournament has not started"):
+            assert_not_zero(round)
         end
-
-        _update_playing_ships_for_next_round(winner_ships_len, winner_ships)
-        _recursive_start()
         return ()
     end
 
-    # Play all battles of the current round
-    func _play_current_round_battles{
+    func _only_tournament_not_started{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }() -> (winner_ships_len : felt, winner_ships : felt*):
-        alloc_locals
-        let (winner_ships : felt*) = alloc()
-        let (winner_ships_len) = _recursive_play_current_round_battles(0, 0, winner_ships)
-        return (winner_ships_len, winner_ships)
+    }():
+        let (round) = current_round_.read()
+        with_attr error_message("Tournament: tournament has already started"):
+            assert round = 0
+        end
+        return ()
     end
 
-    func _recursive_play_current_round_battles{
+    func _only_tournament_in_progress{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }(ship_index : felt, winner_ships_len : felt, winner_ships : felt*) -> (
-        new_winner_ships_len : felt
+    }():
+        _only_tournament_started()
+        let (playing_ship_count) = playing_ship_count_.read()
+        with_attr error_message("Tournament: tournament is finished"):
+            assert_lt(1, playing_ship_count)
+        end
+        return ()
+    end
+
+    func _play_next_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+        round_finished : felt
     ):
         alloc_locals
 
-        let (local ships_len : felt, ships : ShipInit*) = _build_battle_ship_array(ship_index)
-        if ships_len == 0:
-            # No more ship in competition. The round is finished.
-            return (winner_ships_len)
+        # Build the list of ships that will play this battle
+        let (playing_ship_index) = next_playing_ship_index_.read()
+        let (local ships_len : felt, ships : ShipInit*) = _build_battle_ship_array(
+            playing_ship_index
+        )
+
+        with_attr error_message("Tournament: no more ship playing"):
+            assert_not_zero(ships_len)
         end
 
-        let (winner_ship) = _play_next_battle(ships_len, ships)
+        # Update the playing ship index for the next battle
+        next_playing_ship_index_.write(playing_ship_index + ships_len)
+
+        # Play the battle itself
+        let (winner_ship) = _play_battle(ships_len, ships)
 
         # Add winner ship to the list of winners of this round
-        assert winner_ships[winner_ships_len] = winner_ship
+        let (winning_ship_count) = winning_ship_count_.read()
+        winning_ship_count_.write(winning_ship_count + 1)
+        winning_ships_.write(winning_ship_count, winner_ship)
 
-        return _recursive_play_current_round_battles(
-            ship_index + ships_len, winner_ships_len + 1, winner_ships
+        let (playing_ship_count) = playing_ship_count_.read()
+        let (did_all_ships_played_in_this_round) = is_le(
+            playing_ship_count, playing_ship_index + ships_len
         )
+        if did_all_ships_played_in_this_round == TRUE:
+            return (round_finished=TRUE)
+        end
+        return (round_finished=FALSE)
     end
 
     # Play the battle entirely
-    func _play_next_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    func _play_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         ships_len : felt, ships : ShipInit*
     ) -> (winner_ship : felt):
         alloc_locals
@@ -528,26 +591,26 @@ namespace Tournament:
     # Update the list of ships that will be playing in the next ground
     func _update_playing_ships_for_next_round{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }(winner_ships_len : felt, winner_ships : felt*):
-        playing_ship_count_.write(winner_ships_len)
+    }():
+        let (winning_ship_count) = winning_ship_count_.read()
+        playing_ship_count_.write(winning_ship_count)
 
-        _recursive_update_playing_ships_for_next_round(0, winner_ships_len, winner_ships)
+        _recursive_update_playing_ships_for_next_round(0, winning_ship_count)
+        winning_ship_count_.write(0)
         return ()
     end
 
     func _recursive_update_playing_ships_for_next_round{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }(index : felt, winner_ships_len : felt, winner_ships : felt*):
-        if winner_ships_len == 0:
+    }(index : felt, len : felt):
+        if index == len:
             return ()
         end
 
-        let ship_address : felt = [winner_ships]
+        let (ship_address) = winning_ships_.read(index)
         playing_ships_.write(index, ship_address)
 
-        _recursive_update_playing_ships_for_next_round(
-            index + 1, winner_ships_len - 1, &winner_ships[1]
-        )
+        _recursive_update_playing_ships_for_next_round(index + 1, len)
         return ()
     end
 end

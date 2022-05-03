@@ -188,6 +188,12 @@ func start{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() 
     return Tournament.start()
 end
 
+# Play the next battle of the tournament
+@external
+func play_next_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    return Tournament.play_next_battle()
+end
+
 # Register a ship for the caller address
 # @param ship_address: the address of the ship smart contract
 @external
