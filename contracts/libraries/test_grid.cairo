@@ -5,11 +5,10 @@ from contracts.models.common import Cell, Vector2, Dust
 
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin, BitwiseBuiltin
+from starkware.cairo.common.math import assert_le
 
 @external
-func test_grid_create_init_with_empty_cell():
-    alloc_locals
-
+func test_grid_create_init_with_empty_cell{range_check_ptr}():
     let (empty_grid) = grid.create(2)
     let empty_cell = Cell(Dust(FALSE, Vector2(0, 0)), 0)
     let random_cell = Cell(Dust(TRUE, Vector2(1, -1)), 42)
@@ -26,9 +25,7 @@ func test_grid_create_init_with_empty_cell():
 end
 
 @external
-func test_grid_create_different_arrays{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*, range_check_ptr
-}():
+func test_grid_create_different_arrays{range_check_ptr}():
     alloc_locals
 
     let (empty_grid) = grid.create(2)
@@ -41,9 +38,7 @@ func test_grid_create_different_arrays{
 end
 
 @external
-func test_grid_set_and_get_dust():
-    alloc_locals
-
+func test_grid_set_and_get_dust{range_check_ptr}():
     let (current_grid) = grid.create(3)
 
     let dust1 = Dust(TRUE, Vector2(0, 1))
@@ -90,9 +85,7 @@ func test_grid_set_and_get_dust():
 end
 
 @external
-func test_grid_set_and_get_ship():
-    alloc_locals
-
+func test_grid_set_and_get_ship{range_check_ptr}():
     let (current_grid) = grid.create(3)
 
     grid.set_ship_at{grid=current_grid}(0, 1, 1)
@@ -133,9 +126,7 @@ func test_grid_set_and_get_ship():
 end
 
 @external
-func test_grid_set_clear_should_preserve_other_objects():
-    alloc_locals
-
+func test_grid_set_clear_should_preserve_other_objects{range_check_ptr}():
     let (current_grid) = grid.create(2)
 
     let dust1 = Dust(TRUE, Vector2(1, 1))
@@ -165,6 +156,66 @@ func test_grid_set_clear_should_preserve_other_objects():
         assert current_grid.cells[0] = Cell(dust1, no_ship)
         assert current_grid.cells[3] = Cell(no_dust, ship2)
     end
+
+    return ()
+end
+
+@external
+func test_grid_set_dust_should_revert_if_out_of_bound{range_check_ptr}():
+    let (current_grid) = grid.create(2)
+
+    %{ expect_revert(error_message="Out of bound") %}
+    grid.set_dust_at{grid=current_grid}(0, 3, Dust(TRUE, Vector2(1, 1)))
+
+    return ()
+end
+
+@external
+func test_grid_get_dust_should_revert_if_out_of_bound{range_check_ptr}():
+    let (current_grid) = grid.create(2)
+
+    %{ expect_revert(error_message="Out of bound") %}
+    grid.get_dust_at{grid=current_grid}(0, 3)
+
+    return ()
+end
+
+@external
+func test_grid_clear_dust_should_revert_if_out_of_bound{range_check_ptr}():
+    let (current_grid) = grid.create(2)
+
+    %{ expect_revert(error_message="Out of bound") %}
+    grid.clear_dust_at{grid=current_grid}(0, 3)
+
+    return ()
+end
+
+@external
+func test_grid_set_ship_should_revert_if_out_of_bound{range_check_ptr}():
+    let (current_grid) = grid.create(2)
+
+    %{ expect_revert(error_message="Out of bound") %}
+    grid.set_ship_at{grid=current_grid}(0, 3, 1)
+
+    return ()
+end
+
+@external
+func test_grid_get_ship_should_revert_if_out_of_bound{range_check_ptr}():
+    let (current_grid) = grid.create(2)
+
+    %{ expect_revert(error_message="Out of bound") %}
+    grid.get_ship_at{grid=current_grid}(0, 3)
+
+    return ()
+end
+
+@external
+func test_grid_clear_ship_should_revert_if_out_of_bound{range_check_ptr}():
+    let (current_grid) = grid.create(2)
+
+    %{ expect_revert(error_message="Out of bound") %}
+    grid.clear_ship_at{grid=current_grid}(0, 3)
 
     return ()
 end

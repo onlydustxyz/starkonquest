@@ -4,7 +4,7 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.bool import TRUE, FALSE
 from contracts.models.common import Vector2, Dust, Cell, Context
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.math import unsigned_div_rem
+from starkware.cairo.common.math import assert_nn_le
 
 namespace grid:
     struct Grid:
@@ -38,7 +38,7 @@ namespace grid:
     # params:
     #   - x, y: The coordinates of the cell to modify
     #   - dust: The dust to set
-    func set_dust_at{grid : Grid}(x : felt, y : felt, dust : Dust):
+    func set_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
         let (ship_id) = get_ship_at(x, y)
         return internal.set_cell_at(x, y, Cell(dust, ship_id))
     end
@@ -48,7 +48,7 @@ namespace grid:
     #   - x, y: The coordinates of the cell to modify
     # Returns:
     #   - dust: The dust to set
-    func get_dust_at{grid : Grid}(x : felt, y : felt) -> (dust : Dust):
+    func get_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (dust : Dust):
         let (cell) = internal.get_cell_at(x, y)
         return (dust=cell.dust)
     end
@@ -56,7 +56,7 @@ namespace grid:
     # Remove a dust on a given cell
     # params:
     #   - x, y: The coordinates of the cell to modify
-    func clear_dust_at{grid : Grid}(x : felt, y : felt):
+    func clear_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt):
         let (ship_id) = get_ship_at(x, y)
         let NO_DUST = Dust(FALSE, Vector2(0, 0))
         return internal.set_cell_at(x, y, Cell(NO_DUST, ship_id))
@@ -66,7 +66,7 @@ namespace grid:
     # params:
     #   - x, y: The coordinates of the cell to modify
     #   - ship_id: The ship to set
-    func set_ship_at{grid : Grid}(x : felt, y : felt, ship_id : felt):
+    func set_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : felt):
         let (dust) = get_dust_at(x, y)
         return internal.set_cell_at(x, y, Cell(dust, ship_id))
     end
@@ -76,7 +76,7 @@ namespace grid:
     #   - x, y: The coordinates of the cell to modify
     # Returns:
     #   - ship_id: The ship to set
-    func get_ship_at{grid : Grid}(x : felt, y : felt) -> (ship_id : felt):
+    func get_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (ship_id : felt):
         let (cell) = internal.get_cell_at(x, y)
         return (ship_id=cell.ship_id)
     end
@@ -84,7 +84,7 @@ namespace grid:
     # Remove a ship on a given cell
     # params:
     #   - x, y: The coordinates of the cell to modify
-    func clear_ship_at{grid : Grid}(x : felt, y : felt):
+    func clear_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt):
         let NO_SHIP = 0
         let (dust) = get_dust_at(x, y)
         return internal.set_cell_at(x, y, Cell(dust, NO_SHIP))
@@ -253,16 +253,21 @@ namespace grid:
             return ()
         end
 
-        func to_grid_index{grid : Grid}(x : felt, y : felt) -> (index : felt):
-            return (y * grid.size + x)
+        func to_grid_index{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (index : felt):
+            let index = y * grid.size + x
+            with_attr error_message("Out of bound"):
+                assert_nn_le(index, grid.nb_cells)
+            end
+
+            return (index=index)
         end
 
-        func get_cell_at{grid : Grid}(x : felt, y : felt) -> (cell : Cell):
+        func get_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (cell : Cell):
             let (index) = to_grid_index(x, y)
             return (cell=grid.cells[index])
         end
 
-        func set_cell_at{grid : Grid}(x : felt, y : felt, new_cell : Cell):
+        func set_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt, new_cell : Cell):
             alloc_locals
             let (new_cell_index) = to_grid_index(x, y)
 
