@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/franalgaba/pre-commit-cairo
-    rev: main
+    rev: 5587e6184323929b4f73abca922a49055fe2375c
     hooks:
     -   id: cairo-lint
     -   id: cairo-format
