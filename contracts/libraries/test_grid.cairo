@@ -15,11 +15,13 @@ func test_grid_create_init_with_empty_cell{
     let (empty_grid) = grid.create(2)
     let empty_cell = Cell(Dust(FALSE, Vector2(0, 0)), 0)
 
-    assert empty_grid[0] = empty_cell
-    assert empty_grid[1] = empty_cell
-    assert empty_grid[2] = empty_cell
-    assert empty_grid[3] = empty_cell
-    assert empty_grid[4] = empty_cell
+    assert empty_grid.size = 2
+    assert empty_grid.nb_cells = 4
+    assert empty_grid.cells[0] = empty_cell
+    assert empty_grid.cells[1] = empty_cell
+    assert empty_grid.cells[2] = empty_cell
+    assert empty_grid.cells[3] = empty_cell
+    assert empty_grid.cells[4] = empty_cell
 
     return ()
 end
@@ -30,11 +32,11 @@ func test_grid_create_different_arrays{
 }():
     alloc_locals
 
-    let (empty_grid) = Grid.create(2)
-    local grid1 : Cell* = empty_grid
-    local grid2 : Cell* = empty_grid
+    let (empty_grid) = grid.create(2)
+    local grid1 : grid.Grid = empty_grid
+    local grid2 : grid.Grid = empty_grid
 
-    %{ assert ids.grid1 != ids.grid2, f"a = {ids.grid1} is equal to {ids.grid2}" %}
+    %{ assert ids.grid1.cells != ids.grid2.cells, f"a = {ids.grid1.cells} is equal to {ids.grid2.cells}" %}
 
     return ()
 end
