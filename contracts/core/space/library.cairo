@@ -3,7 +3,7 @@
 
 from starkware.starknet.common.syscalls import get_contract_address
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin, BitwiseBuiltin
-from starkware.cairo.common.math import assert_nn, assert_le, unsigned_div_rem
+from starkware.cairo.common.math import assert_nn, assert_le, unsigned_div_rem, assert_not_zero
 from starkware.cairo.common.math_cmp import is_le
 from starkware.cairo.common.alloc import alloc
 
@@ -88,6 +88,7 @@ namespace Space:
 
         let dust_count = 0
         let scores : felt* = alloc()
+        _init_scores_loop(scores, context.ships_len)
 
         let (grid : Grid) = grid_manip.create(size)
         let (next_grid : Grid) = grid_manip.create(size)
@@ -249,7 +250,7 @@ namespace Space:
         # Finally, add dust to the grid
 
         grid_manip.set_dust_at{grid=next_grid}(position.x, position.y, dust)
-
+        let dust_count = dust_count + 1
         let (contract_address) = get_contract_address()
         dust_spawned.emit(contract_address, dust.direction, position)
 
@@ -511,7 +512,7 @@ namespace Space:
     }(dust : Dust, position : Vector2):
         assert dust.present = TRUE
 
-        assert_nn(dust_count)
+        assert_not_zero(dust_count)
         let dust_count = dust_count - 1
 
         let (contract_address) = get_contract_address()
@@ -657,6 +658,15 @@ namespace Space:
         end
 
         return (vdir=dust.direction.y)
+    end
+
+    func _init_scores_loop(scores : felt*, size : felt):
+        if size == 0:
+            return ()
+        end
+
+        assert [scores] = 0
+        return _init_scores_loop(scores + 1, size - 1)
     end
 
     func _increment_ship_score{
