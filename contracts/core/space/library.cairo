@@ -9,7 +9,7 @@ from starkware.cairo.common.alloc import alloc
 
 from starkware.cairo.common.bool import TRUE, FALSE
 
-from contracts.models.common import Vector2, Dust, Cell, Context, ShipInit
+from contracts.models.common import Vector2, Dust, Cell, Context, Grid, ShipInit
 from contracts.interfaces.iship import IShip
 from contracts.interfaces.irand import IRandom
 from contracts.core.library import (
@@ -17,7 +17,7 @@ from contracts.core.library import (
     MathUtils_random_in_range,
     MathUtils_random_direction,
 )
-from contracts.libraries.grid_manip import Grid
+from contracts.libraries.grid import grid_manip
 
 # ------
 # EVENTS
@@ -79,12 +79,7 @@ namespace Space:
 
         local context : Context
 
-        let (empty_grid : Cell*) = Grid.create(size)
-
         let ships_addresses : felt* = alloc()
-        assert context.grid_size = size
-        assert context.grid = empty_grid
-        assert context.next_grid = empty_grid
         assert context.max_turn_count = turn_count
         assert context.max_dust = max_dust
         assert context.rand_contract = rand_contract_address
@@ -94,7 +89,9 @@ namespace Space:
         let dust_count = 0
         let scores : felt* = alloc()
 
-        with context, dust_count, scores:
+        let (grid : Grid) = grid_manip.create(size)
+        let (next_grid : Grid) = grid_manip.create(size)
+        with context, grid, next_grid, dust_count, scores:
             _add_ships(ships_len, ships)
             _rec_play_turns(0)
         end
@@ -112,6 +109,8 @@ namespace Space:
         range_check_ptr,
         bitwise_ptr : BitwiseBuiltin*,
         context : Context,
+        grid : Grid,
+        next_grid : Grid,
     }(ships_len : felt, ships : ShipInit*):
         if ships_len == 0:
             return ()
@@ -132,6 +131,8 @@ namespace Space:
         range_check_ptr,
         bitwise_ptr : BitwiseBuiltin*,
         context : Context,
+        grid : Grid,
+        next_grid : Grid,
         dust_count : felt,
         scores : felt*,
     }(current_turn : felt):
@@ -154,6 +155,8 @@ namespace Space:
         range_check_ptr,
         bitwise_ptr : BitwiseBuiltin*,
         context : Context,
+        grid : Grid,
+        next_grid : Grid,
         dust_count : felt,
         scores : felt*,
     }(current_turn : felt) -> (is_finished : felt):
@@ -174,35 +177,37 @@ namespace Space:
         end
 
         _move_dust(0, 0)
-        let (grid_state_len, grid_state) = Grid._get_grid_state()
-        with grid_state_len, grid_state:
-            _move_ships(0, 0)
-        end
+        _move_ships(0, 0)
         _update_grid(0, 0)
 
         return (FALSE)
     end
 
     func _add_ship{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        context : Context,
+        grid : Grid,
+        next_grid : Grid,
     }(x : felt, y : felt, ship_contract : felt, ship_id : felt):
         alloc_locals
 
         # Check other ship
-        let (ship_at_position : felt) = Grid._get_ship_at(x, y)
+        let (ship_at_position : felt) = grid_manip.get_ship_at(x, y)
         with_attr error_message("Space: cell is not free"):
             assert ship_at_position = 0
         end
 
         # Check dust
-        let dust : Dust = Grid._get_dust_at(x, y)
+        let dust : Dust = grid_manip.get_dust_at(x, y)
         with_attr error_message("Space: cell is not free"):
             assert dust.present = FALSE
         end
 
         # Put the ship on grids
-        Grid._set_next_turn_ship_at(x, y, ship_id)
-        Grid._set_ship_at(x, y, ship_id)
+        grid_manip.set_ship_at{grid=next_grid}(x, y, ship_id)
+        grid_manip.set_ship_at(x, y, ship_id)
         assert [context.ships + ship_id - 1] = ship_contract
 
         # Emit events
@@ -218,11 +223,12 @@ namespace Space:
         range_check_ptr,
         bitwise_ptr : BitwiseBuiltin*,
         context : Context,
+        grid : Grid,
+        next_grid : Grid,
         dust_count : felt,
         current_turn : felt,
     }():
         alloc_locals
-        let (local size) = Grid._get_grid_size()
         let max_dust = context.max_dust
 
         # Check if we already reached the max amount of dust in the grid
@@ -232,11 +238,9 @@ namespace Space:
 
         # Create a new Dust at random position on a border and with random direction
         let (local dust : Dust, position : Vector2) = _generate_random_dust_on_border()
-        # %{ print('Spawning dust at ({}) ({})'.format(ids.position.x, ids.position.y)) %}
 
         # Check there is no dust at this position yet
-        let other_dust : Dust = Grid._get_next_turn_dust_at(position.x, position.y)
-        # %{ print("Other dust present: {}".format(ids.other_dust)) %}
+        let other_dust : Dust = grid_manip.get_dust_at{grid=next_grid}(position.x, position.y)
         if other_dust.present == TRUE:
             # There is already some dust here, so let's just skip dust spawning this turn
             return ()
@@ -244,8 +248,7 @@ namespace Space:
 
         # Finally, add dust to the grid
 
-        Grid._set_next_turn_dust_at(position.x, position.y, dust)
-        # %{ print("after set next turn dust") %}
+        grid_manip.set_dust_at{grid=next_grid}(position.x, position.y, dust)
 
         let (contract_address) = get_contract_address()
         dust_spawned.emit(contract_address, dust.direction, position)
@@ -259,23 +262,24 @@ namespace Space:
         pedersen_ptr : HashBuiltin*,
         range_check_ptr,
         context : Context,
+        grid : Grid,
+        next_grid : Grid,
         dust_count : felt,
         scores : felt*,
     }(x : felt, y : felt):
         alloc_locals
-        let (size) = Grid._get_grid_size()
 
         # We reached the last cell, this is the end
-        if x == size:
+        if x == grid.size:
             return ()
         end
         # We reached the end of the column, let's go to the next one
-        if y == size:
+        if y == grid.size:
             _move_dust(x + 1, 0)
             return ()
         end
 
-        let (local dust : Dust) = Grid._get_dust_at(x, y)
+        let (local dust : Dust) = grid_manip.get_dust_at(x, y)
 
         # if there is no dust here, we go directly to the next cell
         if dust.present == FALSE:
@@ -287,10 +291,10 @@ namespace Space:
         let (local new_position : Vector2) = _compute_new_dust_position(dust, Vector2(x, y))
 
         # As the dust position changed, we free its old position
-        Grid._clear_next_turn_dust_at(x, y)
+        grid_manip.clear_dust_at{grid=next_grid}(x, y)
 
         # Check collision with ship
-        let (ship_id : felt) = Grid._get_ship_at(new_position.x, new_position.y)
+        let (ship_id : felt) = grid_manip.get_ship_at(new_position.x, new_position.y)
         if ship_id != 0:
             # transfer dust to the ship and process next cell
             _catch_dust(dust, Vector2(new_position.x, new_position.y), ship_id)
@@ -299,7 +303,9 @@ namespace Space:
         end
 
         # Check collision
-        let (local other_dust : Dust) = Grid._get_next_turn_dust_at(new_position.x, new_position.y)
+        let (local other_dust : Dust) = grid_manip.get_dust_at{grid=next_grid}(
+            new_position.x, new_position.y
+        )
 
         if other_dust.present == TRUE:
             # In case of collision, do not assign the dust to the cell. The dust is lost forever.
@@ -311,9 +317,11 @@ namespace Space:
             tempvar range_check_ptr = range_check_ptr
             tempvar context = context
             tempvar dust_count = dust_count
+            tempvar grid = grid
+            tempvar next_grid = next_grid
         else:
             # No collision. Update the dust position in the grid
-            Grid._set_next_turn_dust_at(new_position.x, new_position.y, dust)
+            grid_manip.set_dust_at{grid=next_grid}(new_position.x, new_position.y, dust)
 
             let (space_contract_address) = get_contract_address()
             dust_moved.emit(space_contract_address, Vector2(x, y), new_position)
@@ -323,6 +331,8 @@ namespace Space:
             tempvar range_check_ptr = range_check_ptr
             tempvar context = context
             tempvar dust_count = dust_count
+            tempvar grid = grid
+            tempvar next_grid = next_grid
         end
 
         # process the next cell
@@ -331,22 +341,29 @@ namespace Space:
     end
 
     func _update_grid{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        context : Context,
+        grid : Grid,
+        next_grid : Grid,
     }(x : felt, y : felt):
-        let (size) = Grid._get_grid_size()
+        alloc_locals
 
         # We reached the last cell, this is the end
-        if x == size:
+        if x == grid.size:
             return ()
         end
         # We reached the end of the column, let's go to the next one
-        if y == size:
+        if y == grid.size:
             _update_grid(x + 1, 0)
             return ()
         end
 
-        let (cell : Cell) = Grid._get_next_cell_at(x, y)
-        Grid._set_cell_at(x, y, cell)
+        let (local dust : Dust) = grid_manip.get_dust_at{grid=next_grid}(x, y)
+        let (local ship_id : felt) = grid_manip.get_ship_at{grid=next_grid}(x, y)
+        grid_manip.set_dust_at(x, y, dust)
+        grid_manip.set_ship_at(x, y, ship_id)
 
         # process the next cell
         _update_grid(x, y + 1)
@@ -358,26 +375,25 @@ namespace Space:
         syscall_ptr : felt*,
         pedersen_ptr : HashBuiltin*,
         range_check_ptr,
-        grid_state_len,
-        grid_state : Cell*,
         context : Context,
+        grid : Grid,
+        next_grid : Grid,
         dust_count : felt,
         scores : felt*,
     }(x : felt, y : felt):
         alloc_locals
-        let (size) = Grid._get_grid_size()
 
         # We reached the last cell, this is the end
-        if x == size:
+        if x == grid.size:
             return ()
         end
         # We reached the end of the column, let's go to the next one
-        if y == size:
+        if y == grid.size:
             _move_ships(x + 1, 0)
             return ()
         end
 
-        let (local ship_id : felt) = Grid._get_ship_at(x, y)
+        let (local ship_id : felt) = grid_manip.get_ship_at(x, y)
 
         # if there is no ship here, we go directly to the next cell
         if ship_id == 0:
@@ -388,14 +404,14 @@ namespace Space:
         # Call ship contract
         let ship_contract = [context.ships + ship_id - 1]
         let (local new_direction : Vector2) = IShip.move(
-            ship_contract, grid_state_len, grid_state, ship_id
+            ship_contract, grid.nb_cells, grid.cells, ship_id
         )
         let (direction_x) = MathUtils_clamp_value(new_direction.x, -1, 1)
         let (direction_y) = MathUtils_clamp_value(new_direction.y, -1, 1)
 
         # Compute new position and check borders
-        let (candidate_x) = MathUtils_clamp_value(x + direction_x, 0, size - 1)
-        let (candidate_y) = MathUtils_clamp_value(y + direction_y, 0, size - 1)
+        let (candidate_x) = MathUtils_clamp_value(x + direction_x, 0, grid.size - 1)
+        let (candidate_y) = MathUtils_clamp_value(y + direction_y, 0, grid.size - 1)
 
         # Check collision with other ship
         let (local new_x, new_y) = _handle_collision_with_other_ship(x, y, candidate_x, candidate_y)
@@ -405,14 +421,14 @@ namespace Space:
         ship_moved.emit(space_contract_address, 0, Vector2(x, y), Vector2(new_x, new_y))
 
         # Check collision with dust
-        let (dust : Dust) = Grid._get_dust_at(new_x, new_y)
+        let (dust : Dust) = grid_manip.get_dust_at(new_x, new_y)
         if dust.present == TRUE:
             # transfer dust to the ship
             _catch_dust(dust, Vector2(new_x, new_y), ship_id)
 
             # remove dust from the grid
-            Grid._clear_dust_at(new_x, new_y)
-            Grid._clear_next_turn_dust_at(new_x, new_y)
+            grid_manip.clear_dust_at(new_x, new_y)
+            grid_manip.clear_dust_at{grid=next_grid}(new_x, new_y)
 
             # see https://www.cairo-lang.org/docs/how_cairo_works/builtins.html#revoked-implicit-arguments
             tempvar syscall_ptr = syscall_ptr
@@ -421,6 +437,8 @@ namespace Space:
             tempvar context = context
             tempvar dust_count = dust_count
             tempvar scores = scores
+            tempvar grid = grid
+            tempvar next_grid = next_grid
         else:
             tempvar syscall_ptr = syscall_ptr
             tempvar pedersen_ptr = pedersen_ptr
@@ -428,13 +446,21 @@ namespace Space:
             tempvar context = context
             tempvar dust_count = dust_count
             tempvar scores = scores
+            tempvar grid = grid
+            tempvar next_grid = next_grid
         end
 
         # Update the dust position in the grid
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+        tempvar context = context
         tempvar dust_count = dust_count
         tempvar scores = scores
-        Grid._set_next_turn_ship_at(x, y, 0)
-        Grid._set_next_turn_ship_at(new_x, new_y, ship_id)
+        tempvar grid = grid
+        tempvar next_grid = next_grid
+        grid_manip.clear_ship_at{grid=next_grid}(x, y)
+        grid_manip.set_ship_at{grid=next_grid}(new_x, new_y, ship_id)
 
         # process the next cell
         _move_ships(x, y + 1)
@@ -442,9 +468,14 @@ namespace Space:
     end
 
     func _handle_collision_with_other_ship{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        context : Context,
+        grid : Grid,
+        next_grid : Grid,
     }(old_x : felt, old_y : felt, new_x : felt, new_y : felt) -> (x : felt, y : felt):
-        let (other_ship : felt) = Grid._get_next_turn_ship_at(new_x, new_y)
+        let (other_ship : felt) = grid_manip.get_ship_at{grid=next_grid}(new_x, new_y)
         if other_ship != 0:
             return (old_x, old_y)
         end
@@ -456,13 +487,15 @@ namespace Space:
         pedersen_ptr : HashBuiltin*,
         range_check_ptr,
         context : Context,
+        grid : Grid,
+        next_grid : Grid,
         dust_count : felt,
         scores : felt*,
     }(dust : Dust, position : Vector2, ship_id : felt):
         alloc_locals
         _burn_dust(dust, position)
         local dust_count = dust_count
-        Grid._increment_ship_score(ship_id)
+        _increment_ship_score(ship_id)
 
         return ()
     end
@@ -472,6 +505,8 @@ namespace Space:
         pedersen_ptr : HashBuiltin*,
         range_check_ptr,
         context : Context,
+        grid : Grid,
+        next_grid : Grid,
         dust_count : felt,
     }(dust : Dust, position : Vector2):
         assert dust.present = TRUE
@@ -492,6 +527,8 @@ namespace Space:
         range_check_ptr,
         bitwise_ptr : BitwiseBuiltin*,
         context : Context,
+        grid : Grid,
+        next_grid : Grid,
         current_turn : felt,
     }() -> (dust : Dust, position : Vector2):
         alloc_locals
@@ -512,24 +549,33 @@ namespace Space:
 
     # Generate a random position on a given border (top, left, right, bottom)
     func _generate_random_position_on_border{
-        pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr, context : Context
+        pedersen_ptr : HashBuiltin*,
+        syscall_ptr : felt*,
+        range_check_ptr,
+        context : Context,
+        grid : Grid,
+        next_grid : Grid,
     }(r1, r2, r3) -> (position : Vector2):
         alloc_locals
-        let (space_size) = Grid._get_grid_size()
 
-        # x is 0 or space_size - 1
+        # x is 0 or grid.size - 1
         let (x) = MathUtils_random_in_range(r1, 0, 1)
-        local x = x * (space_size - 1)
+        local x = x * (grid.size - 1)
 
-        # y is in [0, space_size-1]
-        let (y) = MathUtils_random_in_range(r2, 0, space_size - 1)
+        # y is in [0, grid.size-1]
+        let (y) = MathUtils_random_in_range(r2, 0, grid.size - 1)
 
         return _shuffled_position(x, y, r3)
     end
 
     # given x, y return randomly Position(x,y) or Position(y,x)
     func _shuffled_position{
-        pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr, context : Context
+        pedersen_ptr : HashBuiltin*,
+        syscall_ptr : felt*,
+        range_check_ptr,
+        context : Context,
+        grid : Grid,
+        next_grid : Grid,
     }(x : felt, y : felt, r) -> (position : Vector2):
         alloc_locals
         local position : Vector2
@@ -547,7 +593,12 @@ namespace Space:
     end
 
     func _compute_new_dust_position{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        context : Context,
+        grid : Grid,
+        next_grid : Grid,
     }(dust : Dust, current_position : Vector2) -> (new_position : Vector2):
         alloc_locals
 
@@ -561,12 +612,15 @@ namespace Space:
     end
 
     func _get_new_hdir{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        context : Context,
+        grid : Grid,
+        next_grid : Grid,
     }(dust : Dust, current_position : Vector2) -> (hdir : felt):
         alloc_locals
-        let (space_size) = Grid._get_grid_size()
-
-        if current_position.x == space_size - 1:
+        if current_position.x == grid.size - 1:
             if dust.direction.x == 1:
                 return (hdir=-1)
             end
@@ -582,12 +636,15 @@ namespace Space:
     end
 
     func _get_new_vdir{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : Context
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        context : Context,
+        grid : Grid,
+        next_grid : Grid,
     }(dust : Dust, current_position : Vector2) -> (vdir : felt):
         alloc_locals
-        let (space_size) = Grid._get_grid_size()
-
-        if current_position.y == space_size - 1:
+        if current_position.y == grid.size - 1:
             if dust.direction.y == 1:
                 return (vdir=-1)
             end
@@ -600,5 +657,41 @@ namespace Space:
         end
 
         return (vdir=dust.direction.y)
+    end
+
+    func _increment_ship_score{
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        context : Context,
+        scores : felt*,
+    }(ship_id : felt):
+        alloc_locals
+
+        let (local new_scores : felt*) = alloc()
+        _get_incremented_scores(context.ships_len, ship_id, new_scores)
+
+        let scores = new_scores
+        return ()
+    end
+
+    func _get_incremented_scores{
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        context : Context,
+        scores : felt*,
+    }(ships_len : felt, ship_id : felt, new_scores : felt*):
+        if ships_len == 0:
+            return ()
+        end
+
+        if ship_id == context.ships_len - ships_len + 1:
+            assert [new_scores] = [scores + ship_id - 1] + 1
+        else:
+            assert [new_scores] = [scores + ship_id - 1]
+        end
+
+        return _get_incremented_scores(ships_len - 1, ship_id, new_scores + 1)
     end
 end
