@@ -311,7 +311,7 @@ namespace Tournament:
     # Open tournament registrations
     func open_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         ) -> (success : felt):
-        # TODO: add Ownable_only_owner()
+        Ownable_only_owner()
         _only_tournament_registrations_closed()
         are_tournament_registrations_open_.write(TRUE)
         return (TRUE)
@@ -320,7 +320,7 @@ namespace Tournament:
     # Close tournament registrations
     func close_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         ) -> (success : felt):
-        # TODO: add Ownable_only_owner()
+        Ownable_only_owner()
         _only_tournament_registrations_open()
         are_tournament_registrations_open_.write(FALSE)
         return (TRUE)
@@ -330,7 +330,7 @@ namespace Tournament:
     func start{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
         success : felt
     ):
-        # TODO: add Ownable_only_owner()
+        Ownable_only_owner()
         _only_tournament_registrations_closed()
         _only_tournament_not_started()
 
@@ -344,7 +344,7 @@ namespace Tournament:
 
     # Play the next battle of the tournament
     func play_next_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-        # TODO: add Ownable_only_owner()
+        Ownable_only_owner()
         _only_tournament_in_progress()
 
         let (round_finished) = _play_next_battle()
