@@ -79,12 +79,12 @@ namespace Space:
 
         local context : Context
 
-        let (empty_grid : Cell*) = grid.create(size)
+        let (empty_grid : grid.Grid) = grid.create(size)
 
         let ships_addresses : felt* = alloc()
         assert context.grid_size = size
-        assert context.grid = empty_grid
-        assert context.next_grid = empty_grid
+        assert context.grid = empty_grid.cells
+        assert context.next_grid = empty_grid.cells
         assert context.max_turn_count = turn_count
         assert context.max_dust = max_dust
         assert context.rand_contract = rand_contract_address

@@ -7,17 +7,28 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import unsigned_div_rem
 
 namespace grid:
+    struct Grid:
+        member cells : Cell*
+        member size : felt
+        member nb_cells : felt
+    end
+
     # Create a new square grid of size*size cells stored in a single-dimension array
     # params:
     #   - grid_size - The number of rows/columns
     # returns:
-    #   - grid: The pointer to the first cell
-    func create(size : felt) -> (grid : Cell*):
+    #   - grid: The created grid
+    func create(size : felt) -> (grid : Grid):
         alloc_locals
 
-        let (local grid : Cell*) = alloc()
+        local grid : Grid
+        assert grid.size = size
+        assert grid.nb_cells = size * size
+        let (new_cells : Cell*) = alloc()
+        assert grid.cells = new_cells
+
         let empty_cell = Cell(Dust(FALSE, Vector2(0, 0)), 0)
-        internal.init_grid_loop(size * size, grid, empty_cell)
+        internal.init_grid_loop(grid, 0, empty_cell)
 
         return (grid=grid)
     end
@@ -251,16 +262,16 @@ namespace grid:
 
         return _get_incremented_scores(ships_len - 1, ship_id, new_scores + 1)
     end
-end
 
-namespace internal:
-    func init_grid_loop(grid_len : felt, grid : Cell*, init_cell : Cell):
-        if grid_len == 0:
+    namespace internal:
+        func init_grid_loop(grid : Grid, index : felt, init_cell : Cell):
+            if index == grid.nb_cells:
+                return ()
+            end
+
+            assert grid.cells[index] = init_cell
+            init_grid_loop(grid, index + 1, init_cell)
             return ()
         end
-
-        assert [grid] = init_cell
-        init_grid_loop(grid_len - 1, grid + Cell.SIZE, init_cell)
-        return ()
     end
 end
