@@ -6,9 +6,7 @@ from starkware.cairo.common.math_cmp import is_le
 from contracts.models.common import Vector2
 
 # clip a value to the interval [min, max]
-func MathUtils_clamp_value{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
-    value, min : felt, max : felt
-) -> (value : felt):
+func MathUtils_clamp_value{range_check_ptr}(value, min : felt, max : felt) -> (value : felt):
     assert_lt(min, max)  # min < max
 
     let (is_lower_than_min) = is_le(value, min)
@@ -25,9 +23,9 @@ func MathUtils_clamp_value{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, ran
 end
 
 # generate a random number x where min <= x <= max
-func MathUtils_random_in_range{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
-    seed : felt, min : felt, max : felt
-) -> (random_value : felt):
+func MathUtils_random_in_range{range_check_ptr}(seed : felt, min : felt, max : felt) -> (
+    random_value : felt
+):
     assert_lt(min, max)  # min < max
 
     let range = max - min + 1
@@ -36,9 +34,9 @@ func MathUtils_random_in_range{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*,
 end
 
 # generate a random direction
-func MathUtils_random_direction{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
-    seed1 : felt, seed2 : felt
-) -> (random_direction : Vector2):
+func MathUtils_random_direction{range_check_ptr}(seed1 : felt, seed2 : felt) -> (
+    random_direction : Vector2
+):
     alloc_locals
     local random_direction : Vector2
 

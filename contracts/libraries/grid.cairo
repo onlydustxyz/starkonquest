@@ -6,6 +6,7 @@ from contracts.models.common import Vector2, Dust, Cell, Context, Grid
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import assert_nn_le
 from starkware.cairo.common.math_cmp import is_not_zero
+from contracts.core.library import MathUtils_random_in_range
 
 namespace grid_manip:
     # Create a new square grid of size*size cells stored in a single-dimension array
@@ -98,6 +99,27 @@ namespace grid_manip:
         return (cell_is_occupied=cell_is_occupied)
     end
 
+    # Generate a random position on a given border (top, left, right, bottom)
+    # params:
+    #   - r1, r2, r3: Random number seeds
+    # returns:
+    #   - position(x,y) random position on a border
+    func generate_random_position_on_border{range_check_ptr, grid : Grid}(r1, r2, r3) -> (
+        position : Vector2
+    ):
+        alloc_locals
+
+        # x is 0 or grid.size - 1
+        let (x) = MathUtils_random_in_range(r1, 0, 1)
+        local x = x * (grid.size - 1)
+
+        # y is in [0, grid.size-1]
+        let (y) = MathUtils_random_in_range(r2, 0, grid.size - 1)
+
+        let (position) = internal.shuffled_position(x, y, r3)
+        return (position=position)
+    end
+
     namespace internal:
         func init_grid_loop(grid : Grid, index : felt, init_cell : Cell):
             if index == grid.nb_cells:
@@ -154,6 +176,23 @@ namespace grid_manip:
             end
 
             return modify_grid_loop(new_grid, current_cell_index + 1, new_cell_index, new_cell)
+        end
+
+        # given x, y return randomly Position(x,y) or Position(y,x)
+        func shuffled_position{range_check_ptr}(x : felt, y : felt, r) -> (position : Vector2):
+            alloc_locals
+            local position : Vector2
+
+            let (on_horizontal_border) = MathUtils_random_in_range(r, 0, 1)
+            if on_horizontal_border == 0:
+                assert position.x = x
+                assert position.y = y
+            else:
+                assert position.x = y
+                assert position.y = x
+            end
+
+            return (position=position)
         end
     end
 end
