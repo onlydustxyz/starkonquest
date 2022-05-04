@@ -25,19 +25,6 @@ func test_grid_create_init_with_empty_cell{range_check_ptr}():
 end
 
 @external
-func test_grid_create_different_arrays{range_check_ptr}():
-    alloc_locals
-
-    let (empty_grid) = grid_manip.create(2)
-    local grid1 : grid_manip.Grid = empty_grid
-    local grid2 : grid_manip.Grid = empty_grid
-
-    %{ assert ids.grid1.cells != ids.grid2.cells, f"a = {ids.grid1.cells} is equal to {ids.grid2.cells}" %}
-
-    return ()
-end
-
-@external
 func test_grid_set_and_get_dust{range_check_ptr}():
     let (grid) = grid_manip.create(3)
 
