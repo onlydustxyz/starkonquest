@@ -64,17 +64,13 @@ namespace grid_manip:
         return internal.set_cell_at(x, y, new_cell)
     end
 
-    # Move a dust from a cell to another
-    # params:
-    #   - (from_x, from_y): origin
-    #   - (to_x, to_y): destination
-    func move_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt):
-        let (cell) = get_cell_at(x, y)
-        let (new_direction) = internal.compute_new_direction(Vector2(x, y), cell.dust.direction)
-
-        add_dust_at(x + new_direction.x, y + new_direction.y, Dust(new_direction))
-        remove_dust_at(x, y)
-
+    # Move all dusts in the grid
+    func move_all_dusts{range_check_ptr, grid : Grid}():
+        let (new_grid) = internal.clone_ships()
+        with new_grid:
+            internal.move_all_dusts_loop(0, 0)
+        end
+        let grid = new_grid
         return ()
     end
 
@@ -152,6 +148,27 @@ namespace grid_manip:
             return (index=index)
         end
 
+        func clone_ships{range_check_ptr, grid : Grid}() -> (new_grid : Grid):
+            alloc_locals
+            local new_grid : Grid
+            assert new_grid.size = grid.size
+            assert new_grid.nb_cells = grid.nb_cells
+            let (cells : Cell*) = alloc()
+            assert new_grid.cells = cells
+
+            clone_ships_loop(new_grid, 0)
+            return (new_grid=new_grid)
+        end
+
+        func clone_ships_loop{range_check_ptr, grid : Grid}(new_grid : Grid, index : felt):
+            if index == grid.nb_cells:
+                return ()
+            end
+            # Copy only the ship id
+            assert new_grid.cells[index] = Cell(0, Dust(Vector2(0, 0)), grid.cells[index].ship_id)
+            return clone_ships_loop(new_grid, index + 1)
+        end
+
         func set_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt, new_cell : Cell):
             alloc_locals
             let (new_cell_index) = to_grid_index(x, y)
@@ -202,9 +219,46 @@ namespace grid_manip:
             return (position=position)
         end
 
-        func compute_new_direction{range_check_ptr, grid : Grid}(
-            position : Vector2, direction : Vector2
-        ) -> (new_direction : Vector2):
+        func move_all_dusts_loop{range_check_ptr, grid : Grid, new_grid : Grid}(x : felt, y : felt):
+            if y == grid.size:
+                # this is the end
+                return ()
+            end
+
+            if x == grid.size:
+                # End of the row
+                return move_all_dusts_loop(0, y + 1)
+            end
+
+            let (cell) = get_cell_at(x, y)
+            if cell.dust_count == 0:
+                # Go to next cell
+                return move_all_dusts_loop(x + 1, y)
+            end
+
+            move_dust_at(x, y, cell.dust)
+            # Go to next cell
+            return move_all_dusts_loop(x + 1, y)
+        end
+
+        func move_dust_at{range_check_ptr, grid : Grid, new_grid : Grid}(
+            x : felt, y : felt, dust : Dust
+        ):
+            alloc_locals
+
+            # Add dust to the new grid at the new position
+            let (new_direction) = internal.compute_new_direction(Vector2(x, y), dust.direction)
+
+            local grid : Grid = grid  # Revoked reference
+            add_dust_at{grid=new_grid}(
+                x + new_direction.x, y + new_direction.y, Dust(new_direction)
+            )
+            return ()
+        end
+
+        func compute_new_direction{grid : Grid}(position : Vector2, direction : Vector2) -> (
+            new_direction : Vector2
+        ):
             alloc_locals
 
             let (local new_x) = bounce(position.x, direction.x)
@@ -213,9 +267,7 @@ namespace grid_manip:
             return (new_direction=Vector2(x=new_x, y=new_y))
         end
 
-        func bounce{range_check_ptr, grid : Grid}(position : felt, direction : felt) -> (
-            new_direction : felt
-        ):
+        func bounce{grid : Grid}(position : felt, direction : felt) -> (new_direction : felt):
             if position == grid.size - 1:
                 if direction == 1:
                     return (new_direction=-1)

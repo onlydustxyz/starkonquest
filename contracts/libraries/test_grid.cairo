@@ -129,10 +129,7 @@ func test_grid_move_dust{range_check_ptr}():
         grid_manip.add_dust_at(3, 3, dust3)
         grid_manip.add_dust_at(3, 0, dust4)
 
-        grid_manip.move_dust_at(0, 0)
-        grid_manip.move_dust_at(0, 3)
-        grid_manip.move_dust_at(3, 3)
-        grid_manip.move_dust_at(3, 0)
+        grid_manip.move_all_dusts()
 
         with_attr error_message("bad dust move"):
             assert_dust_at(1, 1, dust1)
@@ -165,10 +162,7 @@ func test_grid_move_dust_beyound_borders{range_check_ptr}():
         grid_manip.add_dust_at(3, 3, dust3)
         grid_manip.add_dust_at(3, 0, dust4)
 
-        grid_manip.move_dust_at(0, 0)
-        grid_manip.move_dust_at(0, 3)
-        grid_manip.move_dust_at(3, 3)
-        grid_manip.move_dust_at(3, 0)
+        grid_manip.move_all_dusts()
 
         with_attr error_message("bad dust move"):
             assert_dust_at(1, 1, new_dust1)
