@@ -258,3 +258,28 @@ func test_grid_clear_ship_should_revert_if_out_of_bound{range_check_ptr}():
 
     return ()
 end
+
+@external
+func test_generate_random_position_on_border{range_check_ptr}():
+    alloc_locals
+
+    let (grid) = grid_manip.create(10)
+
+    local r1
+    local r2
+    local r3
+    %{
+        import random
+        ids.r1 = random.randint(0,1000)
+        ids.r2 = random.randint(0,1000)
+        ids.r3 = random.randint(0,1000)
+    %}
+
+    with grid:
+        let (position : Vector2) = grid_manip.generate_random_position_on_border(r1, r2, r3)
+    end
+
+    %{ assert ids.position.x == 0 or ids.position.x == 9 or ids.position.y == 0 or ids.position.y == 9 %}
+
+    return ()
+end

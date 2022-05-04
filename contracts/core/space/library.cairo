@@ -24,10 +24,6 @@ from contracts.libraries.grid import grid_manip
 # ------
 
 @event
-func dust_spawned(space_contract_address : felt, direction : Vector2, position : Vector2):
-end
-
-@event
 func dust_destroyed(space_contract_address : felt, position : Vector2):
 end
 
@@ -147,54 +143,15 @@ namespace Space:
         let (space_contract_address) = get_contract_address()
         new_turn.emit(space_contract_address, current_turn + 1)
 
-        with current_turn:
-            _spawn_dust()
-        end
+        # with current_turn:
+        #     _spawn_dust()
+        # end
 
         _move_dust(0, 0)
         _move_ships(0, 0)
         _update_grid(0, 0)
 
         return (FALSE)
-    end
-
-    func _spawn_dust{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr,
-        bitwise_ptr : BitwiseBuiltin*,
-        context : Context,
-        grid : Grid,
-        next_grid : Grid,
-        dust_count : felt,
-        current_turn : felt,
-    }():
-        alloc_locals
-        let max_dust = context.max_dust
-
-        # Check if we already reached the max amount of dust in the grid
-        if dust_count == max_dust:
-            return ()
-        end
-
-        # Create a new Dust at random position on a border and with random direction
-        let (local dust : Dust, position : Vector2) = _generate_random_dust_on_border()
-
-        # Check there is no dust at this position yet
-        let other_dust : Dust = grid_manip.get_dust_at{grid=next_grid}(position.x, position.y)
-        if other_dust.present == TRUE:
-            # There is already some dust here, so let's just skip dust spawning this turn
-            return ()
-        end
-
-        # Finally, add dust to the grid
-
-        grid_manip.set_dust_at{grid=next_grid}(position.x, position.y, dust)
-        let dust_count = dust_count + 1
-        let (contract_address) = get_contract_address()
-        dust_spawned.emit(contract_address, dust.direction, position)
-
-        return ()
     end
 
     # Recursive function that goes through the entire grid and updates dusts position
@@ -459,78 +416,6 @@ namespace Space:
         dust_destroyed.emit(contract_address, position)
 
         return ()
-    end
-
-    # Generate random dust given a space size
-    func _generate_random_dust_on_border{
-        pedersen_ptr : HashBuiltin*,
-        syscall_ptr : felt*,
-        range_check_ptr,
-        bitwise_ptr : BitwiseBuiltin*,
-        context : Context,
-        grid : Grid,
-        next_grid : Grid,
-        current_turn : felt,
-    }() -> (dust : Dust, position : Vector2):
-        alloc_locals
-        local dust : Dust
-        assert dust.present = TRUE
-
-        let (r1, r2, r3, r4, r5) = IRandom.generate_random_numbers(
-            context.rand_contract, current_turn
-        )
-
-        let (direction : Vector2) = MathUtils_random_direction(r1, r2)
-        assert dust.direction = direction
-
-        let (position : Vector2) = _generate_random_position_on_border(r3, r4, r5)
-
-        return (dust=dust, position=position)
-    end
-
-    # Generate a random position on a given border (top, left, right, bottom)
-    func _generate_random_position_on_border{
-        pedersen_ptr : HashBuiltin*,
-        syscall_ptr : felt*,
-        range_check_ptr,
-        context : Context,
-        grid : Grid,
-        next_grid : Grid,
-    }(r1, r2, r3) -> (position : Vector2):
-        alloc_locals
-
-        # x is 0 or grid.size - 1
-        let (x) = MathUtils_random_in_range(r1, 0, 1)
-        local x = x * (grid.size - 1)
-
-        # y is in [0, grid.size-1]
-        let (y) = MathUtils_random_in_range(r2, 0, grid.size - 1)
-
-        return _shuffled_position(x, y, r3)
-    end
-
-    # given x, y return randomly Position(x,y) or Position(y,x)
-    func _shuffled_position{
-        pedersen_ptr : HashBuiltin*,
-        syscall_ptr : felt*,
-        range_check_ptr,
-        context : Context,
-        grid : Grid,
-        next_grid : Grid,
-    }(x : felt, y : felt, r) -> (position : Vector2):
-        alloc_locals
-        local position : Vector2
-
-        let (on_horizontal_border) = MathUtils_random_in_range(r, 0, 1)
-        if on_horizontal_border == 0:
-            assert position.x = x
-            assert position.y = y
-        else:
-            assert position.x = y
-            assert position.y = x
-        end
-
-        return (position=position)
     end
 
     func _compute_new_dust_position{
