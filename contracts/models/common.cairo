@@ -6,11 +6,11 @@ struct Vector2:
 end
 
 struct Dust:
-    member present : felt
     member direction : Vector2
 end
 
 struct Cell:
+    member dust_count : felt
     member dust : Dust
     member ship_id : felt
 end

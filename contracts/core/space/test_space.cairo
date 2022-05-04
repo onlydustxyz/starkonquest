@@ -2,10 +2,16 @@
 
 from contracts.core.space.space import internal as space
 from contracts.libraries.grid import grid_manip
-from contracts.models.common import Context, ShipInit, Dust
+from contracts.models.common import Context, ShipInit, Dust, Grid
 
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bool import TRUE, FALSE
+
+func assert_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : felt):
+    let (cell) = grid_manip.get_cell_at(x, y)
+    assert cell.ship_id = ship_id
+    return ()
+end
 
 func create_context_with_no_ship(nb_ships : felt) -> (context : Context):
     alloc_locals
@@ -46,15 +52,8 @@ func test_add_ships{syscall_ptr : felt*, range_check_ptr}():
 
     # Check grid content
     with grid:
-        with_attr error_message("Ship at position (0,0) is not 1"):
-            let (ship) = grid_manip.get_ship_at(0, 0)
-            assert ship = 1
-        end
-
-        with_attr error_message("Ship at position (1,1) is not 2"):
-            let (ship) = grid_manip.get_ship_at(1, 1)
-            assert ship = 2
-        end
+        assert_ship_at(0, 0, 1)
+        assert_ship_at(1, 1, 2)
     end
 
     # TODO ship_added.emit(space_contract_address, ship_id, Vector2(position.x, position.y))
@@ -114,10 +113,10 @@ func test_spawn_dust{syscall_ptr : felt*, range_check_ptr}():
         end
         %{ clear_mock_call(ids.context.rand_contract, 'generate_random_numbers') %}
 
-        let (dust : Dust) = grid_manip.get_dust_at(0, 5)
-        assert dust.present = TRUE
-        assert dust.direction.x = 0
-        assert dust.direction.y = 1
+        let (cell) = grid_manip.get_cell_at(0, 5)
+        assert cell.dust_count = 1
+        assert cell.dust.direction.x = 0
+        assert cell.dust.direction.y = 1
         assert dust_count = 4
 
         # TODO dust_spawned.emit(contract_address, dust.direction, position)
@@ -155,8 +154,8 @@ func test_spawn_no_dust_if_max_dust_count_reached{syscall_ptr : felt*, range_che
         end
         %{ clear_mock_call(ids.context.rand_contract, 'generate_random_numbers') %}
 
-        let (dust : Dust) = grid_manip.get_dust_at(0, 5)
-        assert dust.present = FALSE
+        let (cell) = grid_manip.get_cell_at(0, 5)
+        assert cell.dust_count = 0
         assert dust_count = 10
     end
 
@@ -192,8 +191,8 @@ func test_spawn_no_dust_if_cell_occupied{syscall_ptr : felt*, range_check_ptr}()
         end
         %{ clear_mock_call(ids.context.rand_contract, 'generate_random_numbers') %}
 
-        let (dust : Dust) = grid_manip.get_dust_at(0, 5)
-        assert dust.present = FALSE
+        let (cell) = grid_manip.get_cell_at(0, 5)
+        assert cell.dust_count = 0
         assert dust_count = 3
     end
 

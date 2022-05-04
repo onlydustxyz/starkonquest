@@ -110,7 +110,7 @@ namespace internal:
         end
 
         # Finally, add dust to the grid
-        grid_manip.set_dust_at(position.x, position.y, dust)
+        grid_manip.add_dust_at(position.x, position.y, dust)
         let dust_count = dust_count + 1
         let (contract_address) = get_contract_address()
         dust_spawned.emit(contract_address, dust.direction, position)
@@ -124,7 +124,6 @@ namespace internal:
     }() -> (dust : Dust, position : Vector2):
         alloc_locals
         local dust : Dust
-        assert dust.present = TRUE
 
         let (r1, r2, r3, r4, r5) = IRandom.generate_random_numbers(
             context.rand_contract, current_turn
