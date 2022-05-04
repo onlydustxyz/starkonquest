@@ -5,6 +5,7 @@ from starkware.cairo.common.bool import TRUE, FALSE
 from contracts.models.common import Vector2, Dust, Cell, Context, Grid
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import assert_nn_le
+from starkware.cairo.common.math_cmp import is_not_zero
 
 namespace grid_manip:
     # Create a new square grid of size*size cells stored in a single-dimension array
@@ -82,6 +83,19 @@ namespace grid_manip:
         let NO_SHIP = 0
         let (dust) = get_dust_at(x, y)
         return internal.set_cell_at(x, y, Cell(dust, NO_SHIP))
+    end
+
+    # Check if a given cell is occupied (contains a dust and/or a ship)
+    # params:
+    #   - x, y: The coordinates of the cell to check
+    # returns:
+    #   - 1 if the cell is occupied, 0 otherwise
+    func is_cell_occupied{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (
+        cell_is_occupied : felt
+    ):
+        let (cell) = internal.get_cell_at(x, y)
+        let (cell_is_occupied) = is_not_zero(cell.dust.present + cell.ship_id)
+        return (cell_is_occupied=cell_is_occupied)
     end
 
     namespace internal:
