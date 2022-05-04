@@ -63,7 +63,7 @@ namespace internal:
 
         let ship : ShipInit = ships[ship_index]
         add_ship(ship.position, ship_index + 1)
-        assert context.ships[ship_index] = ship.address
+        assert context.ship_contracts[ship_index] = ship.address
 
         return add_ship_loop(ships_len, ships, ship_index + 1)
     end
