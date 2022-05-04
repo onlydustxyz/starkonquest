@@ -115,6 +115,73 @@ func test_grid_add_and_remove_dust{range_check_ptr}():
 end
 
 @external
+func test_grid_move_dust{range_check_ptr}():
+    let dust1 = Dust(Vector2(1, 1))  # top left, going down right
+    let dust2 = Dust(Vector2(1, -1))  # top right, going down left
+    let dust3 = Dust(Vector2(-1, -1))  # bottom right, going up left
+    let dust4 = Dust(Vector2(-1, 1))  # bottom left, going up right
+
+    let (grid) = grid_manip.create(4)
+
+    with grid:
+        grid_manip.add_dust_at(0, 0, dust1)
+        grid_manip.add_dust_at(0, 3, dust2)
+        grid_manip.add_dust_at(3, 3, dust3)
+        grid_manip.add_dust_at(3, 0, dust4)
+
+        grid_manip.move_dust_at(0, 0)
+        grid_manip.move_dust_at(0, 3)
+        grid_manip.move_dust_at(3, 3)
+        grid_manip.move_dust_at(3, 0)
+
+        with_attr error_message("bad dust move"):
+            assert_dust_at(1, 1, dust1)
+            assert_dust_at(1, 2, dust2)
+            assert_dust_at(2, 2, dust3)
+            assert_dust_at(2, 1, dust4)
+        end
+    end
+
+    return ()
+end
+
+@external
+func test_grid_move_dust_beyound_borders{range_check_ptr}():
+    let dust1 = Dust(Vector2(-1, -1))  # top left, going up left
+    let dust2 = Dust(Vector2(-1, 1))  # top right, going up right
+    let dust3 = Dust(Vector2(1, 1))  # bottom right, going down right
+    let dust4 = Dust(Vector2(1, -1))  # bottom left, going down left
+
+    let new_dust1 = Dust(Vector2(1, 1))  # now going down right
+    let new_dust2 = Dust(Vector2(1, -1))  # now going down left
+    let new_dust3 = Dust(Vector2(-1, -1))  # now going up left
+    let new_dust4 = Dust(Vector2(-1, 1))  # now going up right
+
+    let (grid) = grid_manip.create(4)
+
+    with grid:
+        grid_manip.add_dust_at(0, 0, dust1)
+        grid_manip.add_dust_at(0, 3, dust2)
+        grid_manip.add_dust_at(3, 3, dust3)
+        grid_manip.add_dust_at(3, 0, dust4)
+
+        grid_manip.move_dust_at(0, 0)
+        grid_manip.move_dust_at(0, 3)
+        grid_manip.move_dust_at(3, 3)
+        grid_manip.move_dust_at(3, 0)
+
+        with_attr error_message("bad dust move"):
+            assert_dust_at(1, 1, new_dust1)
+            assert_dust_at(1, 2, new_dust2)
+            assert_dust_at(2, 2, new_dust3)
+            assert_dust_at(2, 1, new_dust4)
+        end
+    end
+
+    return ()
+end
+
+@external
 func test_grid_set_and_remove_ship{range_check_ptr}():
     let no_ship = 0
     let ship1 = 11

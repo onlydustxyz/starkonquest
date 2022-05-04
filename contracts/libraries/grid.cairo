@@ -41,8 +41,8 @@ namespace grid_manip:
 
     # Add a dust on a given cell
     # params:
-    #   - position (x,y): The coordinates of the cell to modify
-    #   - direction (x,y): The direction of the dust to add
+    #   - (x,y): The coordinates of the cell to modify
+    #   - dust: The dust to add
     # ! Adding a dust will increment the dust count and replace the existing direction
     func add_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
         let (cell) = get_cell_at(x, y)
@@ -52,7 +52,7 @@ namespace grid_manip:
 
     # Remove a dust on a given cell
     # params:
-    #   - position (x,y): The coordinates of the cell to modify
+    #   - (x,y): The coordinates of the cell to modify
     func remove_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt):
         let (cell) = get_cell_at(x, y)
 
@@ -62,6 +62,20 @@ namespace grid_manip:
 
         let new_cell = Cell(cell.dust_count - 1, cell.dust, cell.ship_id)
         return internal.set_cell_at(x, y, new_cell)
+    end
+
+    # Move a dust from a cell to another
+    # params:
+    #   - (from_x, from_y): origin
+    #   - (to_x, to_y): destination
+    func move_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt):
+        let (cell) = get_cell_at(x, y)
+        let (new_direction) = internal.compute_new_direction(Vector2(x, y), cell.dust.direction)
+
+        add_dust_at(x + new_direction.x, y + new_direction.y, Dust(new_direction))
+        remove_dust_at(x, y)
+
+        return ()
     end
 
     # Set a ship on a given cell
@@ -186,6 +200,35 @@ namespace grid_manip:
             end
 
             return (position=position)
+        end
+
+        func compute_new_direction{range_check_ptr, grid : Grid}(
+            position : Vector2, direction : Vector2
+        ) -> (new_direction : Vector2):
+            alloc_locals
+
+            let (local new_x) = bounce(position.x, direction.x)
+            let (new_y) = bounce(position.y, direction.y)
+
+            return (new_direction=Vector2(x=new_x, y=new_y))
+        end
+
+        func bounce{range_check_ptr, grid : Grid}(position : felt, direction : felt) -> (
+            new_direction : felt
+        ):
+            if position == grid.size - 1:
+                if direction == 1:
+                    return (new_direction=-1)
+                end
+            end
+
+            if position == 0:
+                if direction == -1:
+                    return (new_direction=1)
+                end
+            end
+
+            return (new_direction=direction)
         end
     end
 end
