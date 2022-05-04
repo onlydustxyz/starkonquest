@@ -1,10 +1,9 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
-from starkware.cairo.common.bool import TRUE, FALSE
 from contracts.models.common import Vector2, Dust, Cell, Context, Grid
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.math import assert_nn_le
+from starkware.cairo.common.math import assert_nn_le, assert_lt
 from starkware.cairo.common.math_cmp import is_not_zero
 from contracts.core.library import MathUtils_random_in_range
 
@@ -23,39 +22,46 @@ namespace grid_manip:
         let (new_cells : Cell*) = alloc()
         assert grid.cells = new_cells
 
-        let empty_cell = Cell(Dust(FALSE, Vector2(0, 0)), 0)
+        let empty_cell = Cell(0, Dust(Vector2(0, 0)), 0)
 
         internal.init_grid_loop(grid, 0, empty_cell)
 
         return (grid=grid)
     end
 
-    # Set a dust on a given cell
+    # Get a given cell
     # params:
-    #   - x, y: The coordinates of the cell to modify
-    #   - dust: The dust to set
-    func set_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
-        let (ship_id) = get_ship_at(x, y)
-        return internal.set_cell_at(x, y, Cell(dust, ship_id))
+    #   - x, y: The coordinates of the cell to retrieve
+    # Returns:
+    #   - cell: The cell
+    func get_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (cell : Cell):
+        let (index) = internal.to_grid_index(x, y)
+        return (cell=grid.cells[index])
     end
 
-    # Get the dust on a given cell
+    # Add a dust on a given cell
     # params:
-    #   - x, y: The coordinates of the cell to modify
-    # Returns:
-    #   - dust: The dust to set
-    func get_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (dust : Dust):
-        let (cell) = internal.get_cell_at(x, y)
-        return (dust=cell.dust)
+    #   - position (x,y): The coordinates of the cell to modify
+    #   - direction (x,y): The direction of the dust to add
+    # ! Adding a dust will increment the dust count and replace the existing direction
+    func add_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
+        let (cell) = get_cell_at(x, y)
+        let new_cell = Cell(cell.dust_count + 1, dust, cell.ship_id)
+        return internal.set_cell_at(x, y, new_cell)
     end
 
     # Remove a dust on a given cell
     # params:
-    #   - x, y: The coordinates of the cell to modify
-    func clear_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt):
-        let (ship_id) = get_ship_at(x, y)
-        let NO_DUST = Dust(FALSE, Vector2(0, 0))
-        return internal.set_cell_at(x, y, Cell(NO_DUST, ship_id))
+    #   - position (x,y): The coordinates of the cell to modify
+    func remove_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt):
+        let (cell) = get_cell_at(x, y)
+
+        with_attr error_message("No dust to remove here"):
+            assert_lt(0, cell.dust_count)
+        end
+
+        let new_cell = Cell(cell.dust_count - 1, cell.dust, cell.ship_id)
+        return internal.set_cell_at(x, y, new_cell)
     end
 
     # Set a ship on a given cell
@@ -63,27 +69,19 @@ namespace grid_manip:
     #   - x, y: The coordinates of the cell to modify
     #   - ship_id: The ship to set
     func set_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : felt):
-        let (dust) = get_dust_at(x, y)
-        return internal.set_cell_at(x, y, Cell(dust, ship_id))
-    end
-
-    # Get the ship on a given cell
-    # params:
-    #   - x, y: The coordinates of the cell to modify
-    # Returns:
-    #   - ship_id: The ship to set
-    func get_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (ship_id : felt):
-        let (cell) = internal.get_cell_at(x, y)
-        return (ship_id=cell.ship_id)
+        let (cell) = get_cell_at(x, y)
+        let new_cell = Cell(cell.dust_count, cell.dust, ship_id)
+        return internal.set_cell_at(x, y, new_cell)
     end
 
     # Remove a ship on a given cell
     # params:
     #   - x, y: The coordinates of the cell to modify
-    func clear_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt):
+    func remove_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt):
         let NO_SHIP = 0
-        let (dust) = get_dust_at(x, y)
-        return internal.set_cell_at(x, y, Cell(dust, NO_SHIP))
+        let (cell) = get_cell_at(x, y)
+        let new_cell = Cell(cell.dust_count, cell.dust, NO_SHIP)
+        return internal.set_cell_at(x, y, new_cell)
     end
 
     # Check if a given cell is occupied (contains a dust and/or a ship)
@@ -94,8 +92,8 @@ namespace grid_manip:
     func is_cell_occupied{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (
         cell_is_occupied : felt
     ):
-        let (cell) = internal.get_cell_at(x, y)
-        let (cell_is_occupied) = is_not_zero(cell.dust.present + cell.ship_id)
+        let (cell) = get_cell_at(x, y)
+        let (cell_is_occupied) = is_not_zero(cell.dust_count + cell.ship_id)
         return (cell_is_occupied=cell_is_occupied)
     end
 
@@ -138,11 +136,6 @@ namespace grid_manip:
             end
 
             return (index=index)
-        end
-
-        func get_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (cell : Cell):
-            let (index) = to_grid_index(x, y)
-            return (cell=grid.cells[index])
         end
 
         func set_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt, new_cell : Cell):
