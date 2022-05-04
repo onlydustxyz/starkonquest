@@ -1,7 +1,7 @@
 %lang starknet
 
 from contracts.libraries.grid import grid_manip
-from contracts.models.common import Cell, Vector2, Dust
+from contracts.models.common import Cell, Vector2, Dust, Grid
 
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin, BitwiseBuiltin
@@ -64,6 +64,20 @@ func test_grid_set_and_get_dust{range_check_ptr}():
             assert grid.cells[8] = empty_cell
         end
 
+        with_attr error_message("is_cell_occupied broken"):
+            let (cell_0_0_occupied) = grid_manip.is_cell_occupied(0, 0)
+            assert cell_0_0_occupied = 0
+
+            let (cell_0_1_occupied) = grid_manip.is_cell_occupied(0, 1)
+            assert cell_0_1_occupied = 1
+
+            let (cell_1_1_occupied) = grid_manip.is_cell_occupied(1, 1)
+            assert cell_1_1_occupied = 1
+
+            let (cell_2_0_occupied) = grid_manip.is_cell_occupied(2, 0)
+            assert cell_2_0_occupied = 1
+        end
+
         grid_manip.clear_dust_at(1, 1)
 
         with_attr error_message("get_dust_at returns wrong value"):
@@ -108,6 +122,20 @@ func test_grid_set_and_get_ship{range_check_ptr}():
             assert grid.cells[8] = empty_cell
         end
 
+        with_attr error_message("is_cell_occupied broken"):
+            let (cell_0_0_occupied) = grid_manip.is_cell_occupied(0, 0)
+            assert cell_0_0_occupied = 0
+
+            let (cell_0_1_occupied) = grid_manip.is_cell_occupied(0, 1)
+            assert cell_0_1_occupied = 1
+
+            let (cell_1_1_occupied) = grid_manip.is_cell_occupied(1, 1)
+            assert cell_1_1_occupied = 1
+
+            let (cell_2_0_occupied) = grid_manip.is_cell_occupied(2, 0)
+            assert cell_2_0_occupied = 1
+        end
+
         grid_manip.clear_ship_at(1, 1)
 
         with_attr error_message("get_ship_at returns wrong value"):
@@ -147,6 +175,20 @@ func test_grid_set_clear_should_preserve_other_objects{range_check_ptr}():
         with_attr error_message("grid not updated correctly"):
             assert grid.cells[0] = Cell(dust1, ship1)
             assert grid.cells[3] = Cell(dust2, ship2)
+        end
+
+        with_attr error_message("is_cell_occupied broken"):
+            let (cell_0_0_occupied) = grid_manip.is_cell_occupied(0, 0)
+            assert cell_0_0_occupied = 1
+
+            let (cell_0_1_occupied) = grid_manip.is_cell_occupied(0, 1)
+            assert cell_0_1_occupied = 0
+
+            let (cell_1_0_occupied) = grid_manip.is_cell_occupied(1, 0)
+            assert cell_1_0_occupied = 0
+
+            let (cell_1_1_occupied) = grid_manip.is_cell_occupied(1, 1)
+            assert cell_1_1_occupied = 1
         end
 
         grid_manip.clear_ship_at(0, 0)
