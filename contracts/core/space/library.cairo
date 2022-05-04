@@ -36,10 +36,6 @@ func dust_moved(space_contract_address : felt, previous_position : Vector2, posi
 end
 
 @event
-func ship_added(space_contract_address : felt, ship_id : felt, position : Vector2):
-end
-
-@event
 func ship_moved(
     space_contract_address : felt, ship_id : felt, previous_position : Vector2, position : Vector2
 ):
@@ -75,27 +71,27 @@ namespace Space:
         ships_len : felt,
         ships : ShipInit*,
     ):
-        alloc_locals
+        # alloc_locals
 
-        local context : Context
+        # local context : Context
 
-        let ships_addresses : felt* = alloc()
-        assert context.max_turn_count = turn_count
-        assert context.max_dust = max_dust
-        assert context.rand_contract = rand_contract_address
-        assert context.ships_len = ships_len
-        assert context.ships = ships_addresses
+        # let ships_addresses : felt* = alloc()
+        #     assert context.max_turn_count = turn_count
+        #     assert context.max_dust = max_dust
+        #     assert context.rand_contract = rand_contract_address
+        #     assert context.ships_len = ships_len
+        #     assert context.ships = ships_addresses
 
-        let dust_count = 0
-        let scores : felt* = alloc()
-        _init_scores_loop(scores, context.ships_len)
+        # let dust_count = 0
+        #     let scores : felt* = alloc()
+        #     _init_scores_loop(scores, context.ships_len)
 
-        let (grid : Grid) = grid_manip.create(size)
-        let (next_grid : Grid) = grid_manip.create(size)
-        with context, grid, next_grid, dust_count, scores:
-            _add_ships(ships_len, ships)
-            _rec_play_turns(0)
-        end
+        # let (grid : Grid) = grid_manip.create(size)
+        #     let (next_grid : Grid) = grid_manip.create(size)
+        #     with context, grid, next_grid, dust_count, scores:
+        #         _add_ships(ships_len, ships)
+        #         _rec_play_turns(0)
+        #     end
 
         return ()
     end
@@ -103,28 +99,6 @@ namespace Space:
     # ---------
     # INTERNALS
     # ---------
-
-    func _add_ships{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr,
-        bitwise_ptr : BitwiseBuiltin*,
-        context : Context,
-        grid : Grid,
-        next_grid : Grid,
-    }(ships_len : felt, ships : ShipInit*):
-        if ships_len == 0:
-            return ()
-        end
-
-        _add_ship(
-            [ships].position.x,
-            [ships].position.y,
-            [ships].address,
-            context.ships_len - ships_len + 1,
-        )
-        return _add_ships(ships_len - 1, ships + ShipInit.SIZE)
-    end
 
     func _rec_play_turns{
         syscall_ptr : felt*,
@@ -182,40 +156,6 @@ namespace Space:
         _update_grid(0, 0)
 
         return (FALSE)
-    end
-
-    func _add_ship{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr,
-        context : Context,
-        grid : Grid,
-        next_grid : Grid,
-    }(x : felt, y : felt, ship_contract : felt, ship_id : felt):
-        alloc_locals
-
-        # Check other ship
-        let (ship_at_position : felt) = grid_manip.get_ship_at(x, y)
-        with_attr error_message("Space: cell is not free"):
-            assert ship_at_position = 0
-        end
-
-        # Check dust
-        let dust : Dust = grid_manip.get_dust_at(x, y)
-        with_attr error_message("Space: cell is not free"):
-            assert dust.present = FALSE
-        end
-
-        # Put the ship on grids
-        grid_manip.set_ship_at{grid=next_grid}(x, y, ship_id)
-        grid_manip.set_ship_at(x, y, ship_id)
-        assert [context.ships + ship_id - 1] = ship_contract
-
-        # Emit events
-        let (space_contract_address) = get_contract_address()
-        ship_added.emit(space_contract_address, ship_id, Vector2(x, y))
-
-        return ()
     end
 
     func _spawn_dust{
