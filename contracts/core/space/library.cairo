@@ -79,12 +79,12 @@ namespace Space:
         #     assert context.max_turn_count = turn_count
         #     assert context.max_dust = max_dust
         #     assert context.rand_contract = rand_contract_address
-        #     assert context.ships_len = ships_len
-        #     assert context.ships = ships_addresses
+        #     assert context.nb_ships = ships_len
+        #     assert context.ship_contracts = ships_addresses
 
         # let dust_count = 0
         #     let scores : felt* = alloc()
-        #     _init_scores_loop(scores, context.ships_len)
+        #     _init_scores_loop(scores, context.nb_ships)
 
         # let (grid : Grid) = grid_manip.create(size)
         #     let (next_grid : Grid) = grid_manip.create(size)
@@ -343,7 +343,7 @@ namespace Space:
         end
 
         # Call ship contract
-        let ship_contract = [context.ships + ship_id - 1]
+        let ship_contract = [context.ship_contracts + ship_id - 1]
         let (local new_direction : Vector2) = IShip.move(
             ship_contract, grid.nb_cells, grid.cells, ship_id
         )
@@ -619,7 +619,7 @@ namespace Space:
         alloc_locals
 
         let (local new_scores : felt*) = alloc()
-        _get_incremented_scores(context.ships_len, ship_id, new_scores)
+        _get_incremented_scores(context.nb_ships, ship_id, new_scores)
 
         let scores = new_scores
         return ()
@@ -636,7 +636,7 @@ namespace Space:
             return ()
         end
 
-        if ship_id == context.ships_len - ships_len + 1:
+        if ship_id == context.nb_ships - ships_len + 1:
             assert [new_scores] = [scores + ship_id - 1] + 1
         else:
             assert [new_scores] = [scores + ship_id - 1]
