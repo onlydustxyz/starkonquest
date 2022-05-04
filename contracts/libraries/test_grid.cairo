@@ -115,7 +115,9 @@ func test_grid_add_and_remove_dust{range_check_ptr}():
 end
 
 @external
-func test_grid_move_dust{range_check_ptr}():
+func test_grid_move_dust{syscall_ptr : felt*, range_check_ptr}():
+    alloc_locals
+
     let dust1 = Dust(Vector2(1, 1))  # top left, going down right
     let dust2 = Dust(Vector2(1, -1))  # top right, going down left
     let dust3 = Dust(Vector2(-1, -1))  # bottom right, going up left
@@ -130,6 +132,7 @@ func test_grid_move_dust{range_check_ptr}():
         grid_manip.add_dust_at(3, 0, dust4)
 
         grid_manip.move_all_dusts()
+        local syscall_ptr : felt* = syscall_ptr  # TODO remove once event emitted out of grid_manip
 
         with_attr error_message("bad dust move"):
             assert_dust_at(1, 1, dust1)
@@ -143,7 +146,9 @@ func test_grid_move_dust{range_check_ptr}():
 end
 
 @external
-func test_grid_move_dust_beyound_borders{range_check_ptr}():
+func test_grid_move_dust_beyound_borders{syscall_ptr : felt*, range_check_ptr}():
+    alloc_locals
+
     let dust1 = Dust(Vector2(-1, -1))  # top left, going up left
     let dust2 = Dust(Vector2(-1, 1))  # top right, going up right
     let dust3 = Dust(Vector2(1, 1))  # bottom right, going down right
@@ -163,12 +168,44 @@ func test_grid_move_dust_beyound_borders{range_check_ptr}():
         grid_manip.add_dust_at(3, 0, dust4)
 
         grid_manip.move_all_dusts()
+        local syscall_ptr : felt* = syscall_ptr  # TODO remove once event emitted out of grid_manip
 
         with_attr error_message("bad dust move"):
             assert_dust_at(1, 1, new_dust1)
             assert_dust_at(1, 2, new_dust2)
             assert_dust_at(2, 2, new_dust3)
             assert_dust_at(2, 1, new_dust4)
+        end
+    end
+
+    return ()
+end
+
+@external
+func test_grid_move_dust_and_burn{syscall_ptr : felt*, range_check_ptr}():
+    alloc_locals
+
+    let dust1 = Dust(Vector2(1, 1))  # top left, going down right
+    let dust2 = Dust(Vector2(1, -1))  # top right, going down left
+    let dust3 = Dust(Vector2(-1, -1))  # bottom right, going up left
+    let dust4 = Dust(Vector2(-1, 1))  # bottom left, going up right
+
+    let (grid) = grid_manip.create(3)
+
+    with grid:
+        grid_manip.add_dust_at(0, 0, dust1)
+        grid_manip.add_dust_at(0, 2, dust2)
+        grid_manip.add_dust_at(2, 2, dust3)
+        grid_manip.add_dust_at(2, 0, dust4)
+
+        grid_manip.move_all_dusts()
+        local syscall_ptr : felt* = syscall_ptr  # TODO remove once event emitted out of grid_manip
+
+        with_attr error_message("bad dust move"):
+            assert_dust_at(1, 1, dust3)
+            assert_dust_count_at(1, 1, 1)
+
+            # TODO dust_destroyed.emit(contract_address, Vector2(x, y))
         end
     end
 

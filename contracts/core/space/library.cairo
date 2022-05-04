@@ -24,10 +24,6 @@ from contracts.libraries.grid import grid_manip
 # ------
 
 @event
-func dust_destroyed(space_contract_address : felt, position : Vector2):
-end
-
-@event
 func dust_moved(space_contract_address : felt, previous_position : Vector2, position : Vector2):
 end
 

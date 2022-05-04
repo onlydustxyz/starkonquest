@@ -1,11 +1,22 @@
 %lang starknet
 
+from starkware.starknet.common.syscalls import get_contract_address
+
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
-from contracts.models.common import Vector2, Dust, Cell, Context, Grid
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import assert_nn_le, assert_lt
-from starkware.cairo.common.math_cmp import is_not_zero
+from starkware.cairo.common.math_cmp import is_not_zero, is_le
+
+from contracts.models.common import Vector2, Dust, Cell, Context, Grid
 from contracts.core.library import MathUtils_random_in_range
+
+# ------------------
+# EVENTS
+# ------------------
+
+@event
+func dust_destroyed(space_contract_address : felt, position : Vector2):
+end
 
 namespace grid_manip:
     # Create a new square grid of size*size cells stored in a single-dimension array
@@ -65,12 +76,13 @@ namespace grid_manip:
     end
 
     # Move all dusts in the grid
-    func move_all_dusts{range_check_ptr, grid : Grid}():
+    func move_all_dusts{syscall_ptr : felt*, range_check_ptr, grid : Grid}():
         let (new_grid) = internal.clone_ships()
         with new_grid:
             internal.move_all_dusts_loop(0, 0)
         end
         let grid = new_grid
+        internal.burn_extra_dusts_loop(0, 0)
         return ()
     end
 
@@ -281,6 +293,38 @@ namespace grid_manip:
             end
 
             return (new_direction=direction)
+        end
+
+        func burn_extra_dusts_loop{syscall_ptr : felt*, range_check_ptr, grid : Grid}(
+            x : felt, y : felt
+        ):
+            alloc_locals
+
+            if y == grid.size:
+                # this is the end
+                return ()
+            end
+
+            if x == grid.size:
+                # End of the row
+                return burn_extra_dusts_loop(0, y + 1)
+            end
+
+            let (cell) = get_cell_at(x, y)
+            let (too_many_dust) = is_le(2, cell.dust_count)
+            local grid : Grid = grid
+            if too_many_dust == 0:
+                # Go to next cell
+                return burn_extra_dusts_loop(x + 1, y)
+            end
+
+            # Burn the dust
+            remove_dust_at(x, y)
+            let (contract_address) = get_contract_address()  # TODO move event emission out of grid_manip
+            dust_destroyed.emit(contract_address, Vector2(x, y))
+
+            # Check same cell again
+            return burn_extra_dusts_loop(x, y)
         end
     end
 end
