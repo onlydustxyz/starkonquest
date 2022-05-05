@@ -7,7 +7,7 @@ from starkware.cairo.common.math_cmp import is_nn_le
 from contracts.models.common import ShipInit, Vector2, Context
 from contracts.interfaces.irand import IRandom
 from contracts.libraries.square_grid import grid_access, Grid
-from contracts.libraries.cell import cell_access, Dust
+from contracts.libraries.cell import cell_access, Cell, Dust
 from contracts.core.library import MathUtils_random_direction
 
 # ------------------
@@ -186,6 +186,50 @@ namespace internal:
         dust_destroyed.emit(contract_address, grid_iterator)
 
         return (dust_burnt=1)
+    end
+
+    func check_ship_and_dust_collisions{syscall_ptr : felt*, range_check_ptr, grid : Grid}():
+        let (grid_iterator) = grid_access.start()
+        with grid_iterator:
+            check_ship_and_dust_collisions_loop()
+        end
+        return ()
+    end
+
+    func check_ship_and_dust_collisions_loop{
+        syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2
+    }():
+        let (done) = grid_access.done()
+        if done == 1:
+            return ()
+        end
+
+        try_ship_absorb_dust()
+
+        grid_access.next()
+        return check_ship_and_dust_collisions_loop()
+    end
+
+    func try_ship_absorb_dust{
+        syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2
+    }():
+        alloc_locals
+
+        let (cell) = grid_access.get_next_cell_at(grid_iterator.x, grid_iterator.y)
+        local grid : Grid = grid  # revoked reference
+        with cell:
+            let (has_ship) = cell_access.has_ship()
+            let (has_dust) = cell_access.has_dust()
+            let (ship_and_dust) = is_nn_le(2, has_dust + has_ship)
+            if ship_and_dust == 0:
+                return ()
+            end
+
+            cell_access.remove_dust()
+            grid_access.set_next_cell_at(grid_iterator.x, grid_iterator.y, cell)
+        end
+
+        return ()
     end
 
     # Generate random dust given a space size
