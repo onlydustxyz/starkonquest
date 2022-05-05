@@ -37,10 +37,10 @@ namespace ITournament:
     func are_tournament_registrations_open() -> (res : felt):
     end
 
-    func ships_per_battle() -> (res : felt):
+    func ship_count_per_battle() -> (res : felt):
     end
 
-    func max_ships_per_tournament() -> (res : felt):
+    func required_total_ship_count() -> (res : felt):
     end
 
     func grid_size() -> (res : felt):
@@ -52,7 +52,7 @@ namespace ITournament:
     func max_dust() -> (res : felt):
     end
 
-    func player_count() -> (res : felt):
+    func ship_count() -> (res : felt):
     end
 
     func player_ship(player_address : felt) -> (res : felt):
