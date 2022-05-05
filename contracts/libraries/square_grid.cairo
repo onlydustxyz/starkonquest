@@ -136,12 +136,14 @@ namespace grid_access:
     end
 
     # Return a couple of booleans that will be true of the givent position in on the border
-    func is_on_border{grid : Grid}(x : felt, y : felt) -> (on_border : Vector2):
+    func is_crossing_border{grid : Grid}(position : Vector2, direction : Vector2) -> (
+        crossing_border : Vector2
+    ):
         alloc_locals
 
-        let (local on_border_x) = internal.is_on_border(x)
-        let (on_border_y) = internal.is_on_border(y)
-        return (on_border=Vector2(on_border_x, on_border_y))
+        let (local crossing_border_x) = internal.is_crossing_border(position.x, direction.x)
+        let (crossing_border_y) = internal.is_crossing_border(position.y, direction.y)
+        return (crossing_border=Vector2(crossing_border_x, crossing_border_y))
     end
 
     ####################
@@ -241,16 +243,22 @@ namespace grid_access:
             return (position=position)
         end
 
-        func is_on_border{grid : Grid}(position : felt) -> (on_border : felt):
+        func is_crossing_border{grid : Grid}(position : felt, direction : felt) -> (
+            crossing_border : felt
+        ):
             if position == 0:
-                return (on_border=1)
+                if direction == -1:
+                    return (crossing_border=1)
+                end
             end
 
             if position == grid.width - 1:
-                return (on_border=1)
+                if direction == 1:
+                    return (crossing_border=1)
+                end
             end
 
-            return (on_border=0)
+            return (crossing_border=0)
         end
     end
 end
