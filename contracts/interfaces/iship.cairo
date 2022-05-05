@@ -1,6 +1,7 @@
 %lang starknet
 
-from contracts.models.common import Vector2, Cell
+from contracts.models.common import Vector2
+from contracts.libraries.cell import Cell
 
 @contract_interface
 namespace IShip:
