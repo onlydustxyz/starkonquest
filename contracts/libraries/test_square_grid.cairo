@@ -37,7 +37,7 @@ func test_grid_create{range_check_ptr}():
     cell_access.add_ship{cell=random_cell}(23)
 
     assert grid.width = 2
-    assert grid.nb_cells = 4
+    assert grid.cell_count = 4
 
     with grid:
         assert_current_cell_at(0, 0, empty_cell)

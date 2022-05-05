@@ -9,7 +9,7 @@ struct Context:
     member max_turn_count : felt
     member max_dust : felt
     member rand_contract : felt
-    member nb_ships : felt
+    member ship_count : felt
     member ship_contracts : felt*
 end
 
