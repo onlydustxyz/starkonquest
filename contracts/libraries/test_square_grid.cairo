@@ -156,3 +156,39 @@ func test_grid_on_border{range_check_ptr}():
     return ()
 end
 
+@external
+func test_grid_iterator{range_check_ptr}():
+    let (grid) = grid_access.create(2)
+
+    with grid:
+        let (grid_iterator) = grid_access.start()
+        assert grid_iterator = Vector2(0, 0)
+
+        with grid_iterator:
+            let (done) = grid_access.done()
+            assert done = 0
+
+            grid_access.next()
+            assert grid_iterator = Vector2(1, 0)
+            let (done) = grid_access.done()
+            assert done = 0
+
+            grid_access.next()
+            assert grid_iterator = Vector2(0, 1)
+            let (done) = grid_access.done()
+            assert done = 0
+
+            grid_access.next()
+            assert grid_iterator = Vector2(1, 1)
+            let (done) = grid_access.done()
+            assert done = 0
+
+            grid_access.next()
+            assert grid_iterator = Vector2(0, 2)
+            let (done) = grid_access.done()
+            assert done = 1
+        end
+    end
+
+    return ()
+end
