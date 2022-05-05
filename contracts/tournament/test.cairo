@@ -5,136 +5,529 @@ from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.starknet.common.syscalls import get_contract_address, get_caller_address
-from contracts.tournament.library import Tournament
+from contracts.tournament.library import (
+    Tournament,
+    playing_ships_,
+    playing_ship_count_,
+    winning_ships_,
+    winning_ship_count_,
+)
+
+# ---------
+# CONSTANTS
+# ---------
 
 const ONLY_DUST_TOKEN_ADDRESS = 0x3fe90a1958bb8468fb1b62970747d8a00c435ef96cda708ae8de3d07f1bb56b
 const BOARDING_TOKEN_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a95
 const RAND_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a91
 const SPACE_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04aaa
-const ADMIN = 42
+const ADMIN = 300
+const ANYONE = 301
+const PLAYER_1 = 302
+const PLAYER_2 = 303
+
+# -------
+# STRUCTS
+# -------
+
+struct Signers:
+    member admin : felt
+    member anyone : felt
+    member player_1 : felt
+    member player_2 : felt
+end
+
+struct Mocks:
+    member only_dust_token_address : felt
+    member boarding_pass_token_address : felt
+    member rand_address : felt
+    member space_address : felt
+end
+
+struct TestContext:
+    member signers : Signers
+    member mocks : Mocks
+
+    member tournament_id : felt
+    member tournament_name : felt
+    member ships_per_battle : felt
+    member max_ships_per_tournament : felt
+    member grid_size : felt
+    member turn_count : felt
+    member max_dust : felt
+end
+
+# -----
+# TESTS
+# -----
 
 @external
-func test_tournament{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-    alloc_locals
-    local only_dust_token_address = ONLY_DUST_TOKEN_ADDRESS  # ERC20 token address of the reward
-    local boarding_pass_token_address = BOARDING_TOKEN_ADDRESS  # ERC721 token address for access control
-    local rand_address = RAND_ADDRESS  # Random generator contract address
-    local space_address = SPACE_ADDRESS  # Space contract address
-    local admin = ADMIN
-    local tournament_id = 420
-    local tournament_name = 69
-    local ships_per_battle = 2
-    local max_ships_per_tournament = 8
-    local grid_size = 5
-    local turn_count = 10
-    local max_dust = 2
+func test_construct_tournament_with_invalid_ship_count{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    let ship_count_per_battle = 2
+    let required_total_ship_count = 5  # Invalid. This should be a power of ship_count_per_battle.
 
+    %{ expect_revert("TRANSACTION_FAILED", "Tournament: total ship count is expected to be a power of ship count per battle") %}
     Tournament.constructor(
-        ADMIN,
-        tournament_id,
-        tournament_name,
-        ONLY_DUST_TOKEN_ADDRESS,
-        BOARDING_TOKEN_ADDRESS,
-        RAND_ADDRESS,
-        SPACE_ADDRESS,
-        ships_per_battle,
-        max_ships_per_tournament,
-        grid_size,
-        turn_count,
-        max_dust,
+        owner=ADMIN,
+        tournament_id=1,
+        tournament_name=11,
+        reward_token_address=ONLY_DUST_TOKEN_ADDRESS,
+        boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
+        rand_contract_address=RAND_ADDRESS,
+        space_contract_address=SPACE_ADDRESS,
+        ship_count_per_battle=ship_count_per_battle,
+        required_total_ship_count=required_total_ship_count,
+        grid_size=10,
+        turn_count=10,
+        max_dust=8,
     )
+    return ()
+end
 
-    %{ mock_call(ids.only_dust_token_address, "balanceOf", [100, 0]) %}
-    let (reward_total_amount) = Tournament.reward_total_amount()
-    assert reward_total_amount.low = 100
-    assert reward_total_amount.high = 0
+@external
+func test_close_registrations_with_good_ship_count{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(2, 2)
 
-    # Start registration
-    %{ start_prank(ids.admin) %}
-    let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
-    assert are_tournament_registrations_open = FALSE
-
+    # Start registrations
+    %{ start_prank(ids.context.signers.admin) %}
     Tournament.open_registrations()
-
     let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
     assert are_tournament_registrations_open = TRUE
     %{ stop_prank() %}
 
-    # Player 1 registers ship 1
-    %{ mock_call(ids.boarding_pass_token_address, "balanceOf", [1, 0]) %}
-    %{ start_prank(1) %}
-    Tournament.register(1)
+    %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
+
+    # Register ship 1
+    %{ start_prank(ids.context.signers.player_1) %}
+    Tournament.register(ship_address=1000)
     %{ stop_prank() %}
 
-    # Player 2 registers ship 2
-    %{ start_prank(2) %}
-    Tournament.register(2)
+    # Register ship 2
+    %{ start_prank(ids.context.signers.player_2) %}
+    Tournament.register(ship_address=1001)
     %{ stop_prank() %}
 
-    # Player 3 registers ship 3
-    %{ start_prank(3) %}
-    Tournament.register(3)
-    %{ stop_prank() %}
-
-    # Player 4 registers ship 4
-    %{ start_prank(4) %}
-    Tournament.register(4)
-    %{ stop_prank() %}
-
-    # Close registration
-    %{ start_prank(ids.admin) %}
+    # Close registrations
+    %{ start_prank(ids.context.signers.admin) %}
     Tournament.close_registrations()
     let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
     assert are_tournament_registrations_open = FALSE
     %{ stop_prank() %}
 
-    # Start the tournament
-    %{ start_prank(ids.admin) %}
-    Tournament.start()
+    return ()
+end
+
+@external
+func test_close_registrations_with_bad_ship_count{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(2, 2)
+
+    # Start registrations
+    %{ start_prank(ids.context.signers.admin) %}
+    Tournament.open_registrations()
+    let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
+    assert are_tournament_registrations_open = TRUE
     %{ stop_prank() %}
 
-    let (played_battle_count) = Tournament.played_battle_count()
-    assert played_battle_count = 0
-    let (round) = Tournament.current_round()
-    assert round = 1
+    %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
 
-    # Play the first battle
-    _test_battle(1, 1, 1)
+    # Register ship 1
+    %{ start_prank(ids.context.signers.player_1) %}
+    Tournament.register(ship_address=1000)
+    %{ stop_prank() %}
 
-    # Play the second battle
-    _test_battle(2, 1, 2)
+    # Do NOT register ship 2
 
-    # Play the final battle
-    _test_battle(3, 2, 3)
+    # Close registrations
+    %{ start_prank(ids.context.signers.admin) %}
+    %{ expect_revert("TRANSACTION_FAILED", "Tournament: ship count not reached") %}
+    Tournament.close_registrations()
+    %{ stop_prank() %}
 
     return ()
 end
 
-func _test_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    expected_played_battle_count : felt, expected_round_before : felt, expected_round_after : felt
-):
+@external
+func test_register_without_access{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
     alloc_locals
-    local space_address = SPACE_ADDRESS
-    local admin = ADMIN
+    let (local context : TestContext) = test_internal.prepare(2, 4)
 
-    let (round) = Tournament.current_round()
-    with_attr error_message("Bad round before"):
-        assert round = expected_round_before
-    end
-
-    %{ mock_call(ids.space_address, "play_game", []) %}
-    %{ start_prank(ids.admin) %}
-    Tournament.play_next_battle()
+    # Start registration
+    %{ start_prank(ids.context.signers.admin) %}
+    Tournament.open_registrations()
     %{ stop_prank() %}
 
-    let (played_battle_count) = Tournament.played_battle_count()
-    with_attr error_message("Bad played_battle_count"):
-        assert played_battle_count = expected_played_battle_count
-    end
-    let (round) = Tournament.current_round()
-    with_attr error_message("Bad round after"):
-        assert round = expected_round_after
+    # Fail to register
+    %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [0, 0]) %}
+    %{ start_prank(ids.context.signers.anyone) %}
+    %{ expect_revert("TRANSACTION_FAILED", "Tournament: player is not allowed to register") %}
+    Tournament.register(1000)
+    %{ stop_prank() %}
+
+    return ()
+end
+
+@external
+func test_register_with_access{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(2, 4)
+
+    # Start registration
+    %{ start_prank(ids.context.signers.admin) %}
+    Tournament.open_registrations()
+    %{ stop_prank() %}
+
+    # Register
+    %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
+    %{ start_prank(ids.context.signers.player_1) %}
+    let ship_address = 1000
+    Tournament.register(ship_address)
+    %{ stop_prank() %}
+
+    # Check registration
+    let (player_address) = Tournament.ship_player(ship_address)
+    with_attr error_message("Expected ship {ship_address} to be registered"):
+        assert player_address = context.signers.player_1
     end
 
     return ()
+end
+
+@external
+func test_tournament_with_4_ships_and_2_ships_per_battle{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(2, 4)
+    with context:
+        test_internal.setup_tournament(ships_len=4, ships=new (1, 2, 3, 4))
+        assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4))
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+
+        # Play the first battle
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=1
+        )
+
+        # After the first battle, we are still in the round 1 so the list of playing ships is still the same
+        assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4))
+        assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (1))
+
+        # Play the second battle
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=2, expected_round_before=1, expected_round_after=2
+        )
+
+        # After the second battle, we are in the round 2 so the list of playing ships has been updated
+        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 3))
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+
+        # Play the final battle
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=3, expected_round_before=2, expected_round_after=3
+        )
+
+        # After the final battle, we are in the round 3 so the list of playing ships has been updated
+        # As there is only one remaining ship, we have our winner
+        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1))
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+    end
+    return ()
+end
+
+@external
+func test_tournament_with_9_ships_and_3_ships_per_battle{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(3, 9)
+    with context:
+        test_internal.setup_tournament(ships_len=9, ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9))
+        assert_that.playing_ships_are(
+            playing_ships_len=9, playing_ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9)
+        )
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+
+        # Play the first battle
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=1
+        )
+
+        # After the first battle, we are still in the round 1 so the list of playing ships is still the same
+        assert_that.playing_ships_are(
+            playing_ships_len=9, playing_ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9)
+        )
+        assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (1))
+
+        # Play the second battle
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=2, expected_round_before=1, expected_round_after=1
+        )
+
+        # After the second battle, we are still in the round 1 so the list of playing ships is still the same
+        assert_that.playing_ships_are(
+            playing_ships_len=9, playing_ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9)
+        )
+        assert_that.winning_ships_are(winning_ships_len=2, winning_ships=new (1, 4))
+
+        # Play the third battle
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=3, expected_round_before=1, expected_round_after=2
+        )
+
+        # After the third battle, we are in the round 2 so the list of playing ships has been updated
+        assert_that.playing_ships_are(playing_ships_len=3, playing_ships=new (1, 4, 7))
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+
+        # Play the final battle
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=4, expected_round_before=2, expected_round_after=3
+        )
+
+        # After the final battle, we are in the round 3 so the list of playing ships has been updated
+        # As there is only one remaining ship, we have our winner
+        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1))
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+    end
+    return ()
+end
+
+# -----------------------
+# INTERNAL TEST FUNCTIONS
+# -----------------------
+
+namespace test_internal:
+    func prepare{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        ships_per_battle : felt, max_ships_per_tournament : felt
+    ) -> (test_context : TestContext):
+        alloc_locals
+        local signers : Signers = Signers(admin=ADMIN, anyone=ANYONE, player_1=PLAYER_1, player_2=PLAYER_2)
+
+        local mocks : Mocks = Mocks(
+            only_dust_token_address=ONLY_DUST_TOKEN_ADDRESS,
+            boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
+            rand_address=RAND_ADDRESS,
+            space_address=SPACE_ADDRESS,
+            )
+
+        local context : TestContext = TestContext(
+            signers=signers,
+            mocks=mocks,
+            tournament_id=420,
+            tournament_name=69,
+            ships_per_battle=ships_per_battle,
+            max_ships_per_tournament=max_ships_per_tournament,
+            grid_size=5,
+            turn_count=10,
+            max_dust=2,
+            )
+
+        Tournament.constructor(
+            signers.admin,
+            context.tournament_id,
+            context.tournament_name,
+            mocks.only_dust_token_address,
+            mocks.boarding_pass_token_address,
+            mocks.rand_address,
+            mocks.space_address,
+            context.ships_per_battle,
+            context.max_ships_per_tournament,
+            context.grid_size,
+            context.turn_count,
+            context.max_dust,
+        )
+
+        return (test_context=context)
+    end
+
+    func setup_tournament{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
+    }(ships_len : felt, ships : felt*):
+        alloc_locals
+
+        %{ mock_call(ids.context.mocks.only_dust_token_address, "balanceOf", [100, 0]) %}
+        let (reward_total_amount) = Tournament.reward_total_amount()
+        assert reward_total_amount.low = 100
+        assert reward_total_amount.high = 0
+
+        # Start registration
+        %{ start_prank(ids.context.signers.admin) %}
+        let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
+        assert are_tournament_registrations_open = FALSE
+
+        Tournament.open_registrations()
+
+        let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
+        assert are_tournament_registrations_open = TRUE
+        %{ stop_prank() %}
+
+        # Register ships
+        %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
+        _register_ships_loop(ships_len, ships)
+
+        # Close registration
+        %{ start_prank(ids.context.signers.admin) %}
+        Tournament.close_registrations()
+        let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
+        assert are_tournament_registrations_open = FALSE
+        %{ stop_prank() %}
+
+        # Start the tournament
+        %{ start_prank(ids.context.signers.admin) %}
+        Tournament.start()
+        %{ stop_prank() %}
+
+        let (played_battle_count) = Tournament.played_battle_count()
+        assert played_battle_count = 0
+        let (round) = Tournament.current_round()
+        assert round = 1
+
+        return ()
+    end
+
+    func _register_ships_loop{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
+    }(ships_len : felt, ships : felt*):
+        alloc_locals
+        if ships_len == 0:
+            return ()
+        end
+
+        tempvar ship_address = [ships]
+        local player_address = ship_address  # To keep it simple in tests, the player_address is equal to the ship_address
+
+        # Register
+        %{ start_prank(ids.player_address) %}
+        Tournament.register(ship_address)
+        %{ stop_prank() %}
+
+        # Check registration
+        let (registered_player_address) = Tournament.ship_player(ship_address)
+        with_attr error_message("Expected ship {ship_address} to be registered"):
+            assert registered_player_address = player_address
+        end
+
+        _register_ships_loop(ships_len - 1, &ships[1])
+        return ()
+    end
+
+    func invoke_battle{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
+    }(
+        expected_played_battle_count_after : felt,
+        expected_round_before : felt,
+        expected_round_after : felt,
+    ):
+        alloc_locals
+        local space_address = SPACE_ADDRESS
+        local admin = ADMIN
+
+        let (local round) = Tournament.current_round()
+        with_attr error_message(
+                "Expected round number (before battle) to be {expected_round_before}, got {round}"):
+            assert round = expected_round_before
+        end
+
+        %{ mock_call(ids.context.mocks.space_address, "play_game", []) %}
+        %{ start_prank(ids.context.signers.admin) %}
+        Tournament.play_next_battle()
+        %{ stop_prank() %}
+
+        let (local played_battle_count) = Tournament.played_battle_count()
+        with_attr error_message(
+                "Expected played battle count (after battle) to be {expected_played_battle_count_after}, got {played_battle_count}"):
+            assert played_battle_count = expected_played_battle_count_after
+        end
+
+        let (local round) = Tournament.current_round()
+        with_attr error_message(
+                "Expected round number (after battle) to be {expected_round_after}, got {round}"):
+            assert round = expected_round_after
+        end
+
+        return ()
+    end
+end
+
+# -----------------
+# CUSTOM ASSERTIONS
+# -----------------
+
+namespace assert_that:
+    func winning_ships_are{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
+    }(winning_ships_len : felt, winning_ships : felt*):
+        alloc_locals
+        let (local winning_ship_count) = winning_ship_count_.read()
+        with_attr error_message(
+                "Expected winning_ship_count to be {winning_ships_len}, got {winning_ship_count}"):
+            assert winning_ship_count = winning_ships_len
+        end
+
+        _assert_winning_ships_loop(0, winning_ships_len, winning_ships)
+        return ()
+    end
+
+    func _assert_winning_ships_loop{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
+    }(winning_index : felt, winning_ships_len : felt, winning_ships : felt*):
+        alloc_locals
+        if winning_ships_len == 0:
+            return ()
+        end
+
+        local expected_winning_ship_address = [winning_ships]
+        let (local winning_ship_address : felt) = winning_ships_.read(winning_index)
+
+        with_attr error_message(
+                "Expected winning_ship_address to be {expected_winning_ship_address} at index {winning_index}, got {winning_ship_address}"):
+            assert winning_ship_address = expected_winning_ship_address
+        end
+
+        _assert_winning_ships_loop(winning_index + 1, winning_ships_len - 1, &winning_ships[1])
+        return ()
+    end
+
+    func playing_ships_are{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
+    }(playing_ships_len : felt, playing_ships : felt*):
+        alloc_locals
+        let (local playing_ship_count) = playing_ship_count_.read()
+        with_attr error_message(
+                "Expected playing_ship_count to be {playing_ships_len}, got {playing_ship_count}"):
+            assert playing_ship_count = playing_ships_len
+        end
+
+        _assert_playing_ships_loop(0, playing_ships_len, playing_ships)
+        return ()
+    end
+
+    func _assert_playing_ships_loop{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
+    }(playing_index : felt, playing_ships_len : felt, playing_ships : felt*):
+        alloc_locals
+        if playing_ships_len == 0:
+            return ()
+        end
+
+        local expected_playing_ship_address = [playing_ships]
+        let (local playing_ship_address : felt) = playing_ships_.read(playing_index)
+
+        with_attr error_message(
+                "Expected playing_ship_address to be {expected_playing_ship_address} at index {playing_index}, got {playing_ship_address}"):
+            assert playing_ship_address = expected_playing_ship_address
+        end
+
+        _assert_playing_ships_loop(playing_index + 1, playing_ships_len - 1, &playing_ships[1])
+        return ()
+    end
 end
