@@ -29,6 +29,13 @@ func assert_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dus
     return ()
 end
 
+func add_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
+    let (cell) = grid_access.get_current_cell_at(x, y)
+    cell_access.add_dust{cell=cell}(dust)
+    grid_access.set_next_cell_at(x, y, cell)
+    return ()
+end
+
 func create_context_with_no_ship(ship_count : felt) -> (context : Context):
     alloc_locals
 
@@ -208,6 +215,37 @@ func test_spawn_no_dust_if_cell_occupied{syscall_ptr : felt*, range_check_ptr}()
 
         assert_dust_count_at(0, 5, 0)
         assert dust_count = 3
+    end
+
+    return ()
+end
+
+@external
+func test_space_dust_collision{syscall_ptr : felt*, range_check_ptr}():
+    alloc_locals
+
+    let dust1 = Dust(Vector2(1, 1))
+    let dust2 = Dust(Vector2(1, -1))
+    let dust3 = Dust(Vector2(-1, -1))
+    let dust4 = Dust(Vector2(-1, 1))
+
+    let (grid) = grid_access.create(3)
+
+    with grid:
+        add_dust_at(1, 1, dust1)
+        add_dust_at(1, 1, dust2)
+        add_dust_at(1, 1, dust3)
+        add_dust_at(1, 1, dust4)
+
+        space.burn_extra_dust()
+        grid_access.apply_modifications()
+
+        with_attr error_message("bad dust move"):
+            assert_dust_at(1, 1, dust4)
+            assert_dust_count_at(1, 1, 1)
+
+            # TODO dust_destroyed.emit(contract_address, Vector2(x, y))
+        end
     end
 
     return ()
