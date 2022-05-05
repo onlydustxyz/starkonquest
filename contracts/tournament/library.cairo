@@ -18,6 +18,7 @@ from openzeppelin.token.erc721.interfaces.IERC721 import IERC721
 
 from contracts.interfaces.ispace import ISpace
 from contracts.models.common import ShipInit, Vector2
+from contracts.core.library import math_utils
 
 # ------------
 # STORAGE VARS
@@ -60,12 +61,12 @@ end
 
 # Number of ships per battle
 @storage_var
-func ships_per_battle_() -> (res : felt):
+func ship_count_per_battle_() -> (res : felt):
 end
 
 # Number of ships per tournament
 @storage_var
-func max_ships_per_tournament_() -> (res : felt):
+func required_total_ship_count_() -> (res : felt):
 end
 
 # Size of the grid
@@ -83,9 +84,9 @@ end
 func max_dust_() -> (res : felt):
 end
 
-# Number of players
+# Number of registered ships
 @storage_var
-func player_count_() -> (res : felt):
+func ship_count_() -> (res : felt):
 end
 
 # Player registered ship
@@ -194,18 +195,17 @@ namespace Tournament:
         return (reward_total_amount)
     end
 
-    func ships_per_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-        ships_per_battle : felt
-    ):
-        let (ships_per_battle) = ships_per_battle_.read()
-        return (ships_per_battle)
+    func ship_count_per_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        ) -> (ship_count_per_battle : felt):
+        let (ship_count_per_battle) = ship_count_per_battle_.read()
+        return (ship_count_per_battle)
     end
 
-    func max_ships_per_tournament{
+    func required_total_ship_count{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }() -> (max_ships_per_tournament : felt):
-        let (max_ships_per_tournament) = max_ships_per_tournament_.read()
-        return (max_ships_per_tournament)
+    }() -> (required_total_ship_count : felt):
+        let (required_total_ship_count) = required_total_ship_count_.read()
+        return (required_total_ship_count)
     end
 
     func grid_size{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
@@ -229,11 +229,11 @@ namespace Tournament:
         return (max_dust)
     end
 
-    func player_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-        player_count : felt
+    func ship_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+        ship_count : felt
     ):
-        let (player_count) = player_count_.read()
-        return (player_count)
+        let (ship_count) = ship_count_.read()
+        return (ship_count)
     end
 
     func player_ship{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -282,25 +282,34 @@ namespace Tournament:
         boarding_pass_token_address : felt,
         rand_contract_address : felt,
         space_contract_address : felt,
-        ships_per_battle : felt,
-        max_ships_per_tournament : felt,
+        ship_count_per_battle : felt,
+        required_total_ship_count : felt,
         grid_size : felt,
         turn_count : felt,
         max_dust : felt,
     ):
+        alloc_locals
         Ownable_initializer(owner)
+        let (required_total_ship_count_is_valid) = math_utils.is_power_of(
+            required_total_ship_count, ship_count_per_battle
+        )
+        with_attr error_message(
+                "Tournament: total ship count is expected to be a power of ship count per battle"):
+            assert required_total_ship_count_is_valid = TRUE
+        end
+
         tournament_id_.write(tournament_id)
         tournament_name_.write(tournament_name)
         reward_token_address_.write(reward_token_address)
         boarding_pass_token_address_.write(boarding_pass_token_address)
         rand_contract_address_.write(rand_contract_address)
         space_contract_address_.write(space_contract_address)
-        ships_per_battle_.write(ships_per_battle)
-        max_ships_per_tournament_.write(max_ships_per_tournament)
+        ship_count_per_battle_.write(ship_count_per_battle)
+        required_total_ship_count_.write(required_total_ship_count)
         grid_size_.write(grid_size)
         turn_count_.write(turn_count)
         max_dust_.write(max_dust)
-        player_count_.write(0)
+        ship_count_.write(0)
         return ()
     end
 
@@ -322,6 +331,14 @@ namespace Tournament:
         ) -> (success : felt):
         Ownable_only_owner()
         _only_tournament_registrations_open()
+
+        # Check that we did reach the expected number of players
+        let (current_ship_count) = ship_count_.read()
+        let (required_total_ship_count) = required_total_ship_count_.read()
+        with_attr error_message("Tournament: ship count not reached"):
+            assert current_ship_count = required_total_ship_count
+        end
+
         are_tournament_registrations_open_.write(FALSE)
         return (TRUE)
     end
@@ -378,11 +395,11 @@ namespace Tournament:
         with_attr error_message("Tournament: player is not allowed to register"):
             assert is_allowed = TRUE
         end
-        let (current_player_count) = player_count_.read()
-        let (max_ships_per_tournament) = max_ships_per_tournament_.read()
-        # Check that we did not reach the max number of players
-        with_attr error_message("Tournament: max player count reached"):
-            assert_lt(current_player_count, max_ships_per_tournament)
+        let (current_ship_count) = ship_count_.read()
+        let (required_total_ship_count) = required_total_ship_count_.read()
+        # Check that we did not reach the max number of ships
+        with_attr error_message("Tournament: ship count already reached"):
+            assert_lt(current_ship_count, required_total_ship_count)
         end
         let (player_registerd_ship) = player_ship_.read(player_address)
         # Check if player already registered a ship for this tournament
@@ -394,14 +411,14 @@ namespace Tournament:
         with_attr error_message("Tournament: ship already registered"):
             assert ship_registered_player = 0
         end
-        player_count_.write(current_player_count + 1)
+        ship_count_.write(current_ship_count + 1)
         # Write player => ship association
         player_ship_.write(player_address, ship_address)
         # Write ship => player association
         ship_player_.write(ship_address, player_address)
         # Push ship to array of playing ships
-        playing_ships_.write(current_player_count, ship_address)
-        playing_ship_count_.write(current_player_count + 1)
+        playing_ships_.write(current_ship_count, ship_address)
+        playing_ship_count_.write(current_ship_count + 1)
         return (TRUE)
     end
 
@@ -558,8 +575,8 @@ namespace Tournament:
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     }(ship_index : felt, ships_len : felt, ships : ShipInit*) -> (len : felt):
         alloc_locals
-        let (ships_per_battle) = ships_per_battle_.read()
-        if ships_len == ships_per_battle:
+        let (ship_count_per_battle) = ship_count_per_battle_.read()
+        if ships_len == ship_count_per_battle:
             return (ships_len)
         end
 

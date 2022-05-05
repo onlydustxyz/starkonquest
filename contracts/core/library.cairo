@@ -3,6 +3,7 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import unsigned_div_rem, assert_lt
 from starkware.cairo.common.math_cmp import is_le
+from starkware.cairo.common.bool import TRUE, FALSE
 from contracts.models.common import Vector2
 
 # clip a value to the interval [min, max]
@@ -49,4 +50,41 @@ func MathUtils_random_direction{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*
     assert random_direction.y = random
 
     return (random_direction=random_direction)
+end
+
+# TODO: move all MathUtils_* functions inside this namespace
+namespace math_utils:
+    # Return 1 if 'a' is a power of 'b'. Otherwise, return 0
+    func is_power_of{range_check_ptr}(a : felt, b : felt) -> (res : felt):
+        if b == 1:
+            # All integers are a power of 1, as n^0 = 1 for any n
+            return (TRUE)
+        end
+        if a == 0:
+            if b == 0:
+                # 0 is a power of 0
+                return (TRUE)
+            end
+            # 0 is not a power of anything (but 0)
+            return (FALSE)
+        end
+        if b == 0:
+            # Nothing (but 0) is a power of 0
+            return (FALSE)
+        end
+
+        return _is_power_of_loop(a, b, b)
+    end
+
+    func _is_power_of_loop{range_check_ptr}(a : felt, b : felt, multiplier : felt) -> (res : felt):
+        if a == b:
+            return (TRUE)
+        end
+        let (a_is_lower_than_b) = is_le(a, b)
+        if a_is_lower_than_b == 1:
+            return (FALSE)
+        end
+
+        return _is_power_of_loop(a, b * multiplier, multiplier)
+    end
 end
