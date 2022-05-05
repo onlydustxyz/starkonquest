@@ -3,11 +3,11 @@
 
 from starkware.starknet.common.syscalls import get_contract_address
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin, BitwiseBuiltin
-from starkware.cairo.common.bool import TRUE, FALSE
 
-from contracts.models.common import ShipInit, Grid, Vector2, Context, Dust
+from contracts.models.common import ShipInit, Vector2, Context
 from contracts.interfaces.irand import IRandom
-from contracts.libraries.grid import grid_manip
+from contracts.libraries.square_grid import grid_access, Grid
+from contracts.libraries.cell import cell_access, Dust
 from contracts.core.library import MathUtils_random_direction
 
 # ------------------
@@ -41,21 +41,17 @@ func play_game{
 end
 
 namespace internal:
-    func add_ship{syscall_ptr : felt*, range_check_ptr, grid : Grid, context : Context}(
-        position : Vector2, ship_id : felt
+    func add_ships{syscall_ptr : felt*, range_check_ptr, grid : Grid, context : Context}(
+        ships_len : felt, ships : ShipInit*
     ):
-        # Ensure the cell is free
-        let (cell_is_occupied : felt) = grid_manip.is_cell_occupied(position.x, position.y)
-        with_attr error_message("Space: cell is not free"):
-            assert cell_is_occupied = 0
+        alloc_locals
+
+        if ships_len == 0:
+            return ()
         end
 
-        # Put the ship on the grid
-        grid_manip.set_ship_at(position.x, position.y, ship_id)
-
-        # Emit events
-        let (space_contract_address) = get_contract_address()
-        ship_added.emit(space_contract_address, ship_id, Vector2(position.x, position.y))
+        add_ship_loop(ships_len, ships, 0)
+        local context : Context = context  # reference revoked
 
         return ()
     end
@@ -74,14 +70,30 @@ namespace internal:
         return add_ship_loop(ships_len, ships, ship_index + 1)
     end
 
-    func add_ships{syscall_ptr : felt*, range_check_ptr, grid : Grid, context : Context}(
-        ships_len : felt, ships : ShipInit*
+    func add_ship{syscall_ptr : felt*, range_check_ptr, grid : Grid}(
+        position : Vector2, ship_id : felt
     ):
-        if ships_len == 0:
-            return ()
+        alloc_locals
+
+        let (cell) = grid_access.get_next_cell_at(position.x, position.y)
+        local range_check_ptr = range_check_ptr  # revoked reference
+        with cell:
+            # Ensure the cell is free
+            let (cell_is_occupied : felt) = cell_access.is_occupied()
+            with_attr error_message("Space: cell is not free"):
+                assert cell_is_occupied = 0
+            end
+
+            # Put the ship on the grid
+            cell_access.add_ship(ship_id)
+            grid_access.set_next_cell_at(position.x, position.y, cell)
         end
 
-        return add_ship_loop(ships_len, ships, 0)
+        # Emit events
+        let (space_contract_address) = get_contract_address()
+        ship_added.emit(space_contract_address, ship_id, Vector2(position.x, position.y))
+
+        return ()
     end
 
     func spawn_dust{
@@ -104,14 +116,19 @@ namespace internal:
         let (local dust : Dust, position : Vector2) = internal.generate_random_dust_on_border()
 
         # Prevent spawning if cell is occupied
-        let (cell_is_occupied) = grid_manip.is_cell_occupied(position.x, position.y)
-        if cell_is_occupied == 1:
-            return ()
-        end
+        let (cell) = grid_access.get_current_cell_at(position.x, position.y)
+        with cell:
+            let (cell_is_occupied) = cell_access.is_occupied()
+            if cell_is_occupied == 1:
+                return ()
+            end
 
-        # Finally, add dust to the grid
-        grid_manip.add_dust_at(position.x, position.y, dust)
+            # Finally, add dust to the grid
+            cell_access.add_dust(dust)
+        end
+        grid_access.set_next_cell_at(position.x, position.y, cell)
         let dust_count = dust_count + 1
+
         let (contract_address) = get_contract_address()
         dust_spawned.emit(contract_address, dust.direction, position)
 
@@ -132,7 +149,7 @@ namespace internal:
         let (direction : Vector2) = MathUtils_random_direction(r1, r2)
         assert dust.direction = direction
 
-        let (position : Vector2) = grid_manip.generate_random_position_on_border(r3, r4, r5)
+        let (position : Vector2) = grid_access.generate_random_position_on_border(r3, r4, r5)
 
         return (dust=dust, position=position)
     end
