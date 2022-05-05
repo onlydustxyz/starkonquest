@@ -137,7 +137,7 @@ namespace internal:
         return ()
     end
 
-    func burn_extra_dust{syscall_ptr : felt*, range_check_ptr, grid : Grid}():
+    func burn_extra_dust{syscall_ptr : felt*, range_check_ptr, grid : Grid, dust_count}():
         let (grid_iterator) = grid_access.start()
         with grid_iterator:
             burn_extra_dust_loop()
@@ -146,7 +146,7 @@ namespace internal:
     end
 
     func burn_extra_dust_loop{
-        syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2
+        syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2, dust_count
     }():
         let (done) = grid_access.done()
         if done == 1:
@@ -154,6 +154,7 @@ namespace internal:
         end
 
         let (dust_burnt) = try_burn_extra_dust()
+        let dust_count = dust_count - dust_burnt
         if dust_burnt == 0:
             # Do not go to next cell if dust was burnt, there might be other dust to burn
             grid_access.next()
@@ -188,7 +189,9 @@ namespace internal:
         return (dust_burnt=1)
     end
 
-    func check_ship_and_dust_collisions{syscall_ptr : felt*, range_check_ptr, grid : Grid}():
+    func check_ship_and_dust_collisions{
+        syscall_ptr : felt*, range_check_ptr, grid : Grid, dust_count
+    }():
         let (grid_iterator) = grid_access.start()
         with grid_iterator:
             check_ship_and_dust_collisions_loop()
@@ -197,14 +200,15 @@ namespace internal:
     end
 
     func check_ship_and_dust_collisions_loop{
-        syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2
+        syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2, dust_count
     }():
         let (done) = grid_access.done()
         if done == 1:
             return ()
         end
 
-        try_ship_absorb_dust()
+        let (dust_absorbed) = try_ship_absorb_dust()
+        let dust_count = dust_count - dust_absorbed
 
         grid_access.next()
         return check_ship_and_dust_collisions_loop()
@@ -212,7 +216,7 @@ namespace internal:
 
     func try_ship_absorb_dust{
         syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2
-    }():
+    }() -> (dust_absorbed : felt):
         alloc_locals
 
         let (cell) = grid_access.get_next_cell_at(grid_iterator.x, grid_iterator.y)
@@ -220,16 +224,15 @@ namespace internal:
         with cell:
             let (has_ship) = cell_access.has_ship()
             let (has_dust) = cell_access.has_dust()
-            let (ship_and_dust) = is_nn_le(2, has_dust + has_ship)
-            if ship_and_dust == 0:
-                return ()
+            if has_dust * has_ship == 0:
+                return (dust_absorbed=0)
             end
 
             cell_access.remove_dust()
             grid_access.set_next_cell_at(grid_iterator.x, grid_iterator.y, cell)
         end
 
-        return ()
+        return (dust_absorbed=1)
     end
 
     # Generate random dust given a space size

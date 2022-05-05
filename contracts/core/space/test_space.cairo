@@ -32,7 +32,7 @@ func assert_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dus
 end
 
 func add_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
-    let (cell) = grid_access.get_current_cell_at(x, y)
+    let (cell) = grid_access.get_next_cell_at(x, y)
     cell_access.add_dust{cell=cell}(dust)
     grid_access.set_next_cell_at(x, y, cell)
     return ()
@@ -41,8 +41,8 @@ end
 func add_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : felt):
     alloc_locals
 
-    let (cell) = grid_access.get_current_cell_at(x, y)
-    local range_check_ptr = range_check_ptr  # rvoked reference
+    let (cell) = grid_access.get_next_cell_at(x, y)
+    local range_check_ptr = range_check_ptr  # revoked reference
     cell_access.add_ship{cell=cell}(ship_id)
     grid_access.set_next_cell_at(x, y, cell)
     return ()
@@ -236,7 +236,11 @@ func test_space_dust_collision{syscall_ptr : felt*, range_check_ptr}():
         add_dust_at(1, 1, dust3)
         add_dust_at(1, 1, dust4)
 
-        space.burn_extra_dust()
+        local dust_count = 4
+        with dust_count:
+            space.burn_extra_dust()
+        end
+
         grid_access.apply_modifications()
 
         with_attr error_message("bad dust move"):
@@ -244,6 +248,10 @@ func test_space_dust_collision{syscall_ptr : felt*, range_check_ptr}():
             assert_dust_count_at(1, 1, 1)
 
             # TODO dust_destroyed.emit(contract_address, Vector2(x, y))
+        end
+
+        with_attr error_message("dust_count not updated"):
+            assert dust_count = 1
         end
     end
 
@@ -264,11 +272,18 @@ func test_space_ship_absorb_dust{syscall_ptr : felt*, range_check_ptr}():
         add_dust_at(1, 1, dust)
         add_ship_at(1, 1, ship)
 
-        space.check_ship_and_dust_collisions()
+        local dust_count = 1
+        with dust_count:
+            space.check_ship_and_dust_collisions()
+        end
         grid_access.apply_modifications()
 
         with_attr error_message("bad dust move"):
             assert_dust_count_at(1, 1, 0)
+        end
+
+        with_attr error_message("dust_count not updated"):
+            assert dust_count = 0
         end
     end
 
