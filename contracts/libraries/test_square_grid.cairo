@@ -16,6 +16,14 @@ func assert_next_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt, cell 
     return ()
 end
 
+func assert_on_border{grid : Grid}(position : Vector2, on_border : Vector2):
+    let (value) = grid_access.is_on_border(position.x, position.y)
+    assert value.x = on_border.x
+    assert value.y = on_border.y
+
+    return ()
+end
+
 @external
 func test_grid_create{range_check_ptr}():
     alloc_locals
@@ -130,3 +138,21 @@ func test_generate_random_position_on_border{range_check_ptr}():
 
     return ()
 end
+
+@external
+func test_grid_on_border{range_check_ptr}():
+    let (grid) = grid_access.create(10)
+
+    with grid:
+        assert_on_border(Vector2(0, 0), Vector2(1, 1))
+        assert_on_border(Vector2(0, 3), Vector2(1, 0))
+        assert_on_border(Vector2(3, 0), Vector2(0, 1))
+        assert_on_border(Vector2(3, 3), Vector2(0, 0))
+        assert_on_border(Vector2(3, 9), Vector2(0, 1))
+        assert_on_border(Vector2(9, 3), Vector2(1, 0))
+        assert_on_border(Vector2(9, 9), Vector2(1, 1))
+    end
+
+    return ()
+end
+
