@@ -463,9 +463,9 @@ end
 # -----------------
 
 namespace assert_that:
-    func winning_ships_are{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
-    }(winning_ships_len : felt, winning_ships : felt*):
+    func winning_ships_are{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        winning_ships_len : felt, winning_ships : felt*
+    ):
         alloc_locals
         let (local winning_ship_count) = winning_ship_count_.read()
         with_attr error_message(
@@ -478,7 +478,7 @@ namespace assert_that:
     end
 
     func _assert_winning_ships_loop{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     }(winning_index : felt, winning_ships_len : felt, winning_ships : felt*):
         alloc_locals
         if winning_ships_len == 0:
@@ -497,9 +497,9 @@ namespace assert_that:
         return ()
     end
 
-    func playing_ships_are{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
-    }(playing_ships_len : felt, playing_ships : felt*):
+    func playing_ships_are{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        playing_ships_len : felt, playing_ships : felt*
+    ):
         alloc_locals
         let (local playing_ship_count) = playing_ship_count_.read()
         with_attr error_message(
@@ -512,7 +512,7 @@ namespace assert_that:
     end
 
     func _assert_playing_ships_loop{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     }(playing_index : felt, playing_ships_len : felt, playing_ships : felt*):
         alloc_locals
         if playing_ships_len == 0:
