@@ -144,6 +144,36 @@ namespace grid_access:
         return (on_border=Vector2(on_border_x, on_border_y))
     end
 
+    ####################
+    # Iterator pattern
+
+    # Return the first cell coordinates
+    func start{grid : Grid}() -> (grid_iterator : Vector2):
+        return (grid_iterator=Vector2(0, 0))
+    end
+
+    # Return the next cell coordinates
+    func next{grid : Grid, grid_iterator : Vector2}():
+        if grid_iterator.x == grid.width - 1:
+            let grid_iterator = Vector2(0, grid_iterator.y + 1)
+            return ()
+        end
+
+        let grid_iterator = Vector2(grid_iterator.x + 1, grid_iterator.y)
+        return ()
+    end
+
+    # Return the next cell coordinates
+    func done{grid : Grid, grid_iterator : Vector2}() -> (is_done : felt):
+        if grid_iterator.y == grid.width:
+            return (is_done=1)
+        end
+        return (is_done=0)
+    end
+
+    #
+    ####################
+
     # ------------------
     # PRIVATE NAMESPACE
     # ------------------
