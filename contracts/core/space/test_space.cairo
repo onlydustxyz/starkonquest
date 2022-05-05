@@ -4,6 +4,7 @@ from contracts.core.space.space import internal as space
 from contracts.libraries.square_grid import grid_access, Grid
 from contracts.libraries.cell import cell_access, Dust
 from contracts.models.common import Context, ShipInit, Vector2
+# from contracts.test.grid_helper import grid_helper
 
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bool import TRUE, FALSE
@@ -284,6 +285,74 @@ func test_space_ship_absorb_dust{syscall_ptr : felt*, range_check_ptr}():
 
         with_attr error_message("dust_count not updated"):
             assert dust_count = 0
+        end
+    end
+
+    return ()
+end
+
+@external
+func test_full_turn{syscall_ptr : felt*, range_check_ptr}():
+    alloc_locals
+
+    let dust1 = Dust(Vector2(1, 0))
+    let dust2 = Dust(Vector2(-1, 0))
+    let dust3 = Dust(Vector2(0, 1))
+    let dust_spawned = Dust(Vector2(1, 1))
+
+    let ship1 = 1
+    let ship2 = 2
+
+    let (local ships : ShipInit*) = alloc()
+    assert ships[0].address = ship1
+    assert ships[0].position = Vector2(1, 1)
+    assert ships[1].address = ship2
+    assert ships[1].position = Vector2(2, 3)
+
+    let (grid) = grid_access.create(5)
+    let (context) = create_context_with_no_ship(2)
+    let dust_count = 3
+    let current_turn = 1
+    with grid, context, dust_count, current_turn:
+        # init
+        space.add_ships(context.ship_count, ships)
+        add_dust_at(0, 0, dust1)
+        add_dust_at(2, 0, dust2)
+        add_dust_at(4, 1, dust3)
+        grid_access.apply_modifications()
+
+        %{
+            mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
+                           2, 2, # direction => (1, 1)
+                           0, 3, # position => (0, 3)
+                           0 # not shuffled
+                           ])
+
+            mock_call(ids.ship1, "move", [0, -1])
+            mock_call(ids.ship2, "move", [1, 0])
+        %}
+
+        # grid_helper.debug_grid()
+        space.one_turn()
+        # grid_helper.debug_grid()
+
+        with_attr error_message("Something wrong with ship1"):
+            assert_ship_at(1, 0, ship1)
+        end
+        with_attr error_message("Something wrong with ship2"):
+            assert_ship_at(3, 3, ship2)
+        end
+        with_attr error_message("Something wrong with dust3"):
+            assert_dust_at(4, 2, dust3)
+        end
+        with_attr error_message("Something wrong with dust spawned"):
+            assert_dust_at(0, 3, dust_spawned)
+        end
+        with_attr error_message("Something wrong with dust count"):
+            assert dust_count = 2
+        end
+        with_attr error_message("Something wrong with current turn"):
+            assert current_turn = 2
         end
     end
 
