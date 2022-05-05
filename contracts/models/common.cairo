@@ -5,13 +5,6 @@ struct Vector2:
     member y : felt
 end
 
-
-struct Grid:
-    member cells : Cell*
-    member size : felt
-    member nb_cells : felt
-end
-
 struct Context:
     member max_turn_count : felt
     member max_dust : felt
