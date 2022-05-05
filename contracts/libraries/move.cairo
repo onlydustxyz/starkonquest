@@ -94,19 +94,17 @@ namespace move_strategy:
             let (local new_direction) = bounce(grid_iterator, dust.direction)
 
             # Get the next cell
-            let (new_cell) = grid_access.get_next_cell_at(grid_iterator.x, grid_iterator.y)
+            local new_dust_position : Vector2 = Vector2(
+                grid_iterator.x + new_direction.x, grid_iterator.y + new_direction.y
+                )
+            let (new_cell) = grid_access.get_next_cell_at(new_dust_position.x, new_dust_position.y)
 
             # Modify the dust direction in it
             cell_access.add_dust{cell=new_cell}(Dust(new_direction))
 
             # Store the new cell
-            grid_access.set_next_cell_at(
-                grid_iterator.x + new_direction.x, grid_iterator.y + new_direction.y, new_cell
-            )
+            grid_access.set_next_cell_at(new_dust_position.x, new_dust_position.y, new_cell)
 
-            let new_dust_position = Vector2(
-                grid_iterator.x + new_direction.x, grid_iterator.y + new_direction.y
-            )
             let (space_contract_address) = get_contract_address()
             dust_moved.emit(space_contract_address, grid_iterator, new_dust_position)
 

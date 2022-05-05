@@ -8,6 +8,7 @@ from contracts.models.common import ShipInit, Vector2, Context
 from contracts.interfaces.irand import IRandom
 from contracts.libraries.square_grid import grid_access, Grid
 from contracts.libraries.cell import cell_access, Cell, Dust
+from contracts.libraries.move import move_strategy
 from contracts.core.library import MathUtils_random_direction
 
 # ------------------
@@ -43,6 +44,27 @@ func play_game{syscall_ptr : felt*, range_check_ptr}(
 end
 
 namespace internal:
+    func one_turn{
+        syscall_ptr : felt*,
+        range_check_ptr,
+        grid : Grid,
+        context : Context,
+        dust_count,
+        current_turn,
+    }():
+        alloc_locals
+        local current_turn = current_turn + 1
+
+        move_strategy.move_all_ships(context.ship_contracts)
+        move_strategy.move_all_dusts()
+        spawn_dust()
+        burn_extra_dust()
+        check_ship_and_dust_collisions()
+        grid_access.apply_modifications()
+
+        return ()
+    end
+
     func add_ships{syscall_ptr : felt*, range_check_ptr, grid : Grid, context : Context}(
         ships_len : felt, ships : ShipInit*
     ):
