@@ -5,15 +5,6 @@ struct Vector2:
     member y : felt
 end
 
-struct Dust:
-    member direction : Vector2
-end
-
-struct Cell:
-    member dust_count : felt
-    member dust : Dust
-    member ship_id : felt
-end
 
 struct Grid:
     member cells : Cell*
