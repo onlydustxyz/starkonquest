@@ -4,12 +4,14 @@ from contracts.libraries.cell import Cell, Dust, cell_access
 from contracts.models.common import Vector2
 
 func assert_dust_count{cell : Cell}(dust_count : felt):
-    assert cell.dust_count = dust_count
+    let (value) = cell_access.get_dust_count()
+    assert value = dust_count
     return ()
 end
 
 func assert_dust{cell : Cell}(dust : Dust):
-    assert cell.dust = dust
+    let (value) = cell_access.get_dust()
+    assert value = dust
     return ()
 end
 
@@ -20,7 +22,8 @@ func assert_has_dust{cell : Cell}(has_dust : felt):
 end
 
 func assert_ship{cell : Cell}(ship_id : felt):
-    assert cell.ship_id = ship_id
+    let (value) = cell_access.get_ship()
+    assert value = ship_id
     return ()
 end
 

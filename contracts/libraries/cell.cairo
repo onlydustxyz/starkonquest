@@ -120,6 +120,11 @@ namespace cell_access:
         return (dust_count=cell.dust_count)
     end
 
+    # Returns the dust on a given cell
+    func get_dust{cell : Cell}() -> (dust : Dust):
+        return (dust=cell.dust)
+    end
+
     # Check if a cell contains dust
     func has_dust{cell : Cell}() -> (has_dust : felt):
         let (dust_count) = get_dust_count()
