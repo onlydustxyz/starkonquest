@@ -135,6 +135,15 @@ namespace grid_access:
         return (position=position)
     end
 
+    # Return a couple of booleans that will be true of the givent position in on the border
+    func is_on_border{grid : Grid}(x : felt, y : felt) -> (on_border : Vector2):
+        alloc_locals
+
+        let (local on_border_x) = internal.is_on_border(x)
+        let (on_border_y) = internal.is_on_border(y)
+        return (on_border=Vector2(on_border_x, on_border_y))
+    end
+
     # ------------------
     # PRIVATE NAMESPACE
     # ------------------
@@ -200,6 +209,18 @@ namespace grid_access:
             end
 
             return (position=position)
+        end
+
+        func is_on_border{grid : Grid}(position : felt) -> (on_border : felt):
+            if position == 0:
+                return (on_border=1)
+            end
+
+            if position == grid.width - 1:
+                return (on_border=1)
+            end
+
+            return (on_border=0)
         end
     end
 end
