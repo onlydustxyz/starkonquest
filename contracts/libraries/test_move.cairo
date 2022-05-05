@@ -34,7 +34,7 @@ func assert_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : 
 end
 
 @external
-func test_move_dusts{range_check_ptr}():
+func test_move_dusts{syscall_ptr : felt*, range_check_ptr}():
     alloc_locals
 
     let dust1 = Dust(Vector2(1, 1))  # top left, going down right
@@ -58,6 +58,7 @@ func test_move_dusts{range_check_ptr}():
             assert_dust_at(1, 2, dust2)
             assert_dust_at(2, 2, dust3)
             assert_dust_at(2, 1, dust4)
+            # TODO dust_moved.emit(space_contract_address, grid_iterator, new_dust_position)
         end
     end
 
@@ -65,7 +66,7 @@ func test_move_dusts{range_check_ptr}():
 end
 
 @external
-func test_grid_move_dust_beyond_borders{range_check_ptr}():
+func test_grid_move_dust_beyond_borders{syscall_ptr : felt*, range_check_ptr}():
     alloc_locals
 
     let dust1 = Dust(Vector2(-1, -1))  # top left, going up left
@@ -94,6 +95,7 @@ func test_grid_move_dust_beyond_borders{range_check_ptr}():
             assert_dust_at(1, 2, new_dust2)
             assert_dust_at(2, 2, new_dust3)
             assert_dust_at(2, 1, new_dust4)
+            # TODO dust_moved.emit(space_contract_address, grid_iterator, new_dust_position)
         end
     end
 
@@ -121,6 +123,7 @@ func test_move_ship_nominal{syscall_ptr : felt*, range_check_ptr}():
 
         with_attr error_message("bad ship move"):
             assert_ship_at(1, 1, ship)
+            # TODO ship_moved.emit(space_contract_address, ship_id, grid_iterator, new_position)
         end
     end
 
@@ -160,6 +163,7 @@ func test_move_ship_collision_in_current_grid{syscall_ptr : felt*, range_check_p
         with_attr error_message("bad ship move"):
             assert_ship_at(0, 0, ship1)
             assert_ship_at(0, 2, ship2)
+            # TODO ship_moved.emit(space_contract_address, ship_id, grid_iterator, new_position)
         end
     end
 
@@ -199,6 +203,7 @@ func test_move_ship_collision_in_next_grid{syscall_ptr : felt*, range_check_ptr}
         with_attr error_message("bad ship move"):
             assert_ship_at(0, 1, ship1)
             assert_ship_at(1, 1, ship2)
+            # TODO ship_moved.emit(space_contract_address, ship_id, grid_iterator, new_position)
         end
     end
 
