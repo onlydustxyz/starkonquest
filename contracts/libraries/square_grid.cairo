@@ -17,7 +17,7 @@ from contracts.libraries.cell import Cell, cell_access
 
 struct Grid:
     member width : felt
-    member nb_cells : felt
+    member cell_count : felt
     member current_cells : Cell*
     member next_cells : Cell*
 end
@@ -37,7 +37,7 @@ namespace grid_access:
 
         local grid : Grid
         assert grid.width = width
-        assert grid.nb_cells = width * width
+        assert grid.cell_count = width * width
         let (cells : Cell*) = alloc()
         assert grid.current_cells = cells
         assert grid.next_cells = cells
@@ -82,7 +82,7 @@ namespace grid_access:
 
         local new_grid : Grid
         assert new_grid.width = grid.width
-        assert new_grid.nb_cells = grid.nb_cells
+        assert new_grid.cell_count = grid.cell_count
         assert new_grid.current_cells = grid.current_cells
 
         let cells : Cell* = alloc()
@@ -102,7 +102,7 @@ namespace grid_access:
 
         local new_grid : Grid
         assert new_grid.width = grid.width
-        assert new_grid.nb_cells = grid.nb_cells
+        assert new_grid.cell_count = grid.cell_count
         assert new_grid.current_cells = grid.next_cells
         let (cells : Cell*) = alloc()
         assert new_grid.next_cells = cells
@@ -182,7 +182,7 @@ namespace grid_access:
 
     namespace internal:
         func init_cells_loop{grid : Grid}(cells : Cell*, index : felt, init_cell : Cell):
-            if index == grid.nb_cells:
+            if index == grid.cell_count:
                 return ()
             end
 
@@ -194,7 +194,7 @@ namespace grid_access:
         func to_grid_index{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (index : felt):
             let index = y * grid.width + x
             with_attr error_message("Out of bound"):
-                assert_nn_le(index, grid.nb_cells)
+                assert_nn_le(index, grid.cell_count)
             end
 
             return (index=index)
@@ -207,7 +207,7 @@ namespace grid_access:
             new_cell_index : felt,
             new_cell : Cell,
         ):
-            if current_cell_index == grid.nb_cells:
+            if current_cell_index == grid.cell_count:
                 return ()
             end
 
