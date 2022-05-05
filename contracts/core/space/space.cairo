@@ -2,7 +2,7 @@
 %lang starknet
 
 from starkware.starknet.common.syscalls import get_contract_address
-from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin, BitwiseBuiltin
+from starkware.cairo.common.math_cmp import is_nn_le
 
 from contracts.models.common import ShipInit, Vector2, Context
 from contracts.interfaces.irand import IRandom
@@ -22,14 +22,16 @@ end
 func dust_spawned(space_contract_address : felt, direction : Vector2, position : Vector2):
 end
 
+@event
+func dust_destroyed(space_contract_address : felt, position : Vector2):
+end
+
 # ------------------
 # EXTERNAL FUNCTIONS
 # ------------------
 
 @external
-func play_game{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr : BitwiseBuiltin*, range_check_ptr
-}(
+func play_game{syscall_ptr : felt*, range_check_ptr}(
     rand_contract_address : felt,
     size : felt,
     turn_count : felt,
@@ -133,6 +135,57 @@ namespace internal:
         dust_spawned.emit(contract_address, dust.direction, position)
 
         return ()
+    end
+
+    func burn_extra_dust{syscall_ptr : felt*, range_check_ptr, grid : Grid}():
+        let (grid_iterator) = grid_access.start()
+        with grid_iterator:
+            burn_extra_dust_loop()
+        end
+        return ()
+    end
+
+    func burn_extra_dust_loop{
+        syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2
+    }():
+        let (done) = grid_access.done()
+        if done == 1:
+            return ()
+        end
+
+        let (dust_burnt) = try_burn_extra_dust()
+        if dust_burnt == 0:
+            # Do not go to next cell if dust was burnt, there might be other dust to burn
+            grid_access.next()
+            return burn_extra_dust_loop()
+        end
+
+        return burn_extra_dust_loop()
+    end
+
+    func try_burn_extra_dust{
+        syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2
+    }() -> (dust_burnt : felt):
+        alloc_locals
+
+        let (cell) = grid_access.get_next_cell_at(grid_iterator.x, grid_iterator.y)
+        local grid : Grid = grid  # revoked reference
+        with cell:
+            let (dust_count) = cell_access.get_dust_count{cell=cell}()
+            let (extra_dust) = is_nn_le(2, dust_count)
+            if extra_dust == 0:
+                return (dust_burnt=0)
+            end
+
+            cell_access.remove_dust()
+        end
+
+        grid_access.set_next_cell_at(grid_iterator.x, grid_iterator.y, cell)
+
+        let (contract_address) = get_contract_address()
+        dust_destroyed.emit(contract_address, grid_iterator)
+
+        return (dust_burnt=1)
     end
 
     # Generate random dust given a space size
