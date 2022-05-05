@@ -1,13 +1,9 @@
 %lang starknet
 
-from starkware.starknet.common.syscalls import get_contract_address
-
-from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.math import assert_nn_le, assert_lt
-from starkware.cairo.common.math_cmp import is_not_zero, is_le
+from starkware.cairo.common.math import assert_nn_le
 
-from contracts.models.common import Context, Vector2
+from contracts.models.common import Vector2
 from contracts.core.library import MathUtils_random_in_range
 from contracts.libraries.cell import Cell, cell_access
 
@@ -192,11 +188,12 @@ namespace grid_access:
         end
 
         func to_grid_index{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (index : felt):
-            let index = y * grid.width + x
             with_attr error_message("Out of bound"):
-                assert_nn_le(index, grid.cell_count)
+                assert_nn_le(x, grid.width - 1)
+                assert_nn_le(y, grid.width - 1)
             end
 
+            let index = y * grid.width + x
             return (index=index)
         end
 

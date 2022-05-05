@@ -5,6 +5,8 @@ from contracts.models.common import Vector2
 from contracts.libraries.square_grid import grid_access, Grid
 from contracts.libraries.cell import cell_access, Dust
 
+from starkware.cairo.common.alloc import alloc
+
 func add_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
     let (cell) = cell_access.create()
     cell_access.add_dust{cell=cell}(dust)
@@ -15,6 +17,19 @@ end
 func assert_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
     let (cell) = grid_access.get_current_cell_at(x, y)
     assert cell.dust = dust
+    return ()
+end
+
+func add_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : felt):
+    let (cell) = cell_access.create()
+    cell_access.add_ship{cell=cell}(ship_id)
+    grid_access.set_next_cell_at(x, y, cell)
+    return ()
+end
+
+func assert_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : felt):
+    let (cell) = grid_access.get_current_cell_at(x, y)
+    assert cell.ship_id = ship_id
     return ()
 end
 
@@ -50,7 +65,7 @@ func test_move_dusts{range_check_ptr}():
 end
 
 @external
-func test_grid_move_dust_beyound_borders{range_check_ptr}():
+func test_grid_move_dust_beyond_borders{range_check_ptr}():
     alloc_locals
 
     let dust1 = Dust(Vector2(-1, -1))  # top left, going up left
@@ -81,6 +96,136 @@ func test_grid_move_dust_beyound_borders{range_check_ptr}():
             assert_dust_at(2, 1, new_dust4)
         end
     end
+
+    return ()
+end
+
+@external
+func test_move_ship_nominal{syscall_ptr : felt*, range_check_ptr}():
+    alloc_locals
+
+    let ship = 1
+    let ship_contract = 'ship'
+    let (local ship_addresses) = alloc()
+    assert ship_addresses[0] = ship_contract
+
+    let (grid) = grid_access.create(4)
+    with grid:
+        add_ship_at(0, 0, ship)
+        grid_access.apply_modifications()
+
+        %{ mock_call(ids.ship_contract, "move", [1, 1]) %}
+        move_strategy.move_all_ships(ship_addresses)
+        %{ clear_mock_call(ids.ship_contract, "move") %}
+        grid_access.apply_modifications()
+
+        with_attr error_message("bad ship move"):
+            assert_ship_at(1, 1, ship)
+        end
+    end
+
+    return ()
+end
+
+@external
+func test_move_ship_collision_in_current_grid{syscall_ptr : felt*, range_check_ptr}():
+    alloc_locals
+
+    let ship1 = 1
+    let ship2 = 2
+    let ship1_contract = 'ship1'
+    let ship2_contract = 'ship2'
+
+    let (local ship_addresses) = alloc()
+    assert ship_addresses[0] = ship1_contract
+    assert ship_addresses[1] = ship2_contract
+
+    let (grid) = grid_access.create(4)
+    with grid:
+        add_ship_at(0, 0, ship1)
+        add_ship_at(0, 1, ship2)
+        grid_access.apply_modifications()
+
+        %{
+            mock_call(ids.ship1_contract, "move", [0, 1])
+            mock_call(ids.ship2_contract, "move", [0, 1])
+        %}
+        move_strategy.move_all_ships(ship_addresses)
+        %{
+            clear_mock_call(ids.ship1_contract, "move")
+            clear_mock_call(ids.ship2_contract, "move")
+        %}
+        grid_access.apply_modifications()
+
+        with_attr error_message("bad ship move"):
+            assert_ship_at(0, 0, ship1)
+            assert_ship_at(0, 2, ship2)
+        end
+    end
+
+    return ()
+end
+
+@external
+func test_move_ship_collision_in_next_grid{syscall_ptr : felt*, range_check_ptr}():
+    alloc_locals
+
+    let ship1 = 1
+    let ship2 = 2
+    let ship1_contract = 'ship1'
+    let ship2_contract = 'ship2'
+
+    let (local ship_addresses) = alloc()
+    assert ship_addresses[0] = ship1_contract
+    assert ship_addresses[1] = ship2_contract
+
+    let (grid) = grid_access.create(4)
+    with grid:
+        add_ship_at(0, 1, ship1)
+        add_ship_at(1, 0, ship2)
+        grid_access.apply_modifications()
+
+        %{
+            mock_call(ids.ship1_contract, "move", [1, 0])
+            mock_call(ids.ship2_contract, "move", [0, 1])
+        %}
+        move_strategy.move_all_ships(ship_addresses)
+        %{
+            clear_mock_call(ids.ship1_contract, "move")
+            clear_mock_call(ids.ship2_contract, "move")
+        %}
+        grid_access.apply_modifications()
+
+        with_attr error_message("bad ship move"):
+            assert_ship_at(0, 1, ship1)
+            assert_ship_at(1, 1, ship2)
+        end
+    end
+
+    return ()
+end
+
+@external
+func test_move_ship_should_revert_if_out_of_bound{syscall_ptr : felt*, range_check_ptr}():
+    alloc_locals
+
+    let ship = 1
+    let ship_contract = 'ship'
+    let (local ship_addresses) = alloc()
+    assert ship_addresses[0] = ship_contract
+
+    let (grid) = grid_access.create(4)
+    with grid:
+        add_ship_at(0, 0, ship)
+        grid_access.apply_modifications()
+
+        %{
+            mock_call(ids.ship_contract, "move", [-1, 1])
+            expect_revert(error_message="Out of bound")
+        %}
+        move_strategy.move_all_ships(ship_addresses)
+    end
+    %{ clear_mock_call(ids.ship_contract, "move") %}
 
     return ()
 end
