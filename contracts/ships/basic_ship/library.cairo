@@ -3,7 +3,8 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import unsigned_div_rem, assert_nn, sqrt, assert_le
 from starkware.cairo.common.math_cmp import is_le, is_nn
-from contracts.models.common import Vector2, Cell
+from contracts.models.common import Vector2
+from contracts.libraries.cell import Cell
 
 namespace BasicShip:
     # ---------
@@ -138,7 +139,7 @@ namespace BasicShip:
     }(current_grid_len : felt, current_grid : Cell*, from_ : Vector2, nearest_dust : Vector2) -> (
         new_nearest_dust : Vector2
     ):
-        if [current_grid].dust.present == 0:
+        if [current_grid].dust_count == 0:
             # No dust in current cell, keep the previous one
             return (new_nearest_dust=nearest_dust)
         end
