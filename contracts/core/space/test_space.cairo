@@ -4,7 +4,7 @@ from contracts.core.space.space import internal as space
 from contracts.libraries.square_grid import grid_access, Grid
 from contracts.libraries.cell import cell_access, Dust
 from contracts.models.common import Context, ShipInit, Vector2
-# from contracts.test.grid_helper import grid_helper
+from contracts.test.grid_helper import grid_helper
 
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bool import TRUE, FALSE
@@ -50,17 +50,9 @@ func add_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : fel
 end
 
 func create_context_with_no_ship(ship_count : felt) -> (context : Context):
-    alloc_locals
-
-    local context : Context
-    let (ship_addresses) = alloc()
-    assert context.ship_contracts = ship_addresses
-    assert context.ship_count = ship_count
-    assert context.max_turn_count = 10
-    assert context.max_dust = 10
-    assert context.rand_contract = RAND_CONTRACT
-
-    return (context=context)
+    const MAX_TURN_COUNT = 7
+    const MAX_DUST_COUNT = 5
+    return space.create_context(RAND_CONTRACT, MAX_TURN_COUNT, MAX_DUST_COUNT, ship_count)
 end
 
 @external
@@ -134,8 +126,8 @@ func test_spawn_dust{syscall_ptr : felt*, range_check_ptr}():
                            ])
         %}
         let (context) = create_context_with_no_ship(1)
-        local dust_count = 3
-        let current_turn = 7
+        local dust_count = 0
+        let current_turn = 0
         with dust_count, current_turn, context:
             space.spawn_dust()
         end
@@ -145,7 +137,7 @@ func test_spawn_dust{syscall_ptr : felt*, range_check_ptr}():
 
         assert_dust_count_at(0, 5, 1)
         assert_dust_at(0, 5, Dust(Vector2(0, 1)))
-        assert dust_count = 4
+        assert dust_count = 1
 
         # TODO dust_spawned.emit(contract_address, dust.direction, position)
     end
@@ -170,8 +162,8 @@ func test_spawn_no_dust_if_max_dust_count_reached{syscall_ptr : felt*, range_che
                            ])
         %}
         let (context) = create_context_with_no_ship(1)
-        local dust_count = 10
-        let current_turn = 7
+        local dust_count = context.max_dust
+        let current_turn = 0
         with dust_count, current_turn, context:
             space.spawn_dust()
         end
@@ -180,7 +172,7 @@ func test_spawn_no_dust_if_max_dust_count_reached{syscall_ptr : felt*, range_che
         grid_access.apply_modifications()
 
         assert_dust_count_at(0, 5, 0)
-        assert dust_count = 10
+        assert dust_count = context.max_dust
     end
 
     return ()
@@ -203,8 +195,8 @@ func test_spawn_no_dust_if_cell_occupied{syscall_ptr : felt*, range_check_ptr}()
                            ])
         %}
         let (context) = create_context_with_no_ship(1)
-        local dust_count = 3
-        let current_turn = 7
+        local dust_count = 0
+        let current_turn = 0
         with dust_count, current_turn, context:
             space.spawn_dust()
         end
@@ -212,7 +204,7 @@ func test_spawn_no_dust_if_cell_occupied{syscall_ptr : felt*, range_check_ptr}()
         grid_access.apply_modifications()
 
         assert_dust_count_at(0, 5, 0)
-        assert dust_count = 3
+        assert dust_count = 0
     end
 
     return ()
@@ -312,7 +304,7 @@ func test_full_turn{syscall_ptr : felt*, range_check_ptr}():
     let (grid) = grid_access.create(5)
     let (context) = create_context_with_no_ship(2)
     let dust_count = 3
-    let current_turn = 1
+    let current_turn = 3
     with grid, context, dust_count, current_turn:
         # init
         space.add_ships(context.ship_count, ships)
@@ -351,10 +343,97 @@ func test_full_turn{syscall_ptr : felt*, range_check_ptr}():
         with_attr error_message("Something wrong with dust count"):
             assert dust_count = 2
         end
-        with_attr error_message("Something wrong with current turn"):
-            assert current_turn = 2
-        end
     end
+
+    return ()
+end
+
+@external
+func test_full_battle{syscall_ptr : felt*, range_check_ptr}():
+    alloc_locals
+
+    let ship1 = 1
+    let ship2 = 2
+
+    let (local ships : ShipInit*) = alloc()
+    assert ships[0].address = ship1
+    assert ships[0].position = Vector2(0, 9)
+    assert ships[1].address = ship2
+    assert ships[1].position = Vector2(4, 8)
+
+    let (grid) = grid_access.create(10)
+    let (context) = create_context_with_no_ship(2)
+
+    with grid, context:
+        space.add_ships(2, ships)
+        grid_access.apply_modifications()
+
+        let dust_count = 0
+        let current_turn = 0
+        with dust_count, current_turn:
+            %{
+                mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
+                               2, 2, # direction => (1, 1)
+                               0, 2, # position => (0, 2)
+                               1 # shuffled position (0, 2) => (2, 0)
+                               ])
+
+                mock_call(ids.ship1, "move", [1, -1])
+                mock_call(ids.ship2, "move", [0, -1])
+            %}
+
+            space.all_turns_loop()
+        end
+
+        # grid_helper.debug_grid()
+
+        with_attr error_message("Something wrong with the battle"):
+            assert_ship_at(6, 3, ship1)
+            assert_ship_at(4, 1, ship2)
+            assert_dust_count_at(3, 1, 1)
+            assert_dust_count_at(4, 2, 1)
+            assert_dust_count_at(5, 3, 0) # This one was caught by ship2
+            assert_dust_count_at(6, 4, 1)
+            assert_dust_count_at(7, 5, 1)
+            assert_dust_count_at(8, 6, 1)
+        end
+
+        # TODO game_finished.emit(space_contract_address)
+        # TODO new_turn.emit(space_contract_address, current_turn + 1)
+    end
+
+    return ()
+end
+
+
+@external
+func test_play_game{syscall_ptr : felt*, range_check_ptr}():
+    alloc_locals
+
+    let ship1 = 1
+    let ship2 = 2
+
+    let (local ships : ShipInit*) = alloc()
+    assert ships[0].address = ship1
+    assert ships[0].position = Vector2(0, 9)
+    assert ships[1].address = ship2
+    assert ships[1].position = Vector2(4, 8)
+
+    %{
+        mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
+                        2, 2, # direction => (1, 1)
+                        0, 2, # position => (0, 2)
+                        1 # shuffled position (0, 2) => (2, 0)
+                        ])
+
+        mock_call(ids.ship1, "move", [1, -1])
+        mock_call(ids.ship2, "move", [0, -1])
+    %}
+
+    const SIZE = 10
+    const TURN_COUNT = 7
+    const MAX_DUST = 5
+    space.play_game(RAND_CONTRACT, SIZE, TURN_COUNT, MAX_DUST, 2, ships)
 
     return ()
 end
