@@ -1,10 +1,10 @@
-%lang starknet 
+%lang starknet
 
 from contracts.libraries.square_grid import Grid
 from contracts.libraries.cell import Cell
 
 namespace grid_helper:
-    func debug_grid{grid: Grid}():
+    func debug_grid{grid : Grid}():
         %{
             def display(cell):
                 dust = memory[cell] > 0 
@@ -24,6 +24,6 @@ namespace grid_helper:
 
             print_cells(ids.grid.current_cells._reference_value, ids.grid.width, ids.Cell.SIZE)
         %}
-        return()
+        return ()
     end
 end

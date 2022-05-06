@@ -2,6 +2,7 @@
 %lang starknet
 
 from starkware.starknet.common.syscalls import get_contract_address
+from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math_cmp import is_nn_le
 
 from contracts.models.common import ShipInit, Vector2, Context
@@ -27,6 +28,14 @@ end
 func dust_destroyed(space_contract_address : felt, position : Vector2):
 end
 
+@event
+func new_turn(space_contract_address : felt, turn_number : felt):
+end
+
+@event
+func game_finished(space_contract_address : felt):
+end
+
 # ------------------
 # EXTERNAL FUNCTIONS
 # ------------------
@@ -40,10 +49,77 @@ func play_game{syscall_ptr : felt*, range_check_ptr}(
     ships_len : felt,
     ships : ShipInit*,
 ):
-    return ()  # Space.play_game(rand_contract_address, size, turn_count, max_dust, ships_len, ships)
+    return internal.play_game(rand_contract_address, size, turn_count, max_dust, ships_len, ships)
 end
 
 namespace internal:
+    func play_game{syscall_ptr : felt*, range_check_ptr}(
+        rand_contract_address : felt,
+        size : felt,
+        turn_count : felt,
+        max_dust : felt,
+        ships_len : felt,
+        ships : ShipInit*,
+    ):
+        alloc_locals
+
+        let (local grid) = grid_access.create(size)
+        let (context) = internal.create_context(rand_contract_address, turn_count, max_dust, ships_len)
+
+        with grid, context:
+            internal.add_ships(ships_len, ships)
+            grid_access.apply_modifications()
+
+            let dust_count = 0
+            let current_turn = 0
+            with dust_count, current_turn:
+                internal.all_turns_loop()
+            end
+        end
+
+        let (space_contract_address) = get_contract_address()
+        game_finished.emit(space_contract_address)
+
+        return ()
+    end
+
+    func create_context(
+        rand_contract_address : felt, turn_count : felt, max_dust : felt, ships_len : felt
+    ) -> (context : Context):
+        alloc_locals
+
+        local context : Context
+        let (ship_addresses) = alloc()
+        assert context.ship_contracts = ship_addresses
+        assert context.ship_count = ships_len
+        assert context.max_turn_count = turn_count
+        assert context.max_dust = max_dust
+        assert context.rand_contract = rand_contract_address
+
+        return (context=context)
+    end
+
+    func all_turns_loop{
+        syscall_ptr : felt*,
+        range_check_ptr,
+        grid : Grid,
+        context : Context,
+        dust_count : felt,
+        current_turn : felt,
+    }():
+        if current_turn == context.max_turn_count:
+            return ()  # end of the battle
+        end
+
+        let (space_contract_address) = get_contract_address()
+        new_turn.emit(space_contract_address, current_turn + 1)
+
+        one_turn()
+        let current_turn = current_turn + 1
+
+        return all_turns_loop()
+    end
+
     func one_turn{
         syscall_ptr : felt*,
         range_check_ptr,
@@ -53,13 +129,13 @@ namespace internal:
         current_turn,
     }():
         alloc_locals
-        local current_turn = current_turn + 1
 
+        local syscall_ptr : felt* = syscall_ptr
         move_strategy.move_all_ships(context.ship_contracts)
         move_strategy.move_all_dusts()
-        spawn_dust()
         burn_extra_dust()
         check_ship_and_dust_collisions()
+        spawn_dust()
         grid_access.apply_modifications()
 
         return ()
@@ -139,8 +215,8 @@ namespace internal:
         # Create a new Dust at random position on a border and with random direction
         let (local dust : Dust, position : Vector2) = internal.generate_random_dust_on_border()
 
-        # Prevent spawning if cell is occupied
-        let (cell) = grid_access.get_current_cell_at(position.x, position.y)
+        # Prevent spawning if next cell is occupied
+        let (cell) = grid_access.get_next_cell_at(position.x, position.y)
         with cell:
             let (cell_is_occupied) = cell_access.is_occupied()
             if cell_is_occupied == 1:
