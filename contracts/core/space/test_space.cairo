@@ -260,8 +260,10 @@ func test_space_ship_absorb_dust{syscall_ptr : felt*, range_check_ptr}():
     let dust = Dust(Vector2(1, 1))
     let ship = 1
     let (grid) = grid_access.create(3)
+    let (context) = create_context_with_no_ship(2)
+    let (scores) = space.create_scores_array(2)
 
-    with grid:
+    with grid, context, scores:
         add_dust_at(1, 1, dust)
         add_ship_at(1, 1, ship)
 
@@ -303,9 +305,10 @@ func test_full_turn{syscall_ptr : felt*, range_check_ptr}():
 
     let (grid) = grid_access.create(5)
     let (context) = create_context_with_no_ship(2)
+    let (scores) = space.create_scores_array(2)
     let dust_count = 3
     let current_turn = 3
-    with grid, context, dust_count, current_turn:
+    with grid, context, dust_count, current_turn, scores:
         # init
         space.add_ships(context.ship_count, ships)
         add_dust_at(0, 0, dust1)
@@ -363,8 +366,9 @@ func test_full_battle{syscall_ptr : felt*, range_check_ptr}():
 
     let (grid) = grid_access.create(10)
     let (context) = create_context_with_no_ship(2)
+    let (scores) = space.create_scores_array(2)
 
-    with grid, context:
+    with grid, context, scores:
         space.add_ships(2, ships)
         grid_access.apply_modifications()
 
@@ -392,7 +396,7 @@ func test_full_battle{syscall_ptr : felt*, range_check_ptr}():
             assert_ship_at(4, 1, ship2)
             assert_dust_count_at(3, 1, 1)
             assert_dust_count_at(4, 2, 1)
-            assert_dust_count_at(5, 3, 0) # This one was caught by ship2
+            assert_dust_count_at(5, 3, 0)  # This one was caught by ship2
             assert_dust_count_at(6, 4, 1)
             assert_dust_count_at(7, 5, 1)
             assert_dust_count_at(8, 6, 1)
@@ -404,7 +408,6 @@ func test_full_battle{syscall_ptr : felt*, range_check_ptr}():
 
     return ()
 end
-
 
 @external
 func test_play_game{syscall_ptr : felt*, range_check_ptr}():
@@ -433,7 +436,16 @@ func test_play_game{syscall_ptr : felt*, range_check_ptr}():
     const SIZE = 10
     const TURN_COUNT = 7
     const MAX_DUST = 5
-    space.play_game(RAND_CONTRACT, SIZE, TURN_COUNT, MAX_DUST, 2, ships)
+
+    let (scores_len : felt, scores : felt*) = space.play_game(
+        RAND_CONTRACT, SIZE, TURN_COUNT, MAX_DUST, 2, ships
+    )
+
+    # TODO score_changed.emit(space_contract_address, ship_id, scores[ship_id] + 1)
+
+    assert scores_len = 2
+    assert scores[0] = 0  # ship1 caught no dust
+    assert scores[1] = 1  # ship2 caught one dust
 
     return ()
 end
