@@ -1,7 +1,8 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from contracts.models.common import Vector2, Cell
+from contracts.models.common import Vector2
+from contracts.libraries.cell import Cell
 
 namespace StaticShip:
     # ---------
