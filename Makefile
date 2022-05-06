@@ -4,7 +4,7 @@ build:
 	protostar build --cairo-path lib/cairo_contracts/src
 
 test:
-	protostar test contracts/ --cairo-path lib/cairo_contracts/src $(args)
+	protostar test contracts/ --cairo-path lib/cairo_contracts/src -m '.*$(match).*'
 
 date:
 	date

@@ -1,6 +1,7 @@
 %lang starknet
 
-from contracts.models.common import Cell, Vector2
+from contracts.models.common import Vector2
+from contracts.libraries.cell import Cell
 from contracts.ships.basic_ship.library import BasicShip
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.alloc import alloc
