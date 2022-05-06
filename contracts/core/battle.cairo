@@ -17,27 +17,27 @@ from contracts.core.library import MathUtils_random_direction
 # ------------------
 
 @event
-func ship_added(space_contract_address : felt, ship_id : felt, position : Vector2):
+func ship_added(battle_contract_address : felt, ship_id : felt, position : Vector2):
 end
 
 @event
-func dust_spawned(space_contract_address : felt, direction : Vector2, position : Vector2):
+func dust_spawned(battle_contract_address : felt, direction : Vector2, position : Vector2):
 end
 
 @event
-func dust_destroyed(space_contract_address : felt, position : Vector2):
+func dust_destroyed(battle_contract_address : felt, position : Vector2):
 end
 
 @event
-func new_turn(space_contract_address : felt, turn_number : felt):
+func new_turn(battle_contract_address : felt, turn_number : felt):
 end
 
 @event
-func game_finished(space_contract_address : felt):
+func game_finished(battle_contract_address : felt):
 end
 
 @event
-func score_changed(space_contract_address : felt, ship_id : felt, score : felt):
+func score_changed(battle_contract_address : felt, ship_id : felt, score : felt):
 end
 
 # ------------------
@@ -84,8 +84,8 @@ namespace internal:
             end
         end
 
-        let (space_contract_address) = get_contract_address()
-        game_finished.emit(space_contract_address)
+        let (battle_contract_address) = get_contract_address()
+        game_finished.emit(battle_contract_address)
 
         return (scores_len=ships_len, scores=scores)
     end
@@ -138,8 +138,8 @@ namespace internal:
             return ()  # end of the battle
         end
 
-        let (space_contract_address) = get_contract_address()
-        new_turn.emit(space_contract_address, current_turn + 1)
+        let (battle_contract_address) = get_contract_address()
+        new_turn.emit(battle_contract_address, current_turn + 1)
 
         one_turn()
         let current_turn = current_turn + 1
@@ -208,7 +208,7 @@ namespace internal:
         with cell:
             # Ensure the cell is free
             let (cell_is_occupied : felt) = cell_access.is_occupied()
-            with_attr error_message("Space: cell is not free"):
+            with_attr error_message("Battle: cell is not free"):
                 assert cell_is_occupied = 0
             end
 
@@ -218,8 +218,8 @@ namespace internal:
         end
 
         # Emit events
-        let (space_contract_address) = get_contract_address()
-        ship_added.emit(space_contract_address, ship_id, Vector2(position.x, position.y))
+        let (battle_contract_address) = get_contract_address()
+        ship_added.emit(battle_contract_address, ship_id, Vector2(position.x, position.y))
 
         return ()
     end
@@ -397,8 +397,8 @@ namespace internal:
         let new_ship_score = scores[ship_index] + 1
         update_scores_loop(new_scores, 0, ship_index, new_ship_score)
 
-        let (space_contract_address) = get_contract_address()
-        score_changed.emit(space_contract_address, ship_id, new_ship_score)
+        let (battle_contract_address) = get_contract_address()
+        score_changed.emit(battle_contract_address, ship_id, new_ship_score)
 
         let scores = new_scores
         return ()
@@ -425,7 +425,7 @@ namespace internal:
         return update_scores_loop(new_scores, index + 1, ship_index, new_ship_score)
     end
 
-    # Generate random dust given a space size
+    # Generate random dust given a battle size
     func generate_random_dust_on_border{
         syscall_ptr : felt*, range_check_ptr, context : Context, grid : Grid, current_turn : felt
     }() -> (dust : Dust, position : Vector2):

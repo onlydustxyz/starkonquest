@@ -3,7 +3,7 @@
 from contracts.models.common import ShipInit
 
 @contract_interface
-namespace ISpace:
+namespace IBattle:
     func play_game(
         rand_contract_address : felt,
         size : felt,
