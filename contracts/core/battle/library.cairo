@@ -10,7 +10,7 @@ from contracts.interfaces.irand import IRandom
 from contracts.libraries.square_grid import grid_access, Grid
 from contracts.libraries.cell import cell_access, Cell, Dust
 from contracts.libraries.move import move_strategy
-from contracts.core.library import MathUtils_random_direction
+from contracts.core.library import math_utils
 
 # ------------------
 # EVENTS
@@ -420,7 +420,7 @@ namespace battle:
             context.rand_contract, current_turn
         )
 
-        let (direction : Vector2) = MathUtils_random_direction(r1, r2)
+        let (direction : Vector2) = math_utils.random_direction(r1, r2)
         assert dust.direction = direction
 
         let (position : Vector2) = grid_access.generate_random_position_on_border(r3, r4, r5)
