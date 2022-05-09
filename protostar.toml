@@ -5,26 +5,23 @@ protostar_version = "0.1.0"
 libs_path = "lib"
 
 ["protostar.contracts"]
-space = [
-    "./contracts/core/space/space.cairo",
+battle = [
+    "./contracts/core/battle/battle.cairo",
 ]
 random = [
     "./contracts/core/random/random.cairo",
 ]
 random_move_ship = [
-    "./contracts/ships/random_move_ship/ship.cairo",
+    "./contracts/ships/random_move_ship/random_move_ship.cairo",
 ]
 static_ship = [
-    "./contracts/ships/static_ship/ship.cairo",
+    "./contracts/ships/static_ship/static_ship.cairo",
 ]
 basic_ship = [
-    "./contracts/ships/basic_ship/ship.cairo",
+    "./contracts/ships/basic_ship/basic_ship.cairo",
 ]
 only_dust = [
     "./contracts/tokens/only_dust/only_dust.cairo",
-]
-tournament = [
-    "./contracts/tournament/tournament.cairo",
 ]
 starkonquest_boarding_pass = [
     "./contracts/tokens/starkonquest_boarding_pass/starkonquest_boarding_pass.cairo",
