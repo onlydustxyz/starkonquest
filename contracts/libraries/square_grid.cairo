@@ -4,7 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import assert_nn_le
 
 from contracts.models.common import Vector2
-from contracts.core.library import MathUtils_random_in_range
+from contracts.core.library import math_utils
 from contracts.libraries.cell import Cell, cell_access
 
 # ------------------
@@ -121,11 +121,11 @@ namespace grid_access:
         alloc_locals
 
         # x is 0 or grid.width - 1
-        let (x) = MathUtils_random_in_range(r1, 0, 1)
+        let (x) = math_utils.random_in_range(r1, 0, 1)
         local x = x * (grid.width - 1)
 
         # y is in [0, grid.width-1]
-        let (y) = MathUtils_random_in_range(r2, 0, grid.width - 1)
+        let (y) = math_utils.random_in_range(r2, 0, grid.width - 1)
 
         let (position) = internal.shuffled_position(x, y, r3)
         return (position=position)
@@ -228,7 +228,7 @@ namespace grid_access:
             alloc_locals
             local position : Vector2
 
-            let (on_horizontal_border) = MathUtils_random_in_range(r, 0, 1)
+            let (on_horizontal_border) = math_utils.random_in_range(r, 0, 1)
             if on_horizontal_border == 0:
                 assert position.x = x
                 assert position.y = y

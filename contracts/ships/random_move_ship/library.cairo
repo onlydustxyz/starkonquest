@@ -5,7 +5,7 @@ from contracts.models.common import Vector2
 from contracts.libraries.cell import Cell
 from starkware.starknet.common.syscalls import get_block_timestamp, get_block_number
 from contracts.interfaces.irand import IRandom
-from contracts.core.library import MathUtils_random_direction
+from contracts.core.library import random_direction
 
 # ------------
 # STORAGE VARS
@@ -35,7 +35,7 @@ namespace RandomMoveShip:
         let (r1, r2, _, _, _) = IRandom.generate_random_numbers(
             random_contract_address, block_timestamp
         )
-        let (random_direction) = MathUtils_random_direction(r1, r2)
+        let (random_direction) = math_utils.random_direction(r1, r2)
 
         return (new_direction=random_direction)
     end
