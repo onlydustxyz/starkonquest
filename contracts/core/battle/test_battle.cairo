@@ -1,6 +1,6 @@
 %lang starknet
 
-from contracts.core.battle import internal as battle
+from contracts.core.battle.library import battle
 from contracts.libraries.square_grid import grid_access, Grid
 from contracts.libraries.cell import cell_access, Dust
 from contracts.models.common import Context, ShipInit, Vector2
@@ -56,7 +56,7 @@ func create_context_with_no_ship(ship_count : felt) -> (context : Context):
 end
 
 @external
-func xtest_add_ships{syscall_ptr : felt*, range_check_ptr}():
+func test_add_ships{syscall_ptr : felt*, range_check_ptr}():
     alloc_locals
 
     let (local ships : ShipInit*) = alloc()
@@ -89,7 +89,7 @@ func xtest_add_ships{syscall_ptr : felt*, range_check_ptr}():
 end
 
 @external
-func xtest_add_ships_should_revert_if_cell_occupied{syscall_ptr : felt*, range_check_ptr}():
+func test_add_ships_should_revert_if_cell_occupied{syscall_ptr : felt*, range_check_ptr}():
     alloc_locals
 
     let (local ships : ShipInit*) = alloc()
@@ -110,7 +110,7 @@ func xtest_add_ships_should_revert_if_cell_occupied{syscall_ptr : felt*, range_c
 end
 
 @external
-func xtest_spawn_dust{syscall_ptr : felt*, range_check_ptr}():
+func test_spawn_dust{syscall_ptr : felt*, range_check_ptr}():
     alloc_locals
 
     let (grid) = grid_access.create(10)
@@ -146,7 +146,7 @@ func xtest_spawn_dust{syscall_ptr : felt*, range_check_ptr}():
 end
 
 @external
-func xtest_spawn_no_dust_if_max_dust_count_reached{syscall_ptr : felt*, range_check_ptr}():
+func test_spawn_no_dust_if_max_dust_count_reached{syscall_ptr : felt*, range_check_ptr}():
     alloc_locals
 
     let (grid) = grid_access.create(10)
@@ -210,7 +210,7 @@ func test_spawn_no_dust_if_cell_occupied{syscall_ptr : felt*, range_check_ptr}()
 end
 
 @external
-func xtest_battle_dust_collision{syscall_ptr : felt*, range_check_ptr}():
+func test_battle_dust_collision{syscall_ptr : felt*, range_check_ptr}():
     alloc_locals
 
     local syscall_ptr : felt* = syscall_ptr
@@ -251,7 +251,7 @@ func xtest_battle_dust_collision{syscall_ptr : felt*, range_check_ptr}():
 end
 
 @external
-func xtest_battle_ship_absorb_dust{syscall_ptr : felt*, range_check_ptr}():
+func test_battle_ship_absorb_dust{syscall_ptr : felt*, range_check_ptr}():
     alloc_locals
 
     local syscall_ptr : felt* = syscall_ptr
@@ -285,7 +285,7 @@ func xtest_battle_ship_absorb_dust{syscall_ptr : felt*, range_check_ptr}():
 end
 
 @external
-func xtest_full_turn{syscall_ptr : felt*, range_check_ptr}():
+func test_full_turn{syscall_ptr : felt*, range_check_ptr}():
     alloc_locals
 
     let dust1 = Dust(Vector2(1, 0))
@@ -351,7 +351,7 @@ func xtest_full_turn{syscall_ptr : felt*, range_check_ptr}():
 end
 
 @external
-func xtest_full_battle{syscall_ptr : felt*, range_check_ptr}():
+func test_full_battle{syscall_ptr : felt*, range_check_ptr}():
     alloc_locals
 
     let ship1 = 1
@@ -409,7 +409,7 @@ func xtest_full_battle{syscall_ptr : felt*, range_check_ptr}():
 end
 
 @external
-func xtest_play_game{syscall_ptr : felt*, range_check_ptr}():
+func test_play_game{syscall_ptr : felt*, range_check_ptr}():
     alloc_locals
 
     let ship1 = 1

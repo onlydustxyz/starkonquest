@@ -40,23 +40,7 @@ end
 func score_changed(battle_contract_address : felt, ship_id : felt, score : felt):
 end
 
-# ------------------
-# EXTERNAL FUNCTIONS
-# ------------------
-
-@external
-func play_game{syscall_ptr : felt*, range_check_ptr}(
-    rand_contract_address : felt,
-    size : felt,
-    turn_count : felt,
-    max_dust : felt,
-    ships_len : felt,
-    ships : ShipInit*,
-) -> (scores_len : felt, scores : felt*):
-    return internal.play_game(rand_contract_address, size, turn_count, max_dust, ships_len, ships)
-end
-
-namespace internal:
+namespace battle:
     func play_game{syscall_ptr : felt*, range_check_ptr}(
         rand_contract_address : felt,
         size : felt,
@@ -69,18 +53,18 @@ namespace internal:
 
         let (local grid) = grid_access.create(size)
         let (scores) = create_scores_array(ships_len)
-        let (context) = internal.create_context(
+        let (context) = battle.create_context(
             rand_contract_address, turn_count, max_dust, ships_len
         )
 
         with grid, context, scores:
-            internal.add_ships(ships_len, ships)
+            battle.add_ships(ships_len, ships)
             grid_access.apply_modifications()
 
             let dust_count = 0
             let current_turn = 0
             with dust_count, current_turn:
-                internal.all_turns_loop()
+                battle.all_turns_loop()
             end
         end
 
@@ -241,7 +225,7 @@ namespace internal:
         end
 
         # Create a new Dust at random position on a border and with random direction
-        let (local dust : Dust, position : Vector2) = internal.generate_random_dust_on_border()
+        let (local dust : Dust, position : Vector2) = battle.generate_random_dust_on_border()
 
         # Prevent spawning if next cell is occupied
         let (cell) = grid_access.get_next_cell_at(position.x, position.y)
