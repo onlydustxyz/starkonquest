@@ -1,6 +1,6 @@
 %lang starknet
 
-from contracts.core.library import math_utils
+from contracts.libraries.math_utils import math_utils
 
 @external
 func test_9_is_power_of_3{range_check_ptr}():

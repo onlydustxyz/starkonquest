@@ -10,7 +10,7 @@ from contracts.interfaces.irand import IRandom
 from contracts.libraries.square_grid import grid_access, Grid
 from contracts.libraries.cell import cell_access, Cell, Dust
 from contracts.libraries.move import move_strategy
-from contracts.core.library import math_utils
+from contracts.libraries.math_utils import math_utils
 
 # ------------------
 # EVENTS

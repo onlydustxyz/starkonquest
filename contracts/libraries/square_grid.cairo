@@ -4,7 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import assert_nn_le
 
 from contracts.models.common import Vector2
-from contracts.core.library import math_utils
+from contracts.libraries.math_utils import math_utils
 from contracts.libraries.cell import Cell, cell_access
 
 # ------------------

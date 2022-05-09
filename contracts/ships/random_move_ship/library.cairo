@@ -5,7 +5,7 @@ from contracts.models.common import Vector2
 from contracts.libraries.cell import Cell
 from starkware.starknet.common.syscalls import get_block_timestamp, get_block_number
 from contracts.interfaces.irand import IRandom
-from contracts.core.library import random_direction
+from contracts.libraries.math_utils import math_utils
 
 # ------------
 # STORAGE VARS

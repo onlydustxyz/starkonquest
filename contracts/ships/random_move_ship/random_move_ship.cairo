@@ -6,7 +6,7 @@ from starkware.starknet.common.syscalls import get_block_timestamp, get_block_nu
 
 from contracts.models.common import Vector2
 from contracts.libraries.cell import Cell
-from contracts.core.library import random_direction
+from contracts.libraries.math_utils import math_utils
 from contracts.interfaces.irand import IRandom
 from contracts.ships.random_move_ship.library import RandomMoveShip
 
