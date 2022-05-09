@@ -18,7 +18,7 @@ from openzeppelin.token.erc721.interfaces.IERC721 import IERC721
 
 from contracts.interfaces.ispace import ISpace
 from contracts.models.common import ShipInit, Vector2
-from contracts.core.library import math_utils
+from contracts.libraries.math_utils import math_utils
 
 # ------------
 # STORAGE VARS
