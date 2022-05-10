@@ -59,16 +59,16 @@ func reward_total_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
 end
 
 @view
-func ships_per_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-    ships_per_battle : felt
+func ship_count_per_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+    ship_count_per_battle : felt
 ):
-    return Tournament.ships_per_battle()
+    return Tournament.ship_count_per_battle()
 end
 
 @view
-func max_ships_per_tournament{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func required_total_ship_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     ) -> (max_ships_per_tournament : felt):
-    return Tournament.max_ships_per_tournament()
+    return Tournament.required_total_ship_count()
 end
 
 @view
@@ -93,10 +93,10 @@ func max_dust{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 end
 
 @view
-func player_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-    player_count : felt
+func ship_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+    ship_count : felt
 ):
-    return Tournament.player_count()
+    return Tournament.ship_count()
 end
 
 @view
