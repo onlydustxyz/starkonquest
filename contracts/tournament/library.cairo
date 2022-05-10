@@ -16,7 +16,7 @@ from openzeppelin.access.ownable import Ownable_initializer, Ownable_only_owner
 from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 from openzeppelin.token.erc721.interfaces.IERC721 import IERC721
 
-from contracts.interfaces.ispace import ISpace
+from contracts.interfaces.ibattle import IBattle
 from contracts.models.common import ShipInit, Vector2
 from contracts.libraries.math_utils import math_utils
 
@@ -544,7 +544,7 @@ namespace Tournament:
         let (turn_count) = turn_count_.read()
         let (max_dust) = max_dust_.read()
 
-        ISpace.play_game(
+        IBattle.play_game(
             space_contract, rand_contract, grid_size, turn_count, max_dust, ships_len, ships
         )
 
