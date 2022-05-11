@@ -54,3 +54,65 @@ nile run ./scripts/deploy-battle.py
 ```sh
 nile run ./scripts/deploy-tournament.py
 ```
+
+## Deploy Basic Ship for testing
+
+```sh
+nile run ./scripts/deploy-basic-ship.py
+```
+
+It is recommended to keep the address of this contract somewhere. You'll need it later.
+
+# Run tournament
+
+## Open registrations
+
+```bash
+nile run ./scripts/run/open-registrations.py
+```
+
+Define this alias which will be useful in next commands:
+```bash
+alias stark='starknet --gateway_url="http://127.0.0.1:5000/" --feeder_gateway_url="http://127.0.0.1:5000/"'
+```
+
+Now, get transaction details and check it has been accepted on L2 (or L1)
+```bash
+stark get_transaction --hash <transaction-hash>
+```
+
+## Register ships
+
+You must register as many ships as required by the tournament settings.
+
+```bash
+export PKEYPLAYER=100
+export SHIP_ADDRESS=<ship-address>
+nile run ./scripts/run/setup-player.py
+nile run ./scripts/run/register-ship.py
+```
+
+```bash
+export PKEYPLAYER=101
+export SHIP_ADDRESS=<ship-address>
+nile run ./scripts/run/setup-player.py
+nile run ./scripts/run/register-ship.py
+```
+
+Etc.
+
+## Close registrations
+
+```bash
+nile run ./scripts/run/close-registrations.py
+```
+
+## Start tournament
+
+```bash
+nile run ./scripts/run/start-tournament.py
+```
+
+## Play battles
+
+From now on, you should invoke the `play_next_battle` function of the tournament contract until all battles have been played.
