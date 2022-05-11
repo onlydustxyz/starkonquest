@@ -450,7 +450,7 @@ namespace Tournament:
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     }():
         let (are_tournament_registrations_open) = are_tournament_registrations_open_.read()
-        with_attr error_message("Tournament: tournament is open"):
+        with_attr error_message("Tournament: tournament is closed"):
             assert are_tournament_registrations_open = TRUE
         end
         return ()
@@ -460,7 +460,7 @@ namespace Tournament:
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     }():
         let (are_tournament_registrations_open) = are_tournament_registrations_open_.read()
-        with_attr error_message("Tournament: tournament is closed"):
+        with_attr error_message("Tournament: tournament is open"):
             assert are_tournament_registrations_open = FALSE
         end
         return ()
