@@ -1,29 +1,27 @@
-# scripts/deploy-only-dust-erc20.py
+# scripts/deploy-starkonquest-boarding-pass.py
 import os
+import sys
 from nile.nre import NileRuntimeEnvironment
-from nile.core.call_or_invoke import call_or_invoke
+
+sys.path.append(os.path.dirname(__file__))
+from utils import prepare_nile_deploy
 
 
 def run(nre: NileRuntimeEnvironment):
+    print("Deploying starkonquest_boarding_pass contract…")
+    prepare_nile_deploy()
 
-    admin = os.environ["ADMIN"]
-
-    print("Compiling contracts…")
-
-    nre.compile(
-        ["contracts/tokens/starkonquest_boarding_pass/starkonquest_boarding_pass.cairo"]
-    )
-
-    print("Deploying contracts…")
+    admin = nre.get_or_deploy_account("PKEYADMIN")
+    print(f"Admin account address: {admin.address}")
 
     name = str(str_to_felt("StarKonquestBoardingPass"))
     symbol = str(str_to_felt("SKBP"))
-    owner = admin
+    owner = admin.address
     params = [name, symbol, owner]
     address, abi = nre.deploy(
-        "StarKonquestBoardingPass", params, alias="starkonquest_boarding_pass"
+        "starkonquest_boarding_pass", params, alias="starkonquest_boarding_pass", overriding_path=("build", "build")
     )
-    print(f"ABI: {abi},\nContract address: {address}")
+    print(f"ABI: {abi},\nBoardingPass contract address: {address}")
 
 
 # Auxiliary functions

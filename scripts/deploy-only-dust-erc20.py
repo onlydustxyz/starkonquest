@@ -1,26 +1,25 @@
 # scripts/deploy-only-dust-erc20.py
 import os
+import sys
 from nile.nre import NileRuntimeEnvironment
-from nile.core.call_or_invoke import call_or_invoke
 
+sys.path.append(os.path.dirname(__file__))
+from utils import prepare_nile_deploy
 
 def run(nre: NileRuntimeEnvironment):
+    print("Deploying OnlyDust ERC20 contract…")
+    prepare_nile_deploy()
 
-    admin = os.environ["ADMIN"]
-
-    print("Compiling contracts…")
-
-    nre.compile(["contracts/tokens/only_dust/only_dust.cairo"])
-
-    print("Deploying contracts…")
+    admin = nre.get_or_deploy_account("PKEYADMIN")
+    print(f"Admin account address: {admin.address}")
 
     name = str(str_to_felt("OnlyDust"))
     symbol = str(str_to_felt("ODUST"))
     decimals = "18"
-    recipient = admin
-    params = [name, symbol, decimals, "1000000", "0", recipient]
-    address, abi = nre.deploy("only_dust", params, alias="only_dust_token")
-    print(f"ABI: {abi},\nContract address: {address}")
+    recipient = admin.address
+    params = [name, symbol, decimals, "10000000000000000000000", "0", recipient]
+    address, abi = nre.deploy("only_dust", params, alias="only_dust_token", overriding_path=("build", "build"))
+    print(f"ABI: {abi},\nOnlyDust ERC20 contract address: {address}")
 
 
 # Auxiliary functions

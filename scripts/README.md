@@ -1,10 +1,28 @@
 # Deploy
 
-Prerequisitory: set ADMIN environment variable with the address of the account
-that will be the administrator (ie. owner) of the games.
+## Configure
 
-```sh
-export ADMIN="0x2fe83d7f898b275ca82ccaf6146b49f4827fb1b1415d3973d714874588b313d"
+Prerequisitory: customize `.env` file to set wanted configuration.
+The `PKEYADMIN` environment variable holds the primary key of the administrator.
+
+Once you're happy with the values, export environement variables to make them available in subscripts:
+
+```bash
+set -a # automatically export all variables
+source .env
+set +a
+```
+
+## Run local node
+
+```bash
+nile node
+```
+
+## Setup account
+
+```bash
+nile setup "PKEYADMIN"
 ```
 
 ## Deploy OnlyDust ERC20
@@ -19,31 +37,20 @@ nile run ./scripts/deploy-only-dust-erc20.py
 nile run ./scripts/deploy-starkonquest-boarding-pass.py
 ```
 
-## Deploy Space
+## Deploy Random
 
 ```sh
-nile run ./scripts/deploy-space.py
+nile run ./scripts/deploy-random.py
+```
+
+## Deploy Battle
+
+```sh
+nile run ./scripts/deploy-battle.py
 ```
 
 ## Deploy Tournament
 
-A few environment variables control the parameters of the tournament. Set them to
-appropriate values before deploying the contract.
-
 ```sh
-export SEASON_ID=1
-export SHIPS_PER_BATTLE=2
-export MAX_PLAYERS=16
-export SPACE_SIZE=100
-export TURN_COUNT=50
-export MAX_DUST=20
 nile run ./scripts/deploy-tournament.py
-```
-
-## Deploy Ships
-
-You should deploy your ship contract with `nile`:
-
-```sh
-nile deploy basic_ship
 ```
