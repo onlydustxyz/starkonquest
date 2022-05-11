@@ -20,7 +20,7 @@ from contracts.tournament.library import (
 const ONLY_DUST_TOKEN_ADDRESS = 0x3fe90a1958bb8468fb1b62970747d8a00c435ef96cda708ae8de3d07f1bb56b
 const BOARDING_TOKEN_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a95
 const RAND_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a91
-const SPACE_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04aaa
+const BATTLE_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04aaa
 const ADMIN = 300
 const ANYONE = 301
 const PLAYER_1 = 302
@@ -41,7 +41,7 @@ struct Mocks:
     member only_dust_token_address : felt
     member boarding_pass_token_address : felt
     member rand_address : felt
-    member space_address : felt
+    member battle_address : felt
 end
 
 struct TestContext:
@@ -76,7 +76,7 @@ func test_construct_tournament_with_invalid_ship_count{
         reward_token_address=ONLY_DUST_TOKEN_ADDRESS,
         boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
         rand_contract_address=RAND_ADDRESS,
-        space_contract_address=SPACE_ADDRESS,
+        battle_contract_address=BATTLE_ADDRESS,
         ship_count_per_battle=ship_count_per_battle,
         required_total_ship_count=required_total_ship_count,
         grid_size=10,
@@ -316,7 +316,7 @@ namespace test_internal:
             only_dust_token_address=ONLY_DUST_TOKEN_ADDRESS,
             boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
             rand_address=RAND_ADDRESS,
-            space_address=SPACE_ADDRESS,
+            battle_address=BATTLE_ADDRESS,
             )
 
         local context : TestContext = TestContext(
@@ -338,7 +338,7 @@ namespace test_internal:
             mocks.only_dust_token_address,
             mocks.boarding_pass_token_address,
             mocks.rand_address,
-            mocks.space_address,
+            mocks.battle_address,
             context.ships_per_battle,
             context.max_ships_per_tournament,
             context.grid_size,
@@ -428,7 +428,7 @@ namespace test_internal:
         expected_round_after : felt,
     ):
         alloc_locals
-        local space_address = SPACE_ADDRESS
+        local battle_address = BATTLE_ADDRESS
         local admin = ADMIN
 
         let (local round) = Tournament.current_round()
@@ -437,7 +437,7 @@ namespace test_internal:
             assert round = expected_round_before
         end
 
-        %{ mock_call(ids.context.mocks.space_address, "play_game", []) %}
+        %{ mock_call(ids.context.mocks.battle_address, "play_game", []) %}
         %{ start_prank(ids.context.signers.admin) %}
         Tournament.play_next_battle()
         %{ stop_prank() %}

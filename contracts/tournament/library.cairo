@@ -49,9 +49,9 @@ end
 func rand_contract_address_() -> (res : felt):
 end
 
-# Space contract address
+# Battle contract address
 @storage_var
-func space_contract_address_() -> (res : felt):
+func battle_contract_address_() -> (res : felt):
 end
 
 # Whether or not registrations are open
@@ -281,7 +281,7 @@ namespace Tournament:
         reward_token_address : felt,
         boarding_pass_token_address : felt,
         rand_contract_address : felt,
-        space_contract_address : felt,
+        battle_contract_address : felt,
         ship_count_per_battle : felt,
         required_total_ship_count : felt,
         grid_size : felt,
@@ -303,7 +303,7 @@ namespace Tournament:
         reward_token_address_.write(reward_token_address)
         boarding_pass_token_address_.write(boarding_pass_token_address)
         rand_contract_address_.write(rand_contract_address)
-        space_contract_address_.write(space_contract_address)
+        battle_contract_address_.write(battle_contract_address)
         ship_count_per_battle_.write(ship_count_per_battle)
         required_total_ship_count_.write(required_total_ship_count)
         grid_size_.write(grid_size)
@@ -538,14 +538,14 @@ namespace Tournament:
         ships_len : felt, ships : ShipInit*
     ) -> (winner_ship : felt):
         alloc_locals
-        let (space_contract) = space_contract_address_.read()
+        let (battle_contract) = battle_contract_address_.read()
         let (rand_contract) = rand_contract_address_.read()
         let (grid_size) = grid_size_.read()
         let (turn_count) = turn_count_.read()
         let (max_dust) = max_dust_.read()
 
         IBattle.play_game(
-            space_contract, rand_contract, grid_size, turn_count, max_dust, ships_len, ships
+            battle_contract, rand_contract, grid_size, turn_count, max_dust, ships_len, ships
         )
 
         let (played_battle_count) = played_battle_count_.read()

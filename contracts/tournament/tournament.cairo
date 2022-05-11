@@ -67,7 +67,7 @@ end
 
 @view
 func required_total_ship_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    ) -> (max_ships_per_tournament : felt):
+    ) -> (required_total_ship_count : felt):
     return Tournament.required_total_ship_count()
 end
 
@@ -139,9 +139,9 @@ func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     reward_token_address : felt,
     boarding_pass_token_address : felt,
     rand_contract_address : felt,
-    space_contract_address : felt,
+    battle_contract_address : felt,
     ships_per_battle : felt,
-    max_ships_per_tournament : felt,
+    required_total_ship_count : felt,
     grid_size : felt,
     turn_count : felt,
     max_dust : felt,
@@ -153,9 +153,9 @@ func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
         reward_token_address,
         boarding_pass_token_address,
         rand_contract_address,
-        space_contract_address,
+        battle_contract_address,
         ships_per_battle,
-        max_ships_per_tournament,
+        required_total_ship_count,
         grid_size,
         turn_count,
         max_dust,
