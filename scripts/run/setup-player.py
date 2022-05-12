@@ -2,9 +2,6 @@ import os
 import random
 import sys
 from nile.nre import NileRuntimeEnvironment
-from nile import accounts, deployments
-from nile.core.call_or_invoke import call_or_invoke
-from nile.core.deploy import deploy
 
 sys.path.append(os.path.dirname(__file__))
 from utils import send
