@@ -1,7 +1,10 @@
+import os
 from nile import deployments
 from nile.core.call_or_invoke import call_or_invoke
 from nile.core.deploy import deploy
 
+def get_tournament_address():
+    return os.getenv("TOURNAMENT_ADDRESS", "tournament")
 
 def send(account, to, method, calldata):
     """Execute a tx going through an Account contract."""

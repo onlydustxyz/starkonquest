@@ -1,5 +1,9 @@
+import os
+import sys
 from nile.nre import NileRuntimeEnvironment
-from nile import cli
+
+sys.path.append(os.path.dirname(__file__))
+from utils import get_tournament_address
 
 
 def run(nre: NileRuntimeEnvironment):
@@ -7,5 +11,5 @@ def run(nre: NileRuntimeEnvironment):
 
     admin = nre.get_or_deploy_account("PKEYADMIN")
     print(f"Admin account address: {admin.address}")
-    res = admin.send("tournament", "play_next_battle", [])
+    res = admin.send(get_tournament_address(), "play_next_battle", [])
     print(res)

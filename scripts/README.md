@@ -65,6 +65,14 @@ It is recommended to keep the address of this contract somewhere. You'll need it
 
 # Run tournament
 
+These scripts interact with the tournament contract. By default, the "tournament" alias is used to 
+retrieve the contract address. If you wish to use a different tournament contract, set the `TOURNAMENT_ADDRESS`
+environement variable to whatever you want.
+
+```bash
+export TOURNAMENT_ADDRESS=<custom-address-or-alias>
+```
+
 ## Open registrations
 
 ```bash

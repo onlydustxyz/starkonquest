@@ -1,9 +1,11 @@
 import os
-import random
+import sys
 from nile.nre import NileRuntimeEnvironment
-from nile import accounts, deployments
+from nile import deployments
 from nile.core.call_or_invoke import call_or_invoke
-from nile.core.deploy import deploy
+
+sys.path.append(os.path.dirname(__file__))
+from utils import get_tournament_address
 
 
 def run(nre: NileRuntimeEnvironment):
@@ -11,12 +13,12 @@ def run(nre: NileRuntimeEnvironment):
 
     player = nre.get_or_deploy_account("PKEYPLAYER")
     print(f"Player account address: {player.address}")
-    
+
     ship_address = os.getenv("SHIP_ADDRESS")
     assert len(ship_address) > 0
     print(f"Ship address: {ship_address}")
 
-    res = send(player, "tournament", "register", [ship_address])
+    res = send(player, get_tournament_address(), "register", [ship_address])
     print(res)
 
 def send(account, to, method, calldata, nonce=None):
