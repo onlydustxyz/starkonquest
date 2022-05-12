@@ -34,7 +34,7 @@ namespace ITournament:
     func reward_total_amount() -> (res : Uint256):
     end
 
-    func are_tournament_registrations_open() -> (res : felt):
+    func stage() -> (res : felt):
     end
 
     func ship_count_per_battle() -> (res : felt):
