@@ -20,16 +20,6 @@ from contracts.interfaces.ibattle import IBattle
 from contracts.models.common import ShipInit, Vector2
 from contracts.libraries.math_utils import math_utils
 
-# ---------
-# CONSTANTS
-# ---------
-
-const STAGE_CREATED = 1
-const STAGE_REGISTRATIONS_OPEN = 2
-const STAGE_REGISTRATIONS_CLOSED = 3
-const STAGE_STARTED = 4
-const STAGE_FINISHED = 5
-
 # ------------
 # STORAGE VARS
 # ------------
@@ -151,6 +141,16 @@ func current_stage_() -> (state : felt):
 end
 
 namespace tournament:
+    # ---------
+    # CONSTANTS
+    # ---------
+
+    const STAGE_CREATED = 1
+    const STAGE_REGISTRATIONS_OPEN = 2
+    const STAGE_REGISTRATIONS_CLOSED = 3
+    const STAGE_STARTED = 4
+    const STAGE_FINISHED = 5
+
     # -----
     # VIEWS
     # -----
@@ -597,7 +597,7 @@ namespace internal:
         let (playing_ship_count) = playing_ship_count_.read()
         if playing_ship_count == 1:
             # There is only one remaining ship, this is the winner of the tournament
-            internal.change_stage(STAGE_FINISHED)
+            change_stage(tournament.STAGE_FINISHED)
             return ()
         end
         return ()

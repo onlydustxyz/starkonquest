@@ -11,11 +11,6 @@ from contracts.tournament.library import (
     playing_ship_count_,
     winning_ships_,
     winning_ship_count_,
-    STAGE_CREATED,
-    STAGE_REGISTRATIONS_OPEN,
-    STAGE_REGISTRATIONS_CLOSED,
-    STAGE_STARTED,
-    STAGE_FINISHED,
 )
 
 # ---------
@@ -101,7 +96,7 @@ func test_close_registrations_with_good_ship_count{
     # Start registrations
     %{ start_prank(ids.context.signers.admin) %}
     tournament.open_registrations()
-    assert_that.stage_is(STAGE_REGISTRATIONS_OPEN)
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
     %{ stop_prank() %}
 
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
@@ -119,7 +114,7 @@ func test_close_registrations_with_good_ship_count{
     # Close registrations
     %{ start_prank(ids.context.signers.admin) %}
     tournament.close_registrations()
-    assert_that.stage_is(STAGE_REGISTRATIONS_CLOSED)
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED)
     %{ stop_prank() %}
 
     return ()
@@ -135,7 +130,7 @@ func test_close_registrations_with_bad_ship_count{
     # Start registrations
     %{ start_prank(ids.context.signers.admin) %}
     tournament.open_registrations()
-    assert_that.stage_is(STAGE_REGISTRATIONS_OPEN)
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
     %{ stop_prank() %}
 
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
@@ -166,7 +161,7 @@ func test_register_without_access{
     # Start registration
     %{ start_prank(ids.context.signers.admin) %}
     tournament.open_registrations()
-    assert_that.stage_is(STAGE_REGISTRATIONS_OPEN)
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
     %{ stop_prank() %}
 
     # Fail to register
@@ -187,7 +182,7 @@ func test_register_with_access{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
     # Start registration
     %{ start_prank(ids.context.signers.admin) %}
     tournament.open_registrations()
-    assert_that.stage_is(STAGE_REGISTRATIONS_OPEN)
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
     %{ stop_prank() %}
 
     # Register
@@ -213,7 +208,7 @@ func test_register_when_registrations_are_not_yet_open{
     alloc_locals
     let (local context : TestContext) = test_internal.prepare(2, 4)
 
-    assert_that.stage_is(STAGE_CREATED)
+    assert_that.stage_is(tournament.STAGE_CREATED)
 
     # Register
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
@@ -248,7 +243,7 @@ func test_register_when_registrations_are_closed{
 
     %{ start_prank(ids.context.signers.admin) %}
     tournament.close_registrations()
-    assert_that.stage_is(STAGE_REGISTRATIONS_CLOSED)
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED)
     %{ stop_prank() %}
 
     # Register
@@ -272,7 +267,7 @@ func test_tournament_with_4_ships_and_2_ships_per_battle{
         test_internal.setup_tournament(ships_len=4, ships=new (1, 2, 3, 4))
         assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(STAGE_STARTED)
+        assert_that.stage_is(tournament.STAGE_STARTED)
 
         # Play the first battle
         test_internal.invoke_battle(
@@ -300,7 +295,7 @@ func test_tournament_with_4_ships_and_2_ships_per_battle{
         # After the final battle, we have our winner
         assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(STAGE_FINISHED)
+        assert_that.stage_is(tournament.STAGE_FINISHED)
     end
     return ()
 end
@@ -317,7 +312,7 @@ func test_tournament_with_9_ships_and_3_ships_per_battle{
             playing_ships_len=9, playing_ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9)
         )
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(STAGE_STARTED)
+        assert_that.stage_is(tournament.STAGE_STARTED)
 
         # Play the first battle
         test_internal.invoke_battle(
@@ -358,7 +353,7 @@ func test_tournament_with_9_ships_and_3_ships_per_battle{
         # After the final battle, we have our winner
         assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(STAGE_FINISHED)
+        assert_that.stage_is(tournament.STAGE_FINISHED)
     end
     return ()
 end
@@ -408,7 +403,7 @@ namespace test_internal:
             context.max_dust,
         )
 
-        assert_that.stage_is(STAGE_CREATED)
+        assert_that.stage_is(tournament.STAGE_CREATED)
         return (test_context=context)
     end
 
@@ -424,9 +419,9 @@ namespace test_internal:
 
         # Start registration
         %{ start_prank(ids.context.signers.admin) %}
-        assert_that.stage_is(STAGE_CREATED)
+        assert_that.stage_is(tournament.STAGE_CREATED)
         tournament.open_registrations()
-        assert_that.stage_is(STAGE_REGISTRATIONS_OPEN)
+        assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
         %{ stop_prank() %}
 
         # Register ships
@@ -436,13 +431,13 @@ namespace test_internal:
         # Close registration
         %{ start_prank(ids.context.signers.admin) %}
         tournament.close_registrations()
-        assert_that.stage_is(STAGE_REGISTRATIONS_CLOSED)
+        assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED)
         %{ stop_prank() %}
 
         # Start the tournament
         %{ start_prank(ids.context.signers.admin) %}
         tournament.start()
-        assert_that.stage_is(STAGE_STARTED)
+        assert_that.stage_is(tournament.STAGE_STARTED)
         %{ stop_prank() %}
 
         let (played_battle_count) = tournament.played_battle_count()
