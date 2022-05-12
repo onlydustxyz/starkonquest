@@ -19,6 +19,7 @@ from openzeppelin.token.erc721.interfaces.IERC721 import IERC721
 from contracts.interfaces.ibattle import IBattle
 from contracts.models.common import ShipInit, Vector2
 from contracts.libraries.math_utils import math_utils
+from contracts.libraries.array_utils import array_utils
 
 # ------------
 # STORAGE VARS
@@ -526,16 +527,19 @@ namespace internal:
         let (turn_count) = turn_count_.read()
         let (max_dust) = max_dust_.read()
 
-        IBattle.play_game(
+        # Call battle contract to play the entire battle
+        let (scores_len : felt, scores : felt*) = IBattle.play_game(
             battle_contract, rand_contract, grid_size, turn_count, max_dust, ships_len, ships
         )
 
+        # Get the winner
+        let (winner_ship_index) = get_highest_score_index(scores_len, scores)
+        assert_lt(winner_ship_index, ships_len)
+        let winner_ship = ships[winner_ship_index]
+
+        # Increment played battle count
         let (played_battle_count) = played_battle_count_.read()
         played_battle_count_.write(played_battle_count + 1)
-
-        # TODO: get scores
-        # TODO: get winner
-        let winner_ship = ships[0]
 
         return (winner_ship.address)
     end
@@ -627,5 +631,11 @@ namespace internal:
 
         update_playing_ships_for_next_round_loop(index + 1, len)
         return ()
+    end
+
+    func get_highest_score_index{range_check_ptr}(scores_len : felt, scores : felt*) -> (
+        highest_index : felt
+    ):
+        return array_utils.get_highest_element_index(scores_len, scores)
     end
 end

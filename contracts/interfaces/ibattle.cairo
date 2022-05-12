@@ -11,6 +11,6 @@ namespace IBattle:
         max_dust : felt,
         ships_len : felt,
         ships : ShipInit*,
-    ) -> ():
+    ) -> (scores_len : felt, scores : felt*):
     end
 end

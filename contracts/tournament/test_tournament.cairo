@@ -270,6 +270,7 @@ func test_tournament_with_4_ships_and_2_ships_per_battle{
         assert_that.stage_is(tournament.STAGE_STARTED)
 
         # Play the first battle
+        %{ mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 60]) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=1
         )
@@ -279,6 +280,7 @@ func test_tournament_with_4_ships_and_2_ships_per_battle{
         assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (1))
 
         # Play the second battle
+        %{ mock_call(ids.context.mocks.battle_address, "play_game", [2, 80, 50]) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=2, expected_round_before=1, expected_round_after=2
         )
@@ -288,12 +290,13 @@ func test_tournament_with_4_ships_and_2_ships_per_battle{
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
 
         # Play the final battle
+        %{ mock_call(ids.context.mocks.battle_address, "play_game", [2, 40, 70]) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=3, expected_round_before=2, expected_round_after=3
         )
 
         # After the final battle, we have our winner
-        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1))
+        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (3))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
         assert_that.stage_is(tournament.STAGE_FINISHED)
     end
@@ -315,6 +318,7 @@ func test_tournament_with_9_ships_and_3_ships_per_battle{
         assert_that.stage_is(tournament.STAGE_STARTED)
 
         # Play the first battle
+        %{ mock_call(ids.context.mocks.battle_address, "play_game", [3, 10, 60, 80]) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=1
         )
@@ -323,9 +327,10 @@ func test_tournament_with_9_ships_and_3_ships_per_battle{
         assert_that.playing_ships_are(
             playing_ships_len=9, playing_ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9)
         )
-        assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (1))
+        assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (3))
 
         # Play the second battle
+        %{ mock_call(ids.context.mocks.battle_address, "play_game", [3, 100, 60, 80]) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=2, expected_round_before=1, expected_round_after=1
         )
@@ -334,24 +339,26 @@ func test_tournament_with_9_ships_and_3_ships_per_battle{
         assert_that.playing_ships_are(
             playing_ships_len=9, playing_ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9)
         )
-        assert_that.winning_ships_are(winning_ships_len=2, winning_ships=new (1, 4))
+        assert_that.winning_ships_are(winning_ships_len=2, winning_ships=new (3, 4))
 
         # Play the third battle
+        %{ mock_call(ids.context.mocks.battle_address, "play_game", [3, 10, 60, 8]) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=3, expected_round_before=1, expected_round_after=2
         )
 
         # After the third battle, we are in the round 2 so the list of playing ships has been updated
-        assert_that.playing_ships_are(playing_ships_len=3, playing_ships=new (1, 4, 7))
+        assert_that.playing_ships_are(playing_ships_len=3, playing_ships=new (3, 4, 8))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
 
         # Play the final battle
+        %{ mock_call(ids.context.mocks.battle_address, "play_game", [3, 0, 10, 1300]) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=4, expected_round_before=2, expected_round_after=3
         )
 
         # After the final battle, we have our winner
-        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1))
+        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (8))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
         assert_that.stage_is(tournament.STAGE_FINISHED)
     end
@@ -491,7 +498,6 @@ namespace test_internal:
             assert round = expected_round_before
         end
 
-        %{ mock_call(ids.context.mocks.battle_address, "play_game", []) %}
         %{ start_prank(ids.context.signers.admin) %}
         tournament.play_next_battle()
         %{ stop_prank() %}
