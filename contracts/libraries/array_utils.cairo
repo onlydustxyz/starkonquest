@@ -1,0 +1,40 @@
+%lang starknet
+
+from starkware.cairo.common.math_cmp import is_le
+from contracts.models.common import Vector2
+
+namespace array_utils:
+    # Return the index of the highest element in array. Negative numbers underflow, so they are not actually handled as negative numbers.
+    func get_highest_element_index{range_check_ptr}(array_len : felt, array : felt*) -> (
+        highest_element_index : felt
+    ):
+        return _get_highest_element_index_loop(0, 0, 0, array_len, array)
+    end
+
+    func _get_highest_element_index_loop{range_check_ptr}(
+        current_highest_element_index : felt,
+        current_highest_element : felt,
+        index : felt,
+        array_len : felt,
+        array : felt*,
+    ) -> (highest_index : felt):
+        if array_len == 0:
+            return (current_highest_element_index)
+        end
+
+        let element = [array]
+        let (element_is_higher) = is_le(current_highest_element + 1, element)
+        if element_is_higher == 1:
+            return _get_highest_element_index_loop(
+                index, element, index + 1, array_len - 1, &array[1]
+            )
+        end
+        return _get_highest_element_index_loop(
+            current_highest_element_index,
+            current_highest_element,
+            index + 1,
+            array_len - 1,
+            &array[1],
+        )
+    end
+end
