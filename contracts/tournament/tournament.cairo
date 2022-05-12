@@ -5,7 +5,7 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
 from contracts.models.common import ShipInit, Vector2
-from contracts.tournament.library import Tournament
+from contracts.tournament.library import tournament
 
 # -----
 # VIEWS
@@ -14,117 +14,117 @@ from contracts.tournament.library import Tournament
 func tournament_id{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     tournament_id : felt
 ):
-    return Tournament.tournament_id()
+    return tournament.tournament_id()
 end
 
 @view
 func tournament_name{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     tournament_name : felt
 ):
-    return Tournament.tournament_name()
+    return tournament.tournament_name()
 end
 
 @view
 func reward_token_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     reward_token_address : felt
 ):
-    return Tournament.reward_token_address()
+    return tournament.reward_token_address()
 end
 
 @view
 func boarding_pass_token_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     ) -> (boarding_pass_token_address : felt):
-    return Tournament.boarding_pass_token_address()
+    return tournament.boarding_pass_token_address()
 end
 
 @view
 func rand_contract_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     rand_contract_address : felt
 ):
-    return Tournament.rand_contract_address()
+    return tournament.rand_contract_address()
 end
 
 @view
 func are_tournament_registrations_open{
     syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
 }() -> (are_tournament_registrations_open : felt):
-    return Tournament.are_tournament_registrations_open()
+    return tournament.are_tournament_registrations_open()
 end
 
 @view
 func reward_total_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     reward_total_amount : Uint256
 ):
-    return Tournament.reward_total_amount()
+    return tournament.reward_total_amount()
 end
 
 @view
 func ship_count_per_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     ship_count_per_battle : felt
 ):
-    return Tournament.ship_count_per_battle()
+    return tournament.ship_count_per_battle()
 end
 
 @view
 func required_total_ship_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     ) -> (required_total_ship_count : felt):
-    return Tournament.required_total_ship_count()
+    return tournament.required_total_ship_count()
 end
 
 @view
 func grid_size{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     grid_size : felt
 ):
-    return Tournament.grid_size()
+    return tournament.grid_size()
 end
 
 @view
 func turn_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     turn_count : felt
 ):
-    return Tournament.turn_count()
+    return tournament.turn_count()
 end
 
 @view
 func max_dust{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     max_dust : felt
 ):
-    return Tournament.max_dust()
+    return tournament.max_dust()
 end
 
 @view
 func ship_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     ship_count : felt
 ):
-    return Tournament.ship_count()
+    return tournament.ship_count()
 end
 
 @view
 func player_ship{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     player_address : felt
 ) -> (player_ship : felt):
-    return Tournament.player_ship(player_address)
+    return tournament.player_ship(player_address)
 end
 
 @view
 func ship_player{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     ship_address : felt
 ) -> (ship_player : felt):
-    return Tournament.ship_player(ship_address)
+    return tournament.ship_player(ship_address)
 end
 
 @view
 func player_score{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     player_address : felt
 ) -> (player_score : felt):
-    return Tournament.player_score(player_address)
+    return tournament.player_score(player_address)
 end
 
 @view
 func played_battle_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     played_battle_count : felt
 ):
-    return Tournament.played_battle_count()
+    return tournament.played_battle_count()
 end
 
 # -----------
@@ -146,7 +146,7 @@ func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     turn_count : felt,
     max_dust : felt,
 ):
-    return Tournament.constructor(
+    return tournament.constructor(
         owner,
         tournament_id,
         tournament_name,
@@ -171,7 +171,7 @@ end
 func open_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     success : felt
 ):
-    return Tournament.open_registrations()
+    return tournament.open_registrations()
 end
 
 # Close tournament registrations
@@ -179,19 +179,19 @@ end
 func close_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     success : felt
 ):
-    return Tournament.close_registrations()
+    return tournament.close_registrations()
 end
 
 # Start the tournament
 @external
 func start{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (success : felt):
-    return Tournament.start()
+    return tournament.start()
 end
 
 # Play the next battle of the tournament
 @external
 func play_next_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-    return Tournament.play_next_battle()
+    return tournament.play_next_battle()
 end
 
 # Register a ship for the caller address
@@ -200,5 +200,5 @@ end
 func register{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     ship_address : felt
 ) -> (success : felt):
-    return Tournament.register(ship_address)
+    return tournament.register(ship_address)
 end

@@ -6,7 +6,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.starknet.common.syscalls import get_contract_address, get_caller_address
 from contracts.tournament.library import (
-    Tournament,
+    tournament,
     playing_ships_,
     playing_ship_count_,
     winning_ships_,
@@ -69,7 +69,7 @@ func test_construct_tournament_with_invalid_ship_count{
     let required_total_ship_count = 5  # Invalid. This should be a power of ship_count_per_battle.
 
     %{ expect_revert("TRANSACTION_FAILED", "Tournament: total ship count is expected to be a power of ship count per battle") %}
-    Tournament.constructor(
+    tournament.constructor(
         owner=ADMIN,
         tournament_id=1,
         tournament_name=11,
@@ -95,8 +95,8 @@ func test_close_registrations_with_good_ship_count{
 
     # Start registrations
     %{ start_prank(ids.context.signers.admin) %}
-    Tournament.open_registrations()
-    let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
+    tournament.open_registrations()
+    let (are_tournament_registrations_open) = tournament.are_tournament_registrations_open()
     assert are_tournament_registrations_open = TRUE
     %{ stop_prank() %}
 
@@ -104,18 +104,18 @@ func test_close_registrations_with_good_ship_count{
 
     # Register ship 1
     %{ start_prank(ids.context.signers.player_1) %}
-    Tournament.register(ship_address=1000)
+    tournament.register(ship_address=1000)
     %{ stop_prank() %}
 
     # Register ship 2
     %{ start_prank(ids.context.signers.player_2) %}
-    Tournament.register(ship_address=1001)
+    tournament.register(ship_address=1001)
     %{ stop_prank() %}
 
     # Close registrations
     %{ start_prank(ids.context.signers.admin) %}
-    Tournament.close_registrations()
-    let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
+    tournament.close_registrations()
+    let (are_tournament_registrations_open) = tournament.are_tournament_registrations_open()
     assert are_tournament_registrations_open = FALSE
     %{ stop_prank() %}
 
@@ -131,8 +131,8 @@ func test_close_registrations_with_bad_ship_count{
 
     # Start registrations
     %{ start_prank(ids.context.signers.admin) %}
-    Tournament.open_registrations()
-    let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
+    tournament.open_registrations()
+    let (are_tournament_registrations_open) = tournament.are_tournament_registrations_open()
     assert are_tournament_registrations_open = TRUE
     %{ stop_prank() %}
 
@@ -140,7 +140,7 @@ func test_close_registrations_with_bad_ship_count{
 
     # Register ship 1
     %{ start_prank(ids.context.signers.player_1) %}
-    Tournament.register(ship_address=1000)
+    tournament.register(ship_address=1000)
     %{ stop_prank() %}
 
     # Do NOT register ship 2
@@ -148,7 +148,7 @@ func test_close_registrations_with_bad_ship_count{
     # Close registrations
     %{ start_prank(ids.context.signers.admin) %}
     %{ expect_revert("TRANSACTION_FAILED", "Tournament: ship count not reached") %}
-    Tournament.close_registrations()
+    tournament.close_registrations()
     %{ stop_prank() %}
 
     return ()
@@ -163,14 +163,14 @@ func test_register_without_access{
 
     # Start registration
     %{ start_prank(ids.context.signers.admin) %}
-    Tournament.open_registrations()
+    tournament.open_registrations()
     %{ stop_prank() %}
 
     # Fail to register
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [0, 0]) %}
     %{ start_prank(ids.context.signers.anyone) %}
     %{ expect_revert("TRANSACTION_FAILED", "Tournament: player is not allowed to register") %}
-    Tournament.register(1000)
+    tournament.register(1000)
     %{ stop_prank() %}
 
     return ()
@@ -183,18 +183,18 @@ func test_register_with_access{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
 
     # Start registration
     %{ start_prank(ids.context.signers.admin) %}
-    Tournament.open_registrations()
+    tournament.open_registrations()
     %{ stop_prank() %}
 
     # Register
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
     %{ start_prank(ids.context.signers.player_1) %}
     let ship_address = 1000
-    Tournament.register(ship_address)
+    tournament.register(ship_address)
     %{ stop_prank() %}
 
     # Check registration
-    let (player_address) = Tournament.ship_player(ship_address)
+    let (player_address) = tournament.ship_player(ship_address)
     with_attr error_message("Expected ship {ship_address} to be registered"):
         assert player_address = context.signers.player_1
     end
@@ -331,7 +331,7 @@ namespace test_internal:
             max_dust=2,
             )
 
-        Tournament.constructor(
+        tournament.constructor(
             signers.admin,
             context.tournament_id,
             context.tournament_name,
@@ -355,18 +355,18 @@ namespace test_internal:
         alloc_locals
 
         %{ mock_call(ids.context.mocks.only_dust_token_address, "balanceOf", [100, 0]) %}
-        let (reward_total_amount) = Tournament.reward_total_amount()
+        let (reward_total_amount) = tournament.reward_total_amount()
         assert reward_total_amount.low = 100
         assert reward_total_amount.high = 0
 
         # Start registration
         %{ start_prank(ids.context.signers.admin) %}
-        let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
+        let (are_tournament_registrations_open) = tournament.are_tournament_registrations_open()
         assert are_tournament_registrations_open = FALSE
 
-        Tournament.open_registrations()
+        tournament.open_registrations()
 
-        let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
+        let (are_tournament_registrations_open) = tournament.are_tournament_registrations_open()
         assert are_tournament_registrations_open = TRUE
         %{ stop_prank() %}
 
@@ -376,19 +376,19 @@ namespace test_internal:
 
         # Close registration
         %{ start_prank(ids.context.signers.admin) %}
-        Tournament.close_registrations()
-        let (are_tournament_registrations_open) = Tournament.are_tournament_registrations_open()
+        tournament.close_registrations()
+        let (are_tournament_registrations_open) = tournament.are_tournament_registrations_open()
         assert are_tournament_registrations_open = FALSE
         %{ stop_prank() %}
 
         # Start the tournament
         %{ start_prank(ids.context.signers.admin) %}
-        Tournament.start()
+        tournament.start()
         %{ stop_prank() %}
 
-        let (played_battle_count) = Tournament.played_battle_count()
+        let (played_battle_count) = tournament.played_battle_count()
         assert played_battle_count = 0
-        let (round) = Tournament.current_round()
+        let (round) = tournament.current_round()
         assert round = 1
 
         return ()
@@ -407,11 +407,11 @@ namespace test_internal:
 
         # Register
         %{ start_prank(ids.player_address) %}
-        Tournament.register(ship_address)
+        tournament.register(ship_address)
         %{ stop_prank() %}
 
         # Check registration
-        let (registered_player_address) = Tournament.ship_player(ship_address)
+        let (registered_player_address) = tournament.ship_player(ship_address)
         with_attr error_message("Expected ship {ship_address} to be registered"):
             assert registered_player_address = player_address
         end
@@ -431,7 +431,7 @@ namespace test_internal:
         local battle_address = BATTLE_ADDRESS
         local admin = ADMIN
 
-        let (local round) = Tournament.current_round()
+        let (local round) = tournament.current_round()
         with_attr error_message(
                 "Expected round number (before battle) to be {expected_round_before}, got {round}"):
             assert round = expected_round_before
@@ -439,16 +439,16 @@ namespace test_internal:
 
         %{ mock_call(ids.context.mocks.battle_address, "play_game", []) %}
         %{ start_prank(ids.context.signers.admin) %}
-        Tournament.play_next_battle()
+        tournament.play_next_battle()
         %{ stop_prank() %}
 
-        let (local played_battle_count) = Tournament.played_battle_count()
+        let (local played_battle_count) = tournament.played_battle_count()
         with_attr error_message(
                 "Expected played battle count (after battle) to be {expected_played_battle_count_after}, got {played_battle_count}"):
             assert played_battle_count = expected_played_battle_count_after
         end
 
-        let (local round) = Tournament.current_round()
+        let (local round) = tournament.current_round()
         with_attr error_message(
                 "Expected round number (after battle) to be {expected_round_after}, got {round}"):
             assert round = expected_round_after
