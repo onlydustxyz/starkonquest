@@ -20,6 +20,16 @@ from contracts.interfaces.ibattle import IBattle
 from contracts.models.common import ShipInit, Vector2
 from contracts.libraries.math_utils import math_utils
 
+# ---------
+# CONSTANTS
+# ---------
+
+const STAGE_CREATED = 1
+const STAGE_REGISTRATIONS_OPEN = 2
+const STAGE_REGISTRATIONS_CLOSED = 3
+const STAGE_STARTED = 4
+const STAGE_FINISHED = 5
+
 # ------------
 # STORAGE VARS
 # ------------
@@ -52,11 +62,6 @@ end
 # Battle contract address
 @storage_var
 func battle_contract_address_() -> (res : felt):
-end
-
-# Whether or not registrations are open
-@storage_var
-func are_tournament_registrations_open_() -> (res : felt):
 end
 
 # Number of ships per battle
@@ -140,6 +145,11 @@ end
 func played_battle_count_() -> (res : felt):
 end
 
+# Current stage of the tournament
+@storage_var
+func current_stage_() -> (state : felt):
+end
+
 namespace tournament:
     # -----
     # VIEWS
@@ -178,11 +188,11 @@ namespace tournament:
         return (rand_contract_address)
     end
 
-    func are_tournament_registrations_open{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }() -> (are_tournament_registrations_open : felt):
-        let (are_tournament_registrations_open) = are_tournament_registrations_open_.read()
-        return (are_tournament_registrations_open)
+    func stage{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+        stage : felt
+    ):
+        let (stage) = current_stage_.read()
+        return (stage)
     end
 
     func reward_total_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -298,6 +308,7 @@ namespace tournament:
             assert required_total_ship_count_is_valid = TRUE
         end
 
+        internal.change_stage(STAGE_CREATED)
         tournament_id_.write(tournament_id)
         tournament_name_.write(tournament_name)
         reward_token_address_.write(reward_token_address)
@@ -321,8 +332,8 @@ namespace tournament:
     func open_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         ) -> (success : felt):
         Ownable_only_owner()
-        internal.only_tournament_registrations_closed()
-        are_tournament_registrations_open_.write(TRUE)
+        internal.only_in_stage(STAGE_CREATED)
+        internal.change_stage(STAGE_REGISTRATIONS_OPEN)
         return (TRUE)
     end
 
@@ -330,7 +341,7 @@ namespace tournament:
     func close_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         ) -> (success : felt):
         Ownable_only_owner()
-        internal.only_tournament_registrations_open()
+        internal.only_in_stage(STAGE_REGISTRATIONS_OPEN)
 
         # Check that we did reach the expected number of players
         let (current_ship_count) = ship_count_.read()
@@ -339,7 +350,7 @@ namespace tournament:
             assert current_ship_count = required_total_ship_count
         end
 
-        are_tournament_registrations_open_.write(FALSE)
+        internal.change_stage(STAGE_REGISTRATIONS_CLOSED)
         return (TRUE)
     end
 
@@ -348,8 +359,8 @@ namespace tournament:
         success : felt
     ):
         Ownable_only_owner()
-        internal.only_tournament_registrations_closed()
-        internal.only_tournament_not_started()
+        internal.only_in_stage(STAGE_REGISTRATIONS_CLOSED)
+        internal.change_stage(STAGE_STARTED)
 
         # Prepare the first round
         current_round_.write(1)
@@ -362,15 +373,11 @@ namespace tournament:
     # Play the next battle of the tournament
     func play_next_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
         Ownable_only_owner()
-        internal.only_tournament_in_progress()
+        internal.only_in_stage(STAGE_STARTED)
 
         let (round_finished) = internal.play_next_battle()
         if round_finished == TRUE:
-            # Prepare the next round
-            let (round) = current_round_.read()
-            current_round_.write(round + 1)
-            next_playing_ship_index_.write(0)
-            internal.update_playing_ships_for_next_round()
+            internal.prepare_next_round()
             return ()
         end
 
@@ -383,7 +390,7 @@ namespace tournament:
         ship_address : felt
     ) -> (success : felt):
         alloc_locals
-        internal.only_tournament_registrations_open()
+        internal.only_in_stage(STAGE_REGISTRATIONS_OPEN)
         let (player_address) = get_caller_address()
         let (boarding_pass_token_address) = boarding_pass_token_address_.read()
         # Check access control with NFT boarding pass
@@ -448,53 +455,27 @@ namespace internal:
         return ()
     end
 
-    func only_tournament_registrations_open{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }():
-        let (are_tournament_registrations_open) = are_tournament_registrations_open_.read()
-        with_attr error_message("Tournament: tournament is closed"):
-            assert are_tournament_registrations_open = TRUE
+    func only_in_stage{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        stage : felt
+    ):
+        alloc_locals
+        let (local current_stage) = current_stage_.read()
+        with_attr error_message("Tournament: current stage ({current_stage}) is not {stage}"):
+            assert current_stage = stage
         end
         return ()
     end
 
-    func only_tournament_registrations_closed{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }():
-        let (are_tournament_registrations_open) = are_tournament_registrations_open_.read()
-        with_attr error_message("Tournament: tournament is open"):
-            assert are_tournament_registrations_open = FALSE
+    func change_stage{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        new_stage : felt
+    ):
+        alloc_locals
+        let (local current_stage) = current_stage_.read()
+        with_attr error_message(
+                "Tournament: cannot change stage from {current_stage} to {new_stage}"):
+            assert_lt(current_stage, new_stage)
         end
-        return ()
-    end
-
-    func only_tournament_started{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        ):
-        let (round) = current_round_.read()
-        with_attr error_message("Tournament: tournament has not started"):
-            assert_not_zero(round)
-        end
-        return ()
-    end
-
-    func only_tournament_not_started{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }():
-        let (round) = current_round_.read()
-        with_attr error_message("Tournament: tournament has already started"):
-            assert round = 0
-        end
-        return ()
-    end
-
-    func only_tournament_in_progress{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }():
-        only_tournament_started()
-        let (playing_ship_count) = playing_ship_count_.read()
-        with_attr error_message("Tournament: tournament is finished"):
-            assert_lt(1, playing_ship_count)
-        end
+        current_stage_.write(new_stage)
         return ()
     end
 
@@ -604,6 +585,22 @@ namespace internal:
         let (y, x) = unsigned_div_rem(battle_ship_index, grid_size)
 
         return (Vector2(x, y))
+    end
+
+    # Prepare the next round, if any
+    func prepare_next_round{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+        let (round) = current_round_.read()
+        current_round_.write(round + 1)
+        next_playing_ship_index_.write(0)
+        update_playing_ships_for_next_round()
+
+        let (playing_ship_count) = playing_ship_count_.read()
+        if playing_ship_count == 1:
+            # There is only one remaining ship, this is the winner of the tournament
+            internal.change_stage(STAGE_FINISHED)
+            return ()
+        end
+        return ()
     end
 
     # Update the list of ships that will be playing in the next ground

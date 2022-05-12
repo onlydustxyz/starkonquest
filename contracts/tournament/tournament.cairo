@@ -45,10 +45,8 @@ func rand_contract_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
 end
 
 @view
-func are_tournament_registrations_open{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}() -> (are_tournament_registrations_open : felt):
-    return tournament.are_tournament_registrations_open()
+func stage{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (stage : felt):
+    return tournament.stage()
 end
 
 @view
