@@ -166,6 +166,7 @@ func test_register_without_access{
     # Start registration
     %{ start_prank(ids.context.signers.admin) %}
     tournament.open_registrations()
+    assert_that.stage_is(STAGE_REGISTRATIONS_OPEN)
     %{ stop_prank() %}
 
     # Fail to register
@@ -186,6 +187,7 @@ func test_register_with_access{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
     # Start registration
     %{ start_prank(ids.context.signers.admin) %}
     tournament.open_registrations()
+    assert_that.stage_is(STAGE_REGISTRATIONS_OPEN)
     %{ stop_prank() %}
 
     # Register
@@ -200,6 +202,62 @@ func test_register_with_access{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
     with_attr error_message("Expected ship {ship_address} to be registered"):
         assert player_address = context.signers.player_1
     end
+
+    return ()
+end
+
+@external
+func test_register_when_registrations_are_not_yet_open{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(2, 4)
+
+    assert_that.stage_is(STAGE_CREATED)
+
+    # Register
+    %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
+    %{ start_prank(ids.context.signers.player_1) %}
+    let ship_address = 1000
+
+    %{ expect_revert("TRANSACTION_FAILED", "Tournament: current stage (1) is not 2") %}
+    tournament.register(ship_address)
+    %{ stop_prank() %}
+
+    return ()
+end
+
+@external
+func test_register_when_registrations_are_closed{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(1, 1)
+
+    # Open and close registrations
+    %{ start_prank(ids.context.signers.admin) %}
+    tournament.open_registrations()
+    %{ stop_prank() %}
+
+    # Register one ship to be able to close registrations
+    %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
+    %{ start_prank(ids.context.signers.player_1) %}
+    let ship_address = 1001
+    tournament.register(ship_address)
+    %{ stop_prank() %}
+
+    %{ start_prank(ids.context.signers.admin) %}
+    tournament.close_registrations()
+    assert_that.stage_is(STAGE_REGISTRATIONS_CLOSED)
+    %{ stop_prank() %}
+
+    # Register
+    %{ start_prank(ids.context.signers.player_2) %}
+    let ship_address = 1002
+
+    %{ expect_revert("TRANSACTION_FAILED", "Tournament: current stage (3) is not 2") %}
+    tournament.register(ship_address)
+    %{ stop_prank() %}
 
     return ()
 end
@@ -350,6 +408,7 @@ namespace test_internal:
             context.max_dust,
         )
 
+        assert_that.stage_is(STAGE_CREATED)
         return (test_context=context)
     end
 
@@ -383,6 +442,7 @@ namespace test_internal:
         # Start the tournament
         %{ start_prank(ids.context.signers.admin) %}
         tournament.start()
+        assert_that.stage_is(STAGE_STARTED)
         %{ stop_prank() %}
 
         let (played_battle_count) = tournament.played_battle_count()
