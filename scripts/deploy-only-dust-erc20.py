@@ -6,6 +6,7 @@ from nile.nre import NileRuntimeEnvironment
 sys.path.append(os.path.dirname(__file__))
 from utils import prepare_nile_deploy
 
+
 def run(nre: NileRuntimeEnvironment):
     print("Deploying OnlyDust ERC20 contract…")
     prepare_nile_deploy()
@@ -18,7 +19,9 @@ def run(nre: NileRuntimeEnvironment):
     decimals = "18"
     recipient = admin.address
     params = [name, symbol, decimals, "10000000000000000000000", "0", recipient]
-    address, abi = nre.deploy("only_dust", params, alias="only_dust_token", overriding_path=("build", "build"))
+    address, abi = nre.deploy(
+        "only_dust", params, alias="only_dust_token", overriding_path=("build", "build")
+    )
     print(f"ABI: {abi},\nOnlyDust ERC20 contract address: {address}")
 
 

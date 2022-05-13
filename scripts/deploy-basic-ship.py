@@ -11,5 +11,7 @@ def run(nre: NileRuntimeEnvironment):
     print("Deploying basic ship contract…")
     prepare_nile_deploy()
 
-    address, abi = nre.deploy("basic_ship", alias="basic_ship", overriding_path=("build", "build"))
+    address, abi = nre.deploy(
+        "basic_ship", alias="basic_ship", overriding_path=("build", "build")
+    )
     print(f"ABI: {abi},\nBasicShip contract address: {address}")

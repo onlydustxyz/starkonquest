@@ -11,5 +11,7 @@ def run(nre: NileRuntimeEnvironment):
     print("Deploying the random contract…")
     prepare_nile_deploy()
 
-    address, abi = nre.deploy("random", alias="random", overriding_path=("build", "build"))
+    address, abi = nre.deploy(
+        "random", alias="random", overriding_path=("build", "build")
+    )
     print(f"ABI: {abi},\nRandom contract address: {address}")
