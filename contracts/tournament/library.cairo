@@ -636,6 +636,9 @@ namespace internal:
     func get_highest_score_index{range_check_ptr}(scores_len : felt, scores : felt*) -> (
         highest_index : felt
     ):
-        return array_utils.get_highest_element_index(scores_len, scores)
+        let (highest_index) = array_utils.get_highest_element_index{
+            array_len=scores_len, array=scores
+        }()
+        return (highest_index)
     end
 end
