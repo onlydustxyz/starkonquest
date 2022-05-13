@@ -21,6 +21,7 @@ def run(nre: NileRuntimeEnvironment):
     res = send(player, get_tournament_address(), "register", [ship_address])
     print(res)
 
+
 def send(account, to, method, calldata, nonce=None):
     """Execute a tx going through an Account contract."""
     target_address, _ = next(deployments.load(to, account.network)) or to

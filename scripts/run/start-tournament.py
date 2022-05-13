@@ -5,6 +5,7 @@ from nile.nre import NileRuntimeEnvironment
 sys.path.append(os.path.dirname(__file__))
 from utils import get_tournament_address
 
+
 def run(nre: NileRuntimeEnvironment):
     print("Start tournament")
 

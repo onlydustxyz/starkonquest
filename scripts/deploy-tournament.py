@@ -55,7 +55,9 @@ def run(nre: NileRuntimeEnvironment):
         turn_count,
         max_dust,
     ]
-    address, abi = nre.deploy("tournament", params, alias="tournament", overriding_path=("build", "build"))
+    address, abi = nre.deploy(
+        "tournament", params, alias="tournament", overriding_path=("build", "build")
+    )
     print(f"ABI: {abi},\nTournament contract address: {address}")
 
 

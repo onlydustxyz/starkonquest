@@ -19,7 +19,10 @@ def run(nre: NileRuntimeEnvironment):
     owner = admin.address
     params = [name, symbol, owner]
     address, abi = nre.deploy(
-        "starkonquest_boarding_pass", params, alias="starkonquest_boarding_pass", overriding_path=("build", "build")
+        "starkonquest_boarding_pass",
+        params,
+        alias="starkonquest_boarding_pass",
+        overriding_path=("build", "build"),
     )
     print(f"ABI: {abi},\nBoardingPass contract address: {address}")
 

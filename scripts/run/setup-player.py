@@ -15,5 +15,10 @@ def run(nre: NileRuntimeEnvironment):
 
     admin = nre.get_or_deploy_account("PKEYADMIN")
     print(f"Admin account address: {admin.address}")
-    res = send(admin, "starkonquest_boarding_pass", "mint", [player.address, str(random.randrange(2^64)), "0"])
+    res = send(
+        admin,
+        "starkonquest_boarding_pass",
+        "mint",
+        [player.address, str(random.randrange(2 ^ 64)), "0"],
+    )
     print(res)
