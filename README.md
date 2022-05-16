@@ -16,6 +16,16 @@
   <h3 align="center">StarKonquest Contracts written in Cairo for StarkNet.</h3>
 </div>
 
+StarKonquest is is a game developed in Cairo in which several space ships fight in a finite 2D grid to catch as much dust as possible.
+
+The entire game runs in a single transaction, meaning the ships cannot be controlled manually. 
+Players must implement an effective ship AI that will detect and catch dust as quickly as possible.
+
+Dust move in random directions and bounce on the borders of the grid. There can be at most one ship on a cell of the
+grid, so ships can block each others.
+
+Tournament logic is also implemented, allowing dozens of players to fight in multiple battles until only one winner remains.
+
 ## Usage
 
 > ## ⚠️ WARNING! ⚠️
@@ -51,33 +61,25 @@ make
 
 Implement your ship to catch as much dust as possible.
 
+[Here](./contracts/ships/) are some working example of different ship implementations.
+
 ## Get started
 
-To add your ship, compile it and deploy it
-
-```bash
-nile compile
-nile deploy <my-ship-contract>
-```
-
-Keep the addresses of the contracts, you'll need them later.
+See [instructions](./scripts/README.md) to deploy and run a tournament locally.
 
 ## Testing
 
 ```bash
 make test
-pytest tests
 ```
 
 Coding your ship logic can be tricky, we suggest you use tests to check your code.
 
-You can get inspiration from the [static ship tests](https://github.com/onlydustxyz/starknet-onboarding/blob/main/tests/test_space.py#L188) and run this specific test with `pytest tests -k "test_next_turn_with_ship"`.
+You can get inspiration from the [basic ship tests](./contracts/ships/basic_ship/test_basic_ship.cairo) and run this specific test with `export match=basic_ship && make test`.
 
-## CLI
+## Contributing
 
-```bash
-make cli
-```
+Please read [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## 📄 License
 

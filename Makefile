@@ -8,6 +8,3 @@ test:
 
 date:
 	date
-	
-cli: date
-	sh ./cli/menu.sh
