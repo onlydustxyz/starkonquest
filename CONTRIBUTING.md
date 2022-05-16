@@ -6,7 +6,7 @@ Make sure you read those guidelines before starting to make sure your contributi
 
 ## Contribution guidelines
 
-Before starting development, please check your contribution is listed [here]()
+Before starting development, please check your contribution is listed [here](https://contributions.onlydust.xyz/starkonquest)
 and is not already being done by someone else.
 
 It is also very important to follow our [naming convention](https://github.com/onlydustxyz/development-guidelines/blob/main/starknet/README.md#naming-convention) and to understand some of our [design patterns](https://github.com/onlydustxyz/development-guidelines/blob/main/starknet/README.md#design-patterns).
