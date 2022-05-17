@@ -1,10 +1,10 @@
 .PHONY: build test
 
 build:
-	protostar build --cairo-path lib/cairo_contracts/src
+	protostar build
 
 test:
-	protostar test contracts/ --cairo-path lib/cairo_contracts/src -m '.*$(match).*'
+	protostar test contracts/ -m '.*$(match).*'
 
 date:
 	date
