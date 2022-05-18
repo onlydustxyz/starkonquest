@@ -16,6 +16,7 @@ set +a
 ## Run local node
 
 ```bash
+unset STARKNET_NETWORK
 nile node
 ```
 
@@ -55,14 +56,6 @@ nile run ./scripts/deploy-battle.py
 nile run ./scripts/deploy-tournament.py
 ```
 
-## Deploy Basic Ship for testing
-
-```sh
-nile run ./scripts/deploy-basic-ship.py
-```
-
-It is recommended to keep the address of this contract somewhere. You'll need it later.
-
 # Run tournament
 
 These scripts interact with the tournament contract. By default, the "tournament" alias is used to 
@@ -95,15 +88,19 @@ You must register as many ships as required by the tournament settings.
 
 ```bash
 export PKEYPLAYER=100
-export SHIP_ADDRESS=<ship-address>
 nile run ./scripts/run/setup-player.py
+
+nile run ./scripts/deploy-basic-ship.py
+export SHIP_ADDRESS=<ship-address>
 nile run ./scripts/run/register-ship.py
 ```
 
 ```bash
 export PKEYPLAYER=101
-export SHIP_ADDRESS=<ship-address>
 nile run ./scripts/run/setup-player.py
+
+nile run ./scripts/deploy-basic-ship.py
+export SHIP_ADDRESS=<ship-address>
 nile run ./scripts/run/register-ship.py
 ```
 
@@ -124,3 +121,7 @@ nile run ./scripts/run/start-tournament.py
 ## Play battles
 
 From now on, you should invoke the `play_next_battle` function of the tournament contract until all battles have been played.
+
+```bash
+nile run ./scripts/run/play-next-battle.py
+```

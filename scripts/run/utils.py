@@ -1,14 +1,15 @@
 import os
+import subprocess
+
 from nile import deployments
-from nile.core.call_or_invoke import call_or_invoke
-from nile.core.deploy import deploy
+from nile.common import GATEWAYS
 
 
 def get_tournament_address():
     return os.getenv("TOURNAMENT_ADDRESS", "tournament")
 
 
-def send(account, to, method, calldata):
+def send(account, to, method, calldata, type="invoke"):
     """Execute a tx going through an Account contract."""
     target_address, _ = next(deployments.load(to, account.network)) or to
     calldata = [int(x, base=16) for x in calldata]
@@ -30,9 +31,44 @@ def send(account, to, method, calldata):
 
     return call_or_invoke(
         contract=account.address,
-        type="invoke",
+        type=type,
         method="__execute__",
         params=params,
         network=account.network,
         signature=[str(sig_r), str(sig_s)],
     )
+
+
+def call_or_invoke(contract, type, method, params, network, signature=None):
+    """Call or invoke functions of StarkNet smart contracts."""
+    address, abi = next(deployments.load(contract, network))
+
+    command = [
+        "starknet",
+        "--no_wallet",
+        type,
+        "--address",
+        address,
+        "--abi",
+        abi,
+        "--function",
+        method,
+    ]
+
+    if network == "mainnet":
+        os.environ["STARKNET_NETWORK"] = "alpha-mainnet"
+    elif network == "goerli":
+        os.environ["STARKNET_NETWORK"] = "alpha-goerli"
+    else:
+        gateway_prefix = "feeder_gateway" if type == "call" else "gateway"
+        command.append(f"--{gateway_prefix}_url={GATEWAYS.get(network)}")
+
+    if len(params) > 0:
+        command.append("--inputs")
+        command.extend(params)
+
+    if signature is not None:
+        command.append("--signature")
+        command.extend(signature)
+
+    return subprocess.check_output(command).strip().decode("utf-8")
