@@ -7,7 +7,12 @@ from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.math import assert_lt, assert_nn, assert_not_zero
 from starkware.cairo.common.math_cmp import is_le
 from starkware.cairo.common.uint256 import Uint256, uint256_le
-from starkware.starknet.common.syscalls import get_contract_address, get_caller_address
+from starkware.starknet.common.syscalls import (
+    get_contract_address,
+    get_caller_address,
+    get_tx_info,
+    TxInfo,
+)
 from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.alloc import alloc
 
@@ -134,6 +139,11 @@ end
 # Played battle count
 @storage_var
 func played_battle_count_() -> (res : felt):
+end
+
+# Player scores
+@storage_var
+func battle_transaction_hashes_(battle_index : felt) -> (hash : felt):
 end
 
 # Current stage of the tournament
@@ -272,6 +282,24 @@ namespace tournament:
         ) -> (played_battle_count : felt):
         let (played_battle_count) = played_battle_count_.read()
         return (played_battle_count)
+    end
+
+    func battle_transaction_hash{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        battle_index : felt
+    ) -> (hash : felt):
+        let (hash) = battle_transaction_hashes_.read(battle_index)
+        return (hash)
+    end
+
+    func tournament_winner{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+        winner_ship : felt
+    ):
+        let (current_stage) = current_stage_.read()
+        if current_stage == STAGE_FINISHED:
+            let (winner_ship) = playing_ships_.read(0)
+            return (winner_ship)
+        end
+        return (0)
     end
 
     func current_round{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
@@ -436,26 +464,6 @@ namespace internal:
     # INTERNALS
     # ---------
 
-    func increase_score{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        player_address : felt, points : felt
-    ):
-        let (current_score) = player_score_.read(player_address)
-        tempvar new_score
-        assert new_score = current_score + points
-        player_score_.write(player_address, new_score)
-        return ()
-    end
-
-    func decrease_score{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        player_address : felt, points : felt
-    ):
-        let (current_score) = player_score_.read(player_address)
-        tempvar new_score
-        assert new_score = current_score - points
-        player_score_.write(player_address, new_score)
-        return ()
-    end
-
     func only_in_stage{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         stage : felt
     ):
@@ -540,6 +548,10 @@ namespace internal:
         # Increment played battle count
         let (played_battle_count) = played_battle_count_.read()
         played_battle_count_.write(played_battle_count + 1)
+
+        # Store transaction hash to make it easy to retreive associated events later
+        let (tx_info : TxInfo*) = get_tx_info()
+        battle_transaction_hashes_.write(played_battle_count, tx_info.transaction_hash)
 
         return (winner_ship.address)
     end

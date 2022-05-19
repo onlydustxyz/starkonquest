@@ -1,6 +1,7 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.math import assert_not_zero
 from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bool import TRUE, FALSE
@@ -299,6 +300,7 @@ func test_tournament_with_4_ships_and_2_ships_per_battle{
         assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (3))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
         assert_that.stage_is(tournament.STAGE_FINISHED)
+        assert_that.tournament_winner_is(3)
     end
     return ()
 end
@@ -361,6 +363,7 @@ func test_tournament_with_9_ships_and_3_ships_per_battle{
         assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (8))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
         assert_that.stage_is(tournament.STAGE_FINISHED)
+        assert_that.tournament_winner_is(8)
     end
     return ()
 end
@@ -498,9 +501,14 @@ namespace test_internal:
             assert round = expected_round_before
         end
 
+        let (local battle_index) = tournament.played_battle_count()
+        assert_that.battle_transaction_hash_is_not_set(battle_index)
+
         %{ start_prank(ids.context.signers.admin) %}
         tournament.play_next_battle()
         %{ stop_prank() %}
+
+        assert_that.battle_transaction_hash_is_set(battle_index)
 
         let (local played_battle_count) = tournament.played_battle_count()
         with_attr error_message(
@@ -599,6 +607,42 @@ namespace assert_that:
         end
 
         _assert_playing_ships_loop(playing_index + 1, playing_ships_len - 1, &playing_ships[1])
+        return ()
+    end
+
+    func tournament_winner_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        expected_winner_ship : felt
+    ):
+        alloc_locals
+        let (local winner_ship) = tournament.tournament_winner()
+        with_attr error_message(
+                "Expected tournament winner ship to be {expected_winner_ship}, got {winner_ship}"):
+            assert winner_ship = expected_winner_ship
+        end
+        return ()
+    end
+
+    func battle_transaction_hash_is_set{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }(battle_index : felt):
+        alloc_locals
+        let (local hash) = tournament.battle_transaction_hash(battle_index)
+        with_attr error_message(
+                "Expected battle transaction hash at index {battle_index} to be set"):
+            assert_not_zero(hash)
+        end
+        return ()
+    end
+
+    func battle_transaction_hash_is_not_set{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }(battle_index : felt):
+        alloc_locals
+        let (local hash) = tournament.battle_transaction_hash(battle_index)
+        with_attr error_message(
+                "Expected battle transaction hash at index {battle_index} not to be set"):
+            assert hash = 0
+        end
         return ()
     end
 end
