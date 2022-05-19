@@ -38,7 +38,7 @@ Tournament logic is also implemented, allowing dozens of players to fight in mul
 
 #### Requirements
 
-- [Protostar](https://github.com/software-mansion/protostar) >= 0.1.0
+- [Protostar](https://github.com/software-mansion/protostar) >= 0.2.0
 - [Python <=3.8](https://www.python.org/downloads/)
 
 #### 📦 Install
