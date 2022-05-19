@@ -132,6 +132,20 @@ func played_battle_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     return tournament.played_battle_count()
 end
 
+@view
+func battle_transaction_hash{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    battle_index : felt
+) -> (hash : felt):
+    return tournament.battle_transaction_hash(battle_index)
+end
+
+@view
+func tournament_winner{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+    winner_ship : felt
+):
+    return tournament.tournament_winner()
+end
+
 # -----------
 # CONSTRUCTOR
 # -----------
