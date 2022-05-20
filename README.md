@@ -16,7 +16,7 @@
   <h3 align="center">StarKonquest Contracts written in Cairo for StarkNet.</h3>
 </div>
 
-StarKonquest is is a game developed in Cairo in which several space ships fight in a finite 2D grid to catch as much dust as possible.
+StarKonquest is an educational game to learn Cairo, in which you implement ship AIs that fight each others in a finite 2D grid to catch as much dust as possible.
 
 The entire game runs in a single transaction, meaning the ships cannot be controlled manually. 
 Players must implement an effective ship AI that will detect and catch dust as quickly as possible.
