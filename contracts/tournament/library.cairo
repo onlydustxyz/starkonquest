@@ -141,6 +141,14 @@ end
 func current_stage_() -> (state : felt):
 end
 
+# ------------------
+# EVENTS
+# ------------------
+
+@event
+func rewards_deposited(depositor_address : felt, amount : Uint256):
+end
+
 namespace tournament:
     # ---------
     # CONSTANTS
@@ -427,6 +435,27 @@ namespace tournament:
         # Push ship to array of playing ships
         playing_ships_.write(current_ship_count, ship_address)
         playing_ship_count_.write(current_ship_count + 1)
+        return (TRUE)
+    end
+
+    # Deposit ERC20 tokens to the tournament as reward
+    # @param amount: the amount of tokens to deposit by caller
+    func deposit_rewards{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        amount : Uint256
+    ) -> (success : felt):
+        let (reward_token_address) = reward_token_address_.read()
+        let (contract_address) = get_contract_address()
+        let (caller_address) = get_caller_address()
+
+        # Transfer tokens to the tournament contract
+        IERC20.transferFrom(
+            contract_address=reward_token_address,
+            sender=caller_address,
+            recipient=contract_address,
+            amount=amount
+        )
+        # Emit deposit event
+        rewards_deposited.emit(caller_address, amount)
         return (TRUE)
     end
 end
