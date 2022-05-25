@@ -200,3 +200,12 @@ func register{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 ) -> (success : felt):
     return tournament.register(ship_address)
 end
+
+# Deposit ERC20 tokens to the tournament as reward
+# @param amount: the amount of tokens to deposit
+@external
+func deposit_rewards{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    amount : Uint256
+) -> (success : felt):
+    return tournament.deposit_rewards(amount)
+end

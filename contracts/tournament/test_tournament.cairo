@@ -365,6 +365,88 @@ func test_tournament_with_9_ships_and_3_ships_per_battle{
     return ()
 end
 
+@external
+func test_deposit_rewards{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+
+    local reward_token_address : felt
+    # Deploy the ERC20 contract and put its address into a local variable.
+    # Second argument is calldata array, with 1000 initial tokens minted to ADMIN
+    %{ 
+        ids.reward_token_address = deploy_contract(
+        "./contracts/tokens/only_dust/only_dust.cairo",
+        # name, symbol, decimals, initial_supply, recipient
+        [420, 69, 0, 1000, 0, ids.ADMIN]).contract_address
+    %}
+
+    # Set reward_token_address to the deployed ERC20 contract.
+    # Call the tournament contract constructor
+    tournament.constructor(
+        owner=ADMIN,
+        tournament_id=1,
+        tournament_name=11,
+        reward_token_address=reward_token_address,
+        boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
+        rand_contract_address=RAND_ADDRESS,
+        battle_contract_address=BATTLE_ADDRESS,
+        ship_count_per_battle=2,
+        required_total_ship_count=2,
+        grid_size=10,
+        turn_count=10,
+        max_dust=8,
+    )
+
+    # Get initial token balances
+    # ADMIN = 1000, Contract = 0
+    let (depositor_balance_before) = IERC20.balanceOf(
+        contract_address=reward_token_address,
+        account=ADMIN
+    )
+    assert depositor_balance_before.low = 1000
+    assert depositor_balance_before.high = 0
+
+    let (reward_total_amount_before) = tournament.reward_total_amount()
+    assert reward_total_amount_before.low = 0
+    assert reward_total_amount_before.high = 0
+
+    # Admin deposits 100 tokens to the tournament contract
+    let deposit_amount = Uint256(100, 0)
+
+    %{ start_prank(ids.ADMIN) %}
+    # Expect revert since there are no approvals yet
+    %{ expect_revert("TRANSACTION_FAILED", "ERC20: transfer amount exceeds allowance") %}
+    tournament.deposit_rewards(deposit_amount)
+
+    # Approve spending of 100 tokens from ADMIN to the tournament contract
+    let (contract_address) = get_contract_address()
+    IERC20.approve(
+        contract_address=reward_token_address,
+        spender=contract_address,
+        amount=deposit_amount
+    )
+
+    # This should pass now
+    %{ expect_events({"name": "rewards_deposited", "data": [ids.context.signers.admin, 100, 0]}) %}
+    tournament.deposit_rewards(deposit_amount)
+    %{ stop_prank() %}
+
+    # Get final token balances
+    # ADMIN = 900, Contract = 100
+    let (depositor_balance_after) = IERC20.balanceOf(
+        contract_address=reward_token_address,
+        account=ADMIN
+    )
+    assert depositor_balance_after.low = 900
+    assert depositor_balance_after.high = 0
+
+    let (reward_total_amount_after) = tournament.reward_total_amount()
+    assert reward_total_amount_before.low = 100
+    assert reward_total_amount_before.high = 0
+
+    return ()
+end
 # -----------------------
 # INTERNAL TEST FUNCTIONS
 # -----------------------
