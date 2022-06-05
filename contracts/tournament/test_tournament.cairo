@@ -2,6 +2,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
+from contracts.models.common import Player
 from starkware.cairo.common.uint256 import Uint256, uint256_eq
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.starknet.common.syscalls import get_contract_address, get_caller_address
@@ -481,6 +482,236 @@ func test_deposit_rewards_with_enough_allowance{
     return ()
 end
 
+@external
+func test_withdraw_reward_tournament_not_finished{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(2, 2)
+
+    %{ stop_prank = start_prank(ids.context.signers.player_1) %}
+    %{ expect_revert("TRANSACTION_FAILED", "Tournament: tournament not yet FINISHED") %}
+    tournament.winner_withdraw()
+    %{ stop_prank() %}
+
+    return ()
+end
+
+@external
+func test_withdraw_reward_by_zero_address{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(2, 2)
+    with context:
+        # Tournament with 2 ships and 2 ships per battle
+        test_internal.setup_tournament(ships_len=2, ships=new (1, 2))
+        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 2))
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+        assert_that.stage_is(tournament.STAGE_STARTED)
+
+        # Play the first and final battle, only 1 round
+        %{ mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 80]) %}
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=2
+        )
+
+        # We have our winner
+        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1))
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+        assert_that.stage_is(tournament.STAGE_FINISHED)
+        assert_that.winner_is(1)
+
+        # zero address withdraws reward
+        %{ stop_prank = start_prank(caller_address=0) %}
+        %{ expect_revert("TRANSACTION_FAILED", "caller cannot be zero address") %}
+        tournament.winner_withdraw()
+    end
+    %{ stop_prank() %}
+    return ()
+end
+
+@external
+func test_withdraw_reward_not_by_winner{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(2, 2)
+    with context:
+        # Tournament with 2 ships and 2 ships per battle
+        test_internal.setup_tournament(ships_len=2, ships=new (1, 2))
+        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 2))
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+        assert_that.stage_is(tournament.STAGE_STARTED)
+
+        # Play the first and final battle, only 1 round
+        %{ mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 80]) %}
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=2
+        )
+
+        # We have our winner
+        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1))
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+        assert_that.stage_is(tournament.STAGE_FINISHED)
+        assert_that.winner_is(1)
+
+        # 2 withdraws reward
+        %{ stop_prank = start_prank(caller_address=2) %}
+        %{ expect_revert("TRANSACTION_FAILED", "Tournament: caller is not the final winner") %}
+        tournament.winner_withdraw()
+    end
+    %{ stop_prank() %}
+    return ()
+end
+
+@external
+func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    alloc_locals
+
+    # Deploy the contracts
+    let (deployed_contracts : DeployedContracts) = test_integration.deploy_contracts()
+
+    # Get initial token balances
+    # ADMIN = 1000, Winner = 0
+    tempvar addresses : felt* = new (ADMIN, PLAYER_1)
+    let (local token_balances_before : Uint256*) = alloc()
+
+    assert token_balances_before[0] = Uint256(1000, 0)
+    assert token_balances_before[1] = Uint256(0, 0)
+
+    with deployed_contracts:
+        assert_that.token_balances_are(
+            addresses_len=2,
+            addresses=addresses,
+            token_balances_len=2,
+            token_balances=token_balances_before,
+            idx=0,
+        )
+
+        # Admin deposits 100 tokens to the tournament contract
+        let deposit_amount = Uint256(100, 0)
+
+        %{
+            stop_prank_admin = start_prank(
+                ids.ADMIN,
+                ids.deployed_contracts.other_address.only_dust_token_address
+            )
+        %}
+        # ADMIN approves the contract to spend 100 tokens
+        IERC20.approve(
+            contract_address=deployed_contracts.other_address.only_dust_token_address,
+            spender=deployed_contracts.tournament_address,
+            amount=deposit_amount,
+        )
+        %{ stop_prank_admin() %}
+
+        %{
+            stop_prank_admin = start_prank(
+                ids.ADMIN,
+                ids.deployed_contracts.tournament_address
+            )
+        %}
+        %{ expect_events({"name": "rewards_deposited", "data": [ids.ADMIN, 100, 0]}) %}
+        # ADMIN deposits 100 tokens to the tournament contract
+        ITournament.deposit_rewards(
+            contract_address=deployed_contracts.tournament_address, amount=deposit_amount
+        )
+
+        # Start registration
+        ITournament.open_registrations(deployed_contracts.tournament_address)
+        %{ stop_prank_admin() %}
+
+        # Register ships, tournament with 2 ships and 2 ships per battle
+        # For simplicity, player_address = ship_address
+        %{
+            mock_call(
+                ids.deployed_contracts.other_address.boarding_pass_token_address,
+                "balanceOf",
+                [1, 0]
+                )
+        %}
+
+        # PLAYER 1 registers
+        %{
+            stop_prank_player_1 = start_prank(
+                ids.PLAYER_1,
+                ids.deployed_contracts.tournament_address
+            )
+        %}
+        ITournament.register(
+            contract_address=deployed_contracts.tournament_address, ship_address=PLAYER_1
+        )
+        %{ stop_prank_player_1() %}
+
+        # PLAYER 2 registers
+        %{
+            stop_prank_player_2 = start_prank(
+                ids.ADMIN,
+                ids.deployed_contracts.tournament_address
+            )
+        %}
+        ITournament.register(
+            contract_address=deployed_contracts.tournament_address, ship_address=PLAYER_2
+        )
+        %{ stop_prank_player_2() %}
+
+        %{
+            stop_prank_admin = start_prank(
+                ids.ADMIN,
+                ids.deployed_contracts.tournament_address
+            )
+        %}
+        # Close registration and start tournament
+        ITournament.close_registrations(deployed_contracts.tournament_address)
+        ITournament.start(deployed_contracts.tournament_address)
+
+        # Play first and final battle, tournament_finished event is emitted
+        %{
+            mock_call(
+                ids.deployed_contracts.other_address.battle_address,
+                "play_game",
+                [2, 100, 80]
+                )
+        %}
+        %{ expect_events({"name": "tournament_finished", "data": [ids.PLAYER_1, ids.PLAYER_1]}) %}
+        ITournament.play_next_battle(deployed_contracts.tournament_address)
+        %{ stop_prank_admin() %}
+
+        # We have our winner PLAYER_1
+        let (stage) = ITournament.stage(deployed_contracts.tournament_address)
+        let (winner) = ITournament.tournament_winner(deployed_contracts.tournament_address)
+        assert stage = tournament.STAGE_FINISHED
+        assert winner.player_address = PLAYER_1
+
+        # Winner withdraws rewards, rewards_withdrawn event is emitted
+        %{
+            stop_prank_winner = start_prank(
+                ids.PLAYER_1,
+                ids.deployed_contracts.tournament_address
+            )
+        %}
+        %{ expect_events({"name": "rewards_withdrawn", "data": [ids.PLAYER_1, 100, 0]}) %}
+        ITournament.winner_withdraw(deployed_contracts.tournament_address)
+        %{ stop_prank_winner() %}
+
+        # Check token balances
+        # ADMIN = 900, Winner = 100
+        let (local token_balances_after : Uint256*) = alloc()
+
+        assert token_balances_after[0] = Uint256(900, 0)
+        assert token_balances_after[1] = Uint256(100, 0)
+        assert_that.token_balances_are(
+            addresses_len=2,
+            addresses=addresses,
+            token_balances_len=2,
+            token_balances=token_balances_after,
+            idx=0,
+        )
+    end
+    return ()
+end
+
 # -----------------------
 # INTERNAL TEST FUNCTIONS
 # -----------------------
@@ -702,6 +933,17 @@ namespace assert_that:
         return ()
     end
 
+    func winner_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+            expected_winner : felt
+        ):
+            let (winner : Player) = tournament.tournament_winner()
+            with_attr error_message(
+                    "Expected winner to be {expected_winner}, got {winner.player_address}"):
+                assert winner.player_address = expected_winner
+            end
+            return ()
+        end
+
     func winning_ships_are{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         winning_ships_len : felt, winning_ships : felt*
     ):
@@ -790,7 +1032,7 @@ namespace assert_that:
         let expected_balance = token_balances[idx]
         let (balance) = IERC20.balanceOf(
             contract_address=deployed_contracts.other_address.only_dust_token_address,
-            account=address
+            account=address,
         )
         let (is_equal) = uint256_eq(balance, expected_balance)
         with_attr error_message(
