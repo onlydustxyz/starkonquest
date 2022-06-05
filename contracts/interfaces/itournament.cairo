@@ -5,16 +5,19 @@ from contracts.models.common import Player
 
 @contract_interface
 namespace ITournament:
-    func start() -> ():
+    func start() -> (res : felt):
     end
 
-    func open_registrations() -> ():
+    func play_next_battle():
     end
 
-    func close_registrations() -> ():
+    func open_registrations() -> (res : felt):
     end
 
-    func register(ship_address) -> ():
+    func close_registrations() -> (res : felt):
+    end
+
+    func register(ship_address) -> (res : felt):
     end
 
     func tournament_id() -> (res : felt):
