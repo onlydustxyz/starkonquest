@@ -17,7 +17,7 @@ from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 from openzeppelin.token.erc721.interfaces.IERC721 import IERC721
 
 from contracts.interfaces.ibattle import IBattle
-from contracts.models.common import ShipInit, Vector2
+from contracts.models.common import ShipInit, Vector2, Player
 from contracts.libraries.math_utils import math_utils
 from contracts.libraries.array_utils import array_utils
 
@@ -33,6 +33,11 @@ end
 # Name of the tournament
 @storage_var
 func tournament_name_() -> (res : felt):
+end
+
+# Winner of the tournament
+@storage_var
+func tournament_winner_() -> (player : Player):
 end
 
 # ERC20 token address for the reward
@@ -146,7 +151,15 @@ end
 # ------------------
 
 @event
+func tournament_finished(winner : Player):
+end
+
+@event
 func rewards_deposited(depositor_address : felt, amount : Uint256):
+end
+
+@event
+func rewards_withdrawn(winner_address : felt, amount : Uint256):
 end
 
 namespace tournament:
@@ -176,6 +189,13 @@ namespace tournament:
     ):
         let (tournament_name) = tournament_name_.read()
         return (tournament_name)
+    end
+
+    func tournament_winner{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+        tournament_winner : Player
+    ):
+        let (tournament_winner : Player) = tournament_winner_.read()
+        return (tournament_winner)
     end
 
     func reward_token_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -456,6 +476,40 @@ namespace tournament:
         )
         # Emit deposit event
         rewards_deposited.emit(caller_address, amount)
+        return (TRUE)
+    end
+
+    # Winner withdraws ERC20 tokens rewards for the tournament
+    func winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+        success : felt
+    ):
+        let (reward_token_address) = reward_token_address_.read()
+        let (contract_address) = get_contract_address()
+        let (caller_address) = get_caller_address()
+
+        # Check that the tournament has finished
+        let (current_stage) = current_stage_.read()
+        with_attr error_message("Tournament: tournament not yet FINISHED"):
+            assert current_stage = tournament.STAGE_FINISHED
+        end
+
+        # Check that the caller is the final winner of the tournament
+        let (winner : Player) = tournament_winner_.read()
+        with_attr error_message("Tournament: caller cannot be zero address"):
+            assert_not_zero(caller_address)
+        end
+
+        with_attr error_message("Tournament: caller is not the final winner"):
+            assert winner.player_address = caller_address
+        end
+
+        # Transfer rewards to winner
+        let (reward_amount) = reward_total_amount()
+        IERC20.transfer(
+            contract_address=reward_token_address, recipient=caller_address, amount=reward_amount
+        )
+        # Emit winner withdraw event
+        rewards_withdrawn.emit(caller_address, reward_amount)
         return (TRUE)
     end
 end
