@@ -17,3 +17,8 @@ struct ShipInit:
     member address : felt
     member position : Vector2
 end
+
+struct Player:
+    member player_address : felt
+    member ship_address : felt
+end
