@@ -384,8 +384,7 @@ func test_deposit_rewards_with_less_allowance{
     # Get initial token balances
     # ADMIN = 1000
     let (balance) = IERC20.balanceOf(
-        contract_address=deployed_contracts.other_address.only_dust_token_address,
-        account=ADMIN
+        contract_address=deployed_contracts.other_address.only_dust_token_address, account=ADMIN
     )
     assert balance.low = 1000
     assert balance.high = 0
@@ -393,17 +392,16 @@ func test_deposit_rewards_with_less_allowance{
     # Admin deposits 100 tokens to the tournament contract
     let deposit_amount = Uint256(100, 0)
 
-    %{ 
+    %{
         stop_prank = start_prank(
             ids.ADMIN,
             ids.deployed_contracts.other_address.only_dust_token_address
-        ) 
+        )
     %}
     # Expect revert since there are no approvals yet
     %{ expect_revert("TRANSACTION_FAILED", "ERC20: transfer amount exceeds allowance") %}
     ITournament.deposit_rewards(
-        contract_address=deployed_contracts.tournament_address,
-        amount=deposit_amount
+        contract_address=deployed_contracts.tournament_address, amount=deposit_amount
     )
     %{ stop_prank() %}
     return ()
@@ -435,36 +433,35 @@ func test_deposit_rewards_with_enough_allowance{
             addresses=addresses,
             token_balances_len=2,
             token_balances=token_balances_before,
-            idx=0
+            idx=0,
         )
 
         # Admin deposits 100 tokens to the tournament contract
         let deposit_amount = Uint256(100, 0)
 
-        %{ 
+        %{
             stop_prank = start_prank(
                 ids.ADMIN,
                 ids.deployed_contracts.other_address.only_dust_token_address
-            ) 
+            )
         %}
         # Approve the contract to spend 100 tokens
         IERC20.approve(
             contract_address=deployed_contracts.other_address.only_dust_token_address,
             spender=deployed_contracts.tournament_address,
-            amount=deposit_amount
+            amount=deposit_amount,
         )
         %{ stop_prank() %}
 
-        %{ 
+        %{
             stop_prank = start_prank(
                 ids.ADMIN,
                 ids.deployed_contracts.tournament_address
-            ) 
+            )
         %}
         %{ expect_events({"name": "rewards_deposited", "data": [ids.ADMIN, 100, 0]}) %}
         ITournament.deposit_rewards(
-            contract_address=deployed_contracts.tournament_address,
-            amount=deposit_amount
+            contract_address=deployed_contracts.tournament_address, amount=deposit_amount
         )
         %{ stop_prank() %}
 
@@ -476,7 +473,7 @@ func test_deposit_rewards_with_enough_allowance{
             addresses=addresses,
             token_balances_len=2,
             token_balances=token_balances_after,
-            idx=0
+            idx=0,
         )
     end
     return ()
@@ -870,50 +867,51 @@ end
 # --------------------------
 
 namespace test_integration:
-    func deploy_contracts{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    ) -> (deployed_contracts : DeployedContracts):
-    alloc_locals
+    func deploy_contracts{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+        deployed_contracts : DeployedContracts
+    ):
+        alloc_locals
 
-    local reward_token_address : felt
-    local tournament_contract_address : felt
+        local reward_token_address : felt
+        local tournament_contract_address : felt
 
-    # Deploy the ERC20 contract and put its address into a local variable.
-    # Second argument is calldata array, with 1000 initial tokens minted to ADMIN
-    %{ 
-        ids.reward_token_address = deploy_contract(
-        "./contracts/tokens/only_dust/only_dust.cairo",
-        # name, symbol, decimals, initial_supply, recipient
-        [420, 69, 0, 1000, 0, ids.ADMIN]).contract_address
-    %}
+        # Deploy the ERC20 contract and put its address into a local variable.
+        # Second argument is calldata array, with 1000 initial tokens minted to ADMIN
+        %{
+            ids.reward_token_address = deploy_contract(
+            "./contracts/tokens/only_dust/only_dust.cairo",
+            # name, symbol, decimals, initial_supply, recipient
+            [420, 69, 0, 1000, 0, ids.ADMIN]).contract_address
+        %}
 
-    # TO-DO: Deploy other contracts here
+        # TO-DO: Deploy other contracts here
 
-    # Replace mocks with deployed contract addresses here and deploy the tournament contract
-    %{
-        ids.tournament_contract_address = deploy_contract(
-        "./contracts/tournament/tournament.cairo",
-        [   # owner, tournament_id, tournament_name
-            ids.ADMIN, 1, 11, 
-            ids.reward_token_address,
-            ids.BOARDING_TOKEN_ADDRESS,
-            ids.RAND_ADDRESS,
-            ids.BATTLE_ADDRESS,
-            # ship_count_per_battle, required_total_ship_count, grid_size, turn_count, max_dust
-            2, 2, 10, 10, 8
-        ]).contract_address
-    %}
+        # Replace mocks with deployed contract addresses here and deploy the tournament contract
+        %{
+            ids.tournament_contract_address = deploy_contract(
+            "./contracts/tournament/tournament.cairo",
+            [   # owner, tournament_id, tournament_name
+                ids.ADMIN, 1, 11, 
+                ids.reward_token_address,
+                ids.BOARDING_TOKEN_ADDRESS,
+                ids.RAND_ADDRESS,
+                ids.BATTLE_ADDRESS,
+                # ship_count_per_battle, required_total_ship_count, grid_size, turn_count, max_dust
+                2, 2, 10, 10, 8
+            ]).contract_address
+        %}
 
-    let deployed_contracts = DeployedContracts(
-        tournament_address=tournament_contract_address,
         # Replace mocks with deployed contract addresses here
-        Mocks(
+        let deployed_contracts = DeployedContracts(
+            tournament_address=tournament_contract_address,
+            other_address=Mocks(
             only_dust_token_address=reward_token_address,
             boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
             rand_address=RAND_ADDRESS,
             battle_address=BATTLE_ADDRESS
+            ),
         )
-    )
-    return (deployed_contracts)
+        return (deployed_contracts)
     end
 end
 
@@ -934,15 +932,15 @@ namespace assert_that:
     end
 
     func winner_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-            expected_winner : felt
-        ):
-            let (winner : Player) = tournament.tournament_winner()
-            with_attr error_message(
-                    "Expected winner to be {expected_winner}, got {winner.player_address}"):
-                assert winner.player_address = expected_winner
-            end
-            return ()
+        expected_winner : felt
+    ):
+        let (winner : Player) = tournament.tournament_winner()
+        with_attr error_message(
+                "Expected winner to be {expected_winner}, got {winner.player_address}"):
+            assert winner.player_address = expected_winner
         end
+        return ()
+    end
 
     func winning_ships_are{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         winning_ships_len : felt, winning_ships : felt*
@@ -1013,11 +1011,16 @@ namespace assert_that:
     end
 
     func token_balances_are{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, deployed_contracts : DeployedContracts
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr,
+        deployed_contracts : DeployedContracts,
     }(
-        addresses_len : felt, addresses : felt*,
-        token_balances_len : felt, token_balances : Uint256*,
-        idx : felt
+        addresses_len : felt,
+        addresses : felt*,
+        token_balances_len : felt,
+        token_balances : Uint256*,
+        idx : felt,
     ):
         alloc_locals
         if addresses_len == 0:
@@ -1035,17 +1038,12 @@ namespace assert_that:
             account=address,
         )
         let (is_equal) = uint256_eq(balance, expected_balance)
-        with_attr error_message(
-                "Expected token balance to be {expected_balance}, got {balance}"):
+        with_attr error_message("Expected token balance to be {expected_balance}, got {balance}"):
             assert is_equal = TRUE
         end
 
         token_balances_are(
-            addresses_len-1,
-            addresses,
-            token_balances_len-1,
-            token_balances,
-            idx+1
+            addresses_len - 1, addresses, token_balances_len - 1, token_balances, idx + 1
         )
         return ()
     end

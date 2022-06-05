@@ -472,7 +472,7 @@ namespace tournament:
             contract_address=reward_token_address,
             sender=caller_address,
             recipient=contract_address,
-            amount=amount
+            amount=amount,
         )
         # Emit deposit event
         rewards_deposited.emit(caller_address, amount)
@@ -684,7 +684,7 @@ namespace internal:
         return ()
     end
 
-   # Check if the tournament is finished, and if so, end and emit winner
+    # Check if the tournament is finished, and if so, end and emit winner
     func check_for_end_of_tournament{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     }():
