@@ -1,6 +1,7 @@
 %lang starknet
 
 from starkware.cairo.common.uint256 import Uint256
+from contracts.models.common import Player
 
 @contract_interface
 namespace ITournament:
@@ -20,6 +21,9 @@ namespace ITournament:
     end
 
     func tournament_name() -> (res : felt):
+    end
+
+    func tournament_winner() -> (res : Player):
     end
 
     func reward_token_address() -> (res : felt):
@@ -65,5 +69,8 @@ namespace ITournament:
     end
 
     func deposit_rewards(amount : Uint256) -> (res : felt):
+    end
+
+    func winner_withdraw() -> (res : felt):
     end
 end
