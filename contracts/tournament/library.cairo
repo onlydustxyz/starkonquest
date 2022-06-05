@@ -680,11 +680,25 @@ namespace internal:
         current_round_.write(round + 1)
         next_playing_ship_index_.write(0)
         update_playing_ships_for_next_round()
+        check_for_end_of_tournament()
+        return ()
+    end
 
+   # Check if the tournament is finished, and if so, end and emit winner
+    func check_for_end_of_tournament{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }():
         let (playing_ship_count) = playing_ship_count_.read()
         if playing_ship_count == 1:
             # There is only one remaining ship, this is the winner of the tournament
             change_stage(tournament.STAGE_FINISHED)
+
+            # Record winner and emit event
+            let (winner_ship) = playing_ships_.read(0)
+            let (winner_address) = ship_player_.read(winner_ship)
+            let winner = Player(winner_address, winner_ship)
+            tournament_winner_.write(winner)
+            tournament_finished.emit(winner)
             return ()
         end
         return ()
