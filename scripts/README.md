@@ -106,12 +106,6 @@ nile run ./scripts/run/register-ship.py
 
 Etc.
 
-## Close registrations
-
-```bash
-nile run ./scripts/run/close-registrations.py
-```
-
 ## Start tournament
 
 ```bash

@@ -14,9 +14,6 @@ namespace ITournament:
     func open_registrations() -> (res : felt):
     end
 
-    func close_registrations() -> (res : felt):
-    end
-
     func register(ship_address) -> (res : felt):
     end
 
