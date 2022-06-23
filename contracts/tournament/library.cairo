@@ -366,23 +366,6 @@ namespace tournament:
         return (TRUE)
     end
 
-    # Close tournament registrations
-    func close_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        ) -> (success : felt):
-        Ownable_only_owner()
-        internal.only_in_stage(STAGE_REGISTRATIONS_OPEN)
-
-        # Check that we did reach the expected number of players
-        let (current_ship_count) = ship_count_.read()
-        let (required_total_ship_count) = required_total_ship_count_.read()
-        with_attr error_message("Tournament: ship count not reached"):
-            assert current_ship_count = required_total_ship_count
-        end
-
-        internal.change_stage(STAGE_REGISTRATIONS_CLOSED)
-        return (TRUE)
-    end
-
     # Start the tournament
     func start{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
         success : felt
@@ -448,6 +431,17 @@ namespace tournament:
             assert ship_registered_player = 0
         end
         ship_count_.write(current_ship_count + 1)
+        # Check if ship count is equal to required_total_ship_count
+        if current_ship_count + 1 == required_total_ship_count:
+            internal.close_registrations()
+            tempvar syscall_ptr = syscall_ptr
+            tempvar pedersen_ptr = pedersen_ptr
+            tempvar range_check_ptr = range_check_ptr
+        else:
+            tempvar syscall_ptr = syscall_ptr   
+            tempvar pedersen_ptr = pedersen_ptr
+            tempvar range_check_ptr = range_check_ptr
+        end
         # Write player => ship association
         player_ship_.write(player_address, ship_address)
         # Write ship => player association
@@ -737,5 +731,21 @@ namespace internal:
             array_len=scores_len, array=scores
         }()
         return (highest_index)
+    end
+
+    # Close tournament registrations
+    func close_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        ) -> (success : felt):
+        only_in_stage(tournament.STAGE_REGISTRATIONS_OPEN)
+
+        # Check that we did reach the expected number of players
+        let (current_ship_count) = ship_count_.read()
+        let (required_total_ship_count) = required_total_ship_count_.read()
+        with_attr error_message("Tournament: ship count not reached"):
+            assert current_ship_count = required_total_ship_count
+        end
+
+        change_stage(tournament.STAGE_REGISTRATIONS_CLOSED)
+        return (TRUE)
     end
 end

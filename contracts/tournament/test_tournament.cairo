@@ -95,7 +95,7 @@ func test_construct_tournament_with_invalid_ship_count{
 end
 
 @external
-func test_close_registrations_with_good_ship_count{
+func test_automatic_close_registrations{
     syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
 }():
     alloc_locals
@@ -119,42 +119,8 @@ func test_close_registrations_with_good_ship_count{
     tournament.register(ship_address=1001)
     %{ stop_prank_player_2() %}
 
-    # Close registrations
-    %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
-    tournament.close_registrations()
+    # Registration should be closed automatically
     assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED)
-    %{ stop_prank_admin() %}
-
-    return ()
-end
-
-@external
-func test_close_registrations_with_bad_ship_count{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 2)
-
-    # Start registrations
-    %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
-    tournament.open_registrations()
-    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
-    %{ stop_prank_admin() %}
-
-    %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
-
-    # Register ship 1
-    %{ stop_prank_player_1 = start_prank(ids.context.signers.player_1) %}
-    tournament.register(ship_address=1000)
-    %{ stop_prank_player_1() %}
-
-    # Do NOT register ship 2
-
-    # Close registrations
-    %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
-    %{ expect_revert("TRANSACTION_FAILED", "Tournament: ship count not reached") %}
-    tournament.close_registrations()
-    %{ stop_prank_admin() %}
 
     return ()
 end
@@ -249,10 +215,8 @@ func test_register_when_registrations_are_closed{
     tournament.register(ship_address)
     %{ stop_prank_player_1() %}
 
-    %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
-    tournament.close_registrations()
+    # Registration should be closed automatically
     assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED)
-    %{ stop_prank_admin() %}
 
     # Register
     %{ stop_prank_player_2 = start_prank(ids.context.signers.player_2) %}
@@ -676,8 +640,8 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
                 ids.deployed_contracts.tournament_address
             )
         %}
-        # Close registration and start tournament
-        ITournament.close_registrations(deployed_contracts.tournament_address)
+
+        # Start tournament
         ITournament.start(deployed_contracts.tournament_address)
 
         # Play first and final battle, tournament_finished event is emitted
@@ -796,11 +760,8 @@ namespace test_internal:
         %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
         _register_ships_loop(ships_len, ships)
 
-        # Close registration
-        %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
-        tournament.close_registrations()
+        # Registration should now be closed
         assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED)
-        %{ stop_prank_admin() %}
 
         # Start the tournament
         %{ stop_prank_admin= start_prank(ids.context.signers.admin) %}

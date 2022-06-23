@@ -179,14 +179,6 @@ func open_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
     return tournament.open_registrations()
 end
 
-# Close tournament registrations
-@external
-func close_registrations{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-    success : felt
-):
-    return tournament.close_registrations()
-end
-
 # Start the tournament
 @external
 func start{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (success : felt):
