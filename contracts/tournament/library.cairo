@@ -17,7 +17,7 @@ from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 from openzeppelin.token.erc721.interfaces.IERC721 import IERC721
 
 from contracts.interfaces.ibattle import IBattle
-from contracts.models.common import ShipInit, Vector2
+from contracts.models.common import ShipInit, Vector2, Player
 from contracts.libraries.math_utils import math_utils
 from contracts.libraries.array_utils import array_utils
 
@@ -33,6 +33,11 @@ end
 # Name of the tournament
 @storage_var
 func tournament_name_() -> (res : felt):
+end
+
+# Winner of the tournament
+@storage_var
+func tournament_winner_() -> (player : Player):
 end
 
 # ERC20 token address for the reward
@@ -141,6 +146,22 @@ end
 func current_stage_() -> (state : felt):
 end
 
+# ------------------
+# EVENTS
+# ------------------
+
+@event
+func tournament_finished(winner : Player):
+end
+
+@event
+func rewards_deposited(depositor_address : felt, amount : Uint256):
+end
+
+@event
+func rewards_withdrawn(winner_address : felt, amount : Uint256):
+end
+
 namespace tournament:
     # ---------
     # CONSTANTS
@@ -168,6 +189,13 @@ namespace tournament:
     ):
         let (tournament_name) = tournament_name_.read()
         return (tournament_name)
+    end
+
+    func tournament_winner{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+        tournament_winner : Player
+    ):
+        let (tournament_winner : Player) = tournament_winner_.read()
+        return (tournament_winner)
     end
 
     func reward_token_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -429,6 +457,61 @@ namespace tournament:
         playing_ship_count_.write(current_ship_count + 1)
         return (TRUE)
     end
+
+    # Deposit ERC20 tokens to the tournament as reward
+    # @param amount: the amount of tokens to deposit by caller
+    func deposit_rewards{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        amount : Uint256
+    ) -> (success : felt):
+        let (reward_token_address) = reward_token_address_.read()
+        let (contract_address) = get_contract_address()
+        let (caller_address) = get_caller_address()
+
+        # Transfer tokens to the tournament contract
+        IERC20.transferFrom(
+            contract_address=reward_token_address,
+            sender=caller_address,
+            recipient=contract_address,
+            amount=amount,
+        )
+        # Emit deposit event
+        rewards_deposited.emit(caller_address, amount)
+        return (TRUE)
+    end
+
+    # Winner withdraws ERC20 tokens rewards for the tournament
+    func winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+        success : felt
+    ):
+        let (reward_token_address) = reward_token_address_.read()
+        let (contract_address) = get_contract_address()
+        let (caller_address) = get_caller_address()
+
+        # Check that the tournament has finished
+        let (current_stage) = current_stage_.read()
+        with_attr error_message("Tournament: tournament not yet FINISHED"):
+            assert current_stage = tournament.STAGE_FINISHED
+        end
+
+        # Check that the caller is the final winner of the tournament
+        let (winner : Player) = tournament_winner_.read()
+        with_attr error_message("Tournament: caller cannot be zero address"):
+            assert_not_zero(caller_address)
+        end
+
+        with_attr error_message("Tournament: caller is not the final winner"):
+            assert winner.player_address = caller_address
+        end
+
+        # Transfer rewards to winner
+        let (reward_amount) = reward_total_amount()
+        IERC20.transfer(
+            contract_address=reward_token_address, recipient=caller_address, amount=reward_amount
+        )
+        # Emit winner withdraw event
+        rewards_withdrawn.emit(caller_address, reward_amount)
+        return (TRUE)
+    end
 end
 
 namespace internal:
@@ -597,11 +680,25 @@ namespace internal:
         current_round_.write(round + 1)
         next_playing_ship_index_.write(0)
         update_playing_ships_for_next_round()
+        check_for_end_of_tournament()
+        return ()
+    end
 
+    # Check if the tournament is finished, and if so, end and emit winner
+    func check_for_end_of_tournament{
+        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+    }():
         let (playing_ship_count) = playing_ship_count_.read()
         if playing_ship_count == 1:
             # There is only one remaining ship, this is the winner of the tournament
             change_stage(tournament.STAGE_FINISHED)
+
+            # Record winner and emit event
+            let (winner_ship) = playing_ships_.read(0)
+            let (winner_address) = ship_player_.read(winner_ship)
+            let winner = Player(winner_address, winner_ship)
+            tournament_winner_.write(winner)
+            tournament_finished.emit(winner)
             return ()
         end
         return ()

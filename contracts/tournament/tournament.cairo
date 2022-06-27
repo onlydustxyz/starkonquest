@@ -4,7 +4,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
-from contracts.models.common import ShipInit, Vector2
+from contracts.models.common import ShipInit, Vector2, Player
 from contracts.tournament.library import tournament
 
 # -----
@@ -22,6 +22,13 @@ func tournament_name{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_che
     tournament_name : felt
 ):
     return tournament.tournament_name()
+end
+
+@view
+func tournament_winner{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+    tournament_winner : Player
+):
+    return tournament.tournament_winner()
 end
 
 @view
@@ -199,4 +206,21 @@ func register{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     ship_address : felt
 ) -> (success : felt):
     return tournament.register(ship_address)
+end
+
+# Deposit ERC20 tokens to the tournament as reward
+# @param amount: the amount of tokens to deposit
+@external
+func deposit_rewards{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    amount : Uint256
+) -> (success : felt):
+    return tournament.deposit_rewards(amount)
+end
+
+# Winner withdraws ERC20 tokens rewards for the tournament
+@external
+func winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+    success : felt
+):
+    return tournament.winner_withdraw()
 end

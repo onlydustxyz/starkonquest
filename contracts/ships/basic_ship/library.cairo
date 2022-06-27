@@ -46,7 +46,8 @@ namespace BasicShip:
             return (new_direction=Vector2(0, 0))
         end
 
-        return _compute_direction(my_position, dust_position)
+        let (new_direction) = _compute_direction(my_position, dust_position)
+        return(new_direction=new_direction)
     end
 
     func _find_me{

@@ -16,7 +16,7 @@
   <h3 align="center">StarKonquest Contracts written in Cairo for StarkNet.</h3>
 </div>
 
-StarKonquest is is a game developed in Cairo in which several space ships fight in a finite 2D grid to catch as much dust as possible.
+StarKonquest is an educational game to learn Cairo, in which you implement ship AIs that fight each others in a finite 2D grid to catch as much dust as possible.
 
 The entire game runs in a single transaction, meaning the ships cannot be controlled manually. 
 Players must implement an effective ship AI that will detect and catch dust as quickly as possible.
@@ -38,7 +38,7 @@ Tournament logic is also implemented, allowing dozens of players to fight in mul
 
 #### Requirements
 
-- [Protostar](https://github.com/software-mansion/protostar) >= 0.2.0
+- [Protostar](https://github.com/software-mansion/protostar) >= 0.2.1
 - [Python <=3.8](https://www.python.org/downloads/)
 
 #### 📦 Install
@@ -54,7 +54,7 @@ nile install
 ### ⛏️ Compile
 
 ```bash
-make
+protostar build
 ```
 
 ## Goal
@@ -70,7 +70,7 @@ See [instructions](./scripts/README.md) to deploy and run a tournament locally.
 ## Testing
 
 ```bash
-make test
+protostar test
 ```
 
 Coding your ship logic can be tricky, we suggest you use tests to check your code.
