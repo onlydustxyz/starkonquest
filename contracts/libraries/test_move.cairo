@@ -116,9 +116,9 @@ func test_move_ship_nominal{syscall_ptr : felt*, range_check_ptr}():
         add_ship_at(0, 0, ship)
         grid_access.apply_modifications()
 
-        %{ mock_call(ids.ship_contract, "move", [1, 1]) %}
+        %{ stop_mock = mock_call(ids.ship_contract, "move", [1, 1]) %}
         move_strategy.move_all_ships(ship_addresses)
-        %{ clear_mock_call(ids.ship_contract, "move") %}
+        %{ stop_mock() %}
         grid_access.apply_modifications()
 
         with_attr error_message("bad ship move"):
@@ -150,13 +150,13 @@ func test_move_ship_collision_in_current_grid{syscall_ptr : felt*, range_check_p
         grid_access.apply_modifications()
 
         %{
-            mock_call(ids.ship1_contract, "move", [0, 1])
-            mock_call(ids.ship2_contract, "move", [0, 1])
+            stop_mocks_1 = mock_call(ids.ship1_contract, "move", [0, 1])
+            stop_mocks_2 = mock_call(ids.ship2_contract, "move", [0, 1])
         %}
         move_strategy.move_all_ships(ship_addresses)
         %{
-            clear_mock_call(ids.ship1_contract, "move")
-            clear_mock_call(ids.ship2_contract, "move")
+            stop_mocks_1()
+            stop_mocks_2()
         %}
         grid_access.apply_modifications()
 
@@ -190,13 +190,13 @@ func test_move_ship_collision_in_next_grid{syscall_ptr : felt*, range_check_ptr}
         grid_access.apply_modifications()
 
         %{
-            mock_call(ids.ship1_contract, "move", [1, 0])
-            mock_call(ids.ship2_contract, "move", [0, 1])
+            stop_mock_1 = mock_call(ids.ship1_contract, "move", [1, 0])
+            stop_mock_2 = mock_call(ids.ship2_contract, "move", [0, 1])
         %}
         move_strategy.move_all_ships(ship_addresses)
         %{
-            clear_mock_call(ids.ship1_contract, "move")
-            clear_mock_call(ids.ship2_contract, "move")
+            stop_mock_1()
+            stop_mock_2()
         %}
         grid_access.apply_modifications()
 
@@ -225,12 +225,12 @@ func test_move_ship_should_revert_if_out_of_bound{syscall_ptr : felt*, range_che
         grid_access.apply_modifications()
 
         %{
-            mock_call(ids.ship_contract, "move", [-1, 1])
+            stop_mock = mock_call(ids.ship_contract, "move", [-1, 1])
             expect_revert(error_message="Out of bound")
         %}
         move_strategy.move_all_ships(ship_addresses)
     end
-    %{ clear_mock_call(ids.ship_contract, "move") %}
+    %{ stop_mock() %}
 
     return ()
 end

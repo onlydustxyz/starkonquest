@@ -54,7 +54,7 @@ nile install
 ### ⛏️ Compile
 
 ```bash
-make
+protostar build
 ```
 
 ## Goal
@@ -70,7 +70,7 @@ See [instructions](./scripts/README.md) to deploy and run a tournament locally.
 ## Testing
 
 ```bash
-make test
+protostar test
 ```
 
 Coding your ship logic can be tricky, we suggest you use tests to check your code.

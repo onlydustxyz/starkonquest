@@ -119,7 +119,7 @@ func test_spawn_dust{syscall_ptr : felt*, range_check_ptr}():
         grid_access.apply_modifications()
 
         %{
-            mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
+            stop_mock = mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
                            1, 2, # direction => (0, 1)
                            0, 5, # position => (0, 5)
                            0 # not shuffled
@@ -131,7 +131,7 @@ func test_spawn_dust{syscall_ptr : felt*, range_check_ptr}():
         with dust_count, current_turn, context:
             battle.spawn_dust()
         end
-        %{ clear_mock_call(ids.context.rand_contract, 'generate_random_numbers') %}
+        %{ stop_mock() %}
 
         grid_access.apply_modifications()
 
@@ -155,7 +155,7 @@ func test_spawn_no_dust_if_max_dust_count_reached{syscall_ptr : felt*, range_che
         grid_access.apply_modifications()
 
         %{
-            mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
+            stop_mock = mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
                            1, 2, # direction => (0, 1)
                            0, 5, # position => (0, 5)
                            0 # not shuffled
@@ -167,7 +167,7 @@ func test_spawn_no_dust_if_max_dust_count_reached{syscall_ptr : felt*, range_che
         with dust_count, current_turn, context:
             battle.spawn_dust()
         end
-        %{ clear_mock_call(ids.context.rand_contract, 'generate_random_numbers') %}
+        %{ stop_mock() %}
 
         grid_access.apply_modifications()
 
@@ -187,7 +187,7 @@ func test_spawn_no_dust_if_cell_occupied{syscall_ptr : felt*, range_check_ptr}()
         add_ship_at(0, 5, 1)
 
         %{
-            mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
+            stop_mock = mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
                            1, 2, # direction => (0, 1)
                            0, 5, # position => (0, 5)
                            0 # not shuffled
@@ -199,7 +199,7 @@ func test_spawn_no_dust_if_cell_occupied{syscall_ptr : felt*, range_check_ptr}()
         with dust_count, current_turn, context:
             battle.spawn_dust()
         end
-        %{ clear_mock_call(ids.context.rand_contract, 'generate_random_numbers') %}
+        %{ stop_mock() %}
         grid_access.apply_modifications()
 
         assert_dust_count_at(0, 5, 0)
