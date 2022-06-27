@@ -28,9 +28,9 @@ func test_move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     assert next_direction.y = 0
 
     # Change the generated random numbers to get a different random direction
-    %{ 
+    %{
         stop_mock()
-        stop_mock = mock_call(ids.RANDOM_CONTRACT_ADDRESS, "generate_random_numbers", [3, 3, 3, 3, 3]) 
+        stop_mock = mock_call(ids.RANDOM_CONTRACT_ADDRESS, "generate_random_numbers", [3, 3, 3, 3, 3])
     %}
     let (next_direction) = RandomMoveShip.move(grid_len, grid, 1)
 
