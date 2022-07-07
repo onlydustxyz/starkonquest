@@ -103,6 +103,7 @@ func test_automatic_close_registrations{
 
     # Start registrations
     %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
+    %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
     tournament.open_registrations()
     assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
     %{ stop_prank_admin() %}
@@ -116,6 +117,7 @@ func test_automatic_close_registrations{
 
     # Register ship 2
     %{ stop_prank_player_2 = start_prank(ids.context.signers.player_2) %}
+    %{ expect_events({"name": "stage_changed", "data": [2, 3]}) %}
     tournament.register(ship_address=1001)
     %{ stop_prank_player_2() %}
 
@@ -134,6 +136,7 @@ func test_register_without_access{
 
     # Start registration
     %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
+    %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
     tournament.open_registrations()
     assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
     %{ stop_prank_admin() %}
@@ -155,6 +158,7 @@ func test_register_with_access{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
 
     # Start registration
     %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
+    %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
     tournament.open_registrations()
     assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
     %{ stop_prank_admin() %}
@@ -164,6 +168,7 @@ func test_register_with_access{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
     %{ stop_prank_player_1 = start_prank(ids.context.signers.player_1) %}
     let ship_address = 1000
     tournament.register(ship_address)
+    %{ expect_events({"name": "new_player_registered", "data": [ids.context.signers.player_1, 1, 5]}) %}
     %{ stop_prank_player_1() %}
 
     # Check registration
@@ -205,6 +210,7 @@ func test_register_when_registrations_are_closed{
 
     # Open and close registrations
     %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
+    %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
     tournament.open_registrations()
     %{ stop_prank_admin() %}
 
@@ -236,6 +242,7 @@ func test_tournament_with_4_ships_and_2_ships_per_battle{
     alloc_locals
     let (local context : TestContext) = test_internal.prepare(2, 4)
     with context:
+        %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
         test_internal.setup_tournament(ships_len=4, ships=new (1, 2, 3, 4))
         assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
@@ -269,6 +276,7 @@ func test_tournament_with_4_ships_and_2_ships_per_battle{
             stop_mock()
             stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [2, 40, 70])
         %}
+        %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=3, expected_round_before=2, expected_round_after=3
         )
@@ -290,6 +298,7 @@ func test_tournament_with_9_ships_and_3_ships_per_battle{
     alloc_locals
     let (local context : TestContext) = test_internal.prepare(3, 9)
     with context:
+        %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
         test_internal.setup_tournament(ships_len=9, ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9))
         assert_that.playing_ships_are(
             playing_ships_len=9, playing_ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9)
@@ -342,6 +351,7 @@ func test_tournament_with_9_ships_and_3_ships_per_battle{
             stop_mock()
             stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [3, 0, 10, 1300])
         %}
+        %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=4, expected_round_before=2, expected_round_after=3
         )
@@ -483,6 +493,7 @@ func test_withdraw_reward_by_zero_address{
     let (local context : TestContext) = test_internal.prepare(2, 2)
     with context:
         # Tournament with 2 ships and 2 ships per battle
+        %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
         test_internal.setup_tournament(ships_len=2, ships=new (1, 2))
         assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 2))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
@@ -490,6 +501,7 @@ func test_withdraw_reward_by_zero_address{
 
         # Play the first and final battle, only 1 round
         %{ mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 80]) %}
+        %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=2
         )
@@ -517,6 +529,7 @@ func test_withdraw_reward_not_by_winner{
     let (local context : TestContext) = test_internal.prepare(2, 2)
     with context:
         # Tournament with 2 ships and 2 ships per battle
+        %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
         test_internal.setup_tournament(ships_len=2, ships=new (1, 2))
         assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 2))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
@@ -524,6 +537,7 @@ func test_withdraw_reward_not_by_winner{
 
         # Play the first and final battle, only 1 round
         %{ mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 80]) %}
+        %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=2
         )
@@ -653,6 +667,7 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
                 )
         %}
         %{ expect_events({"name": "tournament_finished", "data": [ids.PLAYER_1, ids.PLAYER_1]}) %}
+        %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
         ITournament.play_next_battle(deployed_contracts.tournament_address)
         %{ stop_prank_admin() %}
 
@@ -685,6 +700,24 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
             token_balances_len=2,
             token_balances=token_balances_after,
             idx=0,
+        )
+    end
+    return ()
+end
+
+@external
+func test_event_sent_after_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(2, 2)
+    with context:
+        # Tournament with 2 ships and 2 ships per battle
+        test_internal.setup_tournament(ships_len=2, ships=new (1, 2))
+
+        # Play the first and final battle, only 1 round and test if the event data is correct
+        %{ mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 80]) %}
+        %{ expect_events({"name": "battle_completed", "data": [1, 1, 1]}) %}
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=2
         )
     end
     return ()
@@ -752,6 +785,7 @@ namespace test_internal:
         # Start registration
         %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
         assert_that.stage_is(tournament.STAGE_CREATED)
+        %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
         tournament.open_registrations()
         assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
         %{ stop_prank_admin() %}
@@ -761,10 +795,12 @@ namespace test_internal:
         _register_ships_loop(ships_len, ships)
 
         # Registration should now be closed
+        %{ expect_events({"name": "stage_changed", "data": [2, 3]}) %}
         assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED)
 
         # Start the tournament
         %{ stop_prank_admin= start_prank(ids.context.signers.admin) %}
+        %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
         tournament.start()
         assert_that.stage_is(tournament.STAGE_STARTED)
         %{ stop_prank_admin() %}

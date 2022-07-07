@@ -154,12 +154,24 @@ end
 func tournament_finished(winner : Player):
 end
 
+@event 
+func battle_completed(winner_address : felt, played_battle_count : felt, current_round : felt):
+end
+
 @event
 func rewards_deposited(depositor_address : felt, amount : Uint256):
 end
 
 @event
 func rewards_withdrawn(winner_address : felt, amount : Uint256):
+end
+
+@event
+func new_player_registered(player_address : felt, total_ship_count : felt, remaining_ship_count : felt):
+end
+
+@event
+func stage_changed(old_stage : felt, new_stage : felt):
 end
 
 namespace tournament:
@@ -449,6 +461,11 @@ namespace tournament:
         # Push ship to array of playing ships
         playing_ships_.write(current_ship_count, ship_address)
         playing_ship_count_.write(current_ship_count + 1)
+        new_player_registered.emit(
+            player_address,
+            current_ship_count + 1, 
+            required_total_ship_count - current_ship_count + 1
+        )
         return (TRUE)
     end
 
@@ -553,6 +570,7 @@ namespace internal:
                 "Tournament: cannot change stage from {current_stage} to {new_stage}"):
             assert_lt(current_stage, new_stage)
         end
+        stage_changed.emit(current_stage, new_stage)
         current_stage_.write(new_stage)
         return ()
     end
@@ -617,6 +635,12 @@ namespace internal:
         # Increment played battle count
         let (played_battle_count) = played_battle_count_.read()
         played_battle_count_.write(played_battle_count + 1)
+        
+        # Send the event that the battle is completed
+        let (round) = current_round_.read()
+        let (winner_address) = ship_player_.read(winner_ship.address)
+
+        battle_completed.emit(winner_address, played_battle_count + 1, round)
 
         return (winner_ship.address)
     end
