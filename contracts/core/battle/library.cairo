@@ -11,6 +11,7 @@ from contracts.libraries.square_grid import grid_access, Grid
 from contracts.libraries.cell import cell_access, Cell, Dust
 from contracts.libraries.move import move_strategy
 from contracts.libraries.math_utils import math_utils
+from contracts.test.grid_helper import grid_helper
 
 # ------------------
 # EVENTS
@@ -59,8 +60,6 @@ namespace battle:
 
         with grid, context, scores:
             battle.add_ships(ships_len, ships)
-            grid_access.apply_modifications()
-
             let dust_count = 0
             let current_turn = 0
             with dust_count, current_turn:
@@ -121,11 +120,13 @@ namespace battle:
         if current_turn == context.max_turn_count:
             return ()  # end of the battle
         end
-
+        # %{ print(f"Current turn :{ids.current_turn}/{ids.context.max_turn_count}") %}
         let (battle_contract_address) = get_contract_address()
         new_turn.emit(battle_contract_address, current_turn + 1)
 
         one_turn()
+        # grid_helper.debug_grid()
+
         let current_turn = current_turn + 1
 
         return all_turns_loop()
@@ -148,7 +149,7 @@ namespace battle:
         burn_extra_dust()
         check_ship_and_dust_collisions()
         spawn_dust()
-        grid_access.apply_modifications()
+        # grid_access.apply_modifications()
 
         return ()
     end
@@ -187,7 +188,7 @@ namespace battle:
     ):
         alloc_locals
 
-        let (cell) = grid_access.get_next_cell_at(position.x, position.y)
+        let (cell) = grid_access.get_cell_at(position.x, position.y)
         local range_check_ptr = range_check_ptr  # revoked reference
         with cell:
             # Ensure the cell is free
@@ -198,7 +199,7 @@ namespace battle:
 
             # Put the ship on the grid
             cell_access.add_ship(ship_id)
-            grid_access.set_next_cell_at(position.x, position.y, cell)
+            grid_access.set_cell_at(position.x, position.y, cell)
         end
 
         # Emit events
@@ -228,7 +229,7 @@ namespace battle:
         let (local dust : Dust, position : Vector2) = battle.generate_random_dust_on_border()
 
         # Prevent spawning if next cell is occupied
-        let (cell) = grid_access.get_next_cell_at(position.x, position.y)
+        let (cell) = grid_access.get_cell_at(position.x, position.y)
         with cell:
             let (cell_is_occupied) = cell_access.is_occupied()
             if cell_is_occupied == 1:
@@ -238,7 +239,7 @@ namespace battle:
             # Finally, add dust to the grid
             cell_access.add_dust(dust)
         end
-        grid_access.set_next_cell_at(position.x, position.y, cell)
+        grid_access.set_cell_at(position.x, position.y, cell)
         let dust_count = dust_count + 1
 
         let (contract_address) = get_contract_address()
@@ -279,7 +280,7 @@ namespace battle:
     }() -> (dust_burnt : felt):
         alloc_locals
 
-        let (cell) = grid_access.get_next_cell_at(grid_iterator.x, grid_iterator.y)
+        let (cell) = grid_access.get_cell_at(grid_iterator.x, grid_iterator.y)
         local grid : Grid = grid  # revoked reference
         with cell:
             let (dust_count) = cell_access.get_dust_count{cell=cell}()
@@ -291,7 +292,7 @@ namespace battle:
             cell_access.remove_dust()
         end
 
-        grid_access.set_next_cell_at(grid_iterator.x, grid_iterator.y, cell)
+        grid_access.set_cell_at(grid_iterator.x, grid_iterator.y, cell)
 
         let (contract_address) = get_contract_address()
         dust_destroyed.emit(contract_address, grid_iterator)
@@ -345,7 +346,7 @@ namespace battle:
     }() -> (dust_absorbed : felt):
         alloc_locals
 
-        let (cell) = grid_access.get_next_cell_at(grid_iterator.x, grid_iterator.y)
+        let (cell) = grid_access.get_cell_at(grid_iterator.x, grid_iterator.y)
         local grid : Grid = grid  # revoked reference
         with cell:
             let (has_ship) = cell_access.has_ship()
@@ -355,7 +356,7 @@ namespace battle:
             end
 
             cell_access.remove_dust()
-            grid_access.set_next_cell_at(grid_iterator.x, grid_iterator.y, cell)
+            grid_access.set_cell_at(grid_iterator.x, grid_iterator.y, cell)
             increment_ship_score()
         end
 
@@ -372,7 +373,7 @@ namespace battle:
     }():
         alloc_locals
 
-        let (cell) = grid_access.get_next_cell_at(grid_iterator.x, grid_iterator.y)
+        let (cell) = grid_access.get_cell_at(grid_iterator.x, grid_iterator.y)
         let (ship_id) = cell_access.get_ship{cell=cell}()
 
         let (new_array) = alloc()
