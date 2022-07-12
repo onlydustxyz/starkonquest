@@ -12,40 +12,40 @@ from starkware.cairo.common.bool import TRUE, FALSE
 const RAND_CONTRACT = 11111
 
 func assert_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : felt):
-    let (cell) = grid_access.get_current_cell_at(x, y)
+    let (cell) = grid_access.get_cell_at(x, y)
     let (value) = cell_access.get_ship{cell=cell}()
     assert value = ship_id
     return ()
 end
 
 func assert_dust_count_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust_count : felt):
-    let (cell) = grid_access.get_current_cell_at(x, y)
+    let (cell) = grid_access.get_cell_at(x, y)
     let (value) = cell_access.get_dust_count{cell=cell}()
     assert value = dust_count
     return ()
 end
 
 func assert_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
-    let (cell) = grid_access.get_current_cell_at(x, y)
+    let (cell) = grid_access.get_cell_at(x, y)
     let (value) = cell_access.get_dust{cell=cell}()
     assert value = dust
     return ()
 end
 
 func add_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
-    let (cell) = grid_access.get_next_cell_at(x, y)
+    let (cell) = grid_access.get_cell_at(x, y)
     cell_access.add_dust{cell=cell}(dust)
-    grid_access.set_next_cell_at(x, y, cell)
+    grid_access.set_cell_at(x, y, cell)
     return ()
 end
 
 func add_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : felt):
     alloc_locals
 
-    let (cell) = grid_access.get_next_cell_at(x, y)
+    let (cell) = grid_access.get_cell_at(x, y)
     local range_check_ptr = range_check_ptr  # revoked reference
     cell_access.add_ship{cell=cell}(ship_id)
-    grid_access.set_next_cell_at(x, y, cell)
+    grid_access.set_cell_at(x, y, cell)
     return ()
 end
 
@@ -70,7 +70,6 @@ func test_add_ships{syscall_ptr : felt*, range_check_ptr}():
 
     with grid, context:
         battle.add_ships(context.ship_count, ships)
-        grid_access.apply_modifications()
     end
 
     # Check context
@@ -116,7 +115,6 @@ func test_spawn_dust{syscall_ptr : felt*, range_check_ptr}():
     let (grid) = grid_access.create(10)
     with grid:
         add_ship_at(0, 0, 1)
-        grid_access.apply_modifications()
 
         %{
             stop_mock = mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
@@ -132,8 +130,6 @@ func test_spawn_dust{syscall_ptr : felt*, range_check_ptr}():
             battle.spawn_dust()
         end
         %{ stop_mock() %}
-
-        grid_access.apply_modifications()
 
         assert_dust_count_at(0, 5, 1)
         assert_dust_at(0, 5, Dust(Vector2(0, 1)))
@@ -152,14 +148,13 @@ func test_spawn_no_dust_if_max_dust_count_reached{syscall_ptr : felt*, range_che
     let (grid) = grid_access.create(10)
     with grid:
         add_ship_at(0, 0, 1)
-        grid_access.apply_modifications()
 
         %{
             stop_mock = mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
-                           1, 2, # direction => (0, 1)
-                           0, 5, # position => (0, 5)
-                           0 # not shuffled
-                           ])
+                                   1, 2, # direction => (0, 1)
+                                   0, 5, # position => (0, 5)
+                                   0 # not shuffled
+                                   ])
         %}
         let (context) = create_context_with_no_ship(1)
         local dust_count = context.max_dust
@@ -168,8 +163,6 @@ func test_spawn_no_dust_if_max_dust_count_reached{syscall_ptr : felt*, range_che
             battle.spawn_dust()
         end
         %{ stop_mock() %}
-
-        grid_access.apply_modifications()
 
         assert_dust_count_at(0, 5, 0)
         assert dust_count = context.max_dust
@@ -200,7 +193,6 @@ func test_spawn_no_dust_if_cell_occupied{syscall_ptr : felt*, range_check_ptr}()
             battle.spawn_dust()
         end
         %{ stop_mock() %}
-        grid_access.apply_modifications()
 
         assert_dust_count_at(0, 5, 0)
         assert dust_count = 0
@@ -232,8 +224,6 @@ func test_battle_dust_collision{syscall_ptr : felt*, range_check_ptr}():
         with dust_count:
             battle.burn_extra_dust()
         end
-
-        grid_access.apply_modifications()
 
         with_attr error_message("bad dust move"):
             assert_dust_at(1, 1, dust4)
@@ -270,7 +260,6 @@ func test_battle_ship_absorb_dust{syscall_ptr : felt*, range_check_ptr}():
         with dust_count:
             battle.check_ship_and_dust_collisions()
         end
-        grid_access.apply_modifications()
 
         with_attr error_message("bad dust move"):
             assert_dust_count_at(1, 1, 0)
@@ -313,22 +302,21 @@ func test_full_turn{syscall_ptr : felt*, range_check_ptr}():
         add_dust_at(0, 0, dust1)
         add_dust_at(2, 0, dust2)
         add_dust_at(4, 1, dust3)
-        grid_access.apply_modifications()
 
         %{
             mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
-                           2, 2, # direction => (1, 1)
-                           0, 3, # position => (0, 3)
-                           0 # not shuffled
-                           ])
+                                                               2, 2, # direction => (1, 1)
+                                                               0, 3, # position => (0, 3)
+                                                               0 # not shuffled
+                                                               ])
 
             mock_call(ids.ship1, "move", [0, -1])
             mock_call(ids.ship2, "move", [1, 0])
         %}
 
-        # grid_helper.debug_grid()
+        grid_helper.debug_grid()
         battle.one_turn()
-        # grid_helper.debug_grid()
+        grid_helper.debug_grid()
 
         with_attr error_message("Something wrong with ship1"):
             assert_ship_at(1, 0, ship1)
@@ -369,29 +357,24 @@ func test_full_battle{syscall_ptr : felt*, range_check_ptr}():
 
     with grid, context, scores:
         battle.add_ships(2, ships)
-        grid_access.apply_modifications()
-
         let dust_count = 0
         let current_turn = 0
         with dust_count, current_turn:
             %{
                 mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
-                               2, 2, # direction => (1, 1)
-                               0, 2, # position => (0, 2)
-                               1 # shuffled position (0, 2) => (2, 0)
-                               ])
+                                        2, 2, # direction => (1, 1)
+                                        0, 2, # position => (0, 2)
+                                           1 # shuffled position (0, 2) => (2, 0)
+                                               ])
 
                 mock_call(ids.ship1, "move", [1, -1])
                 mock_call(ids.ship2, "move", [0, -1])
             %}
-
             battle.all_turns_loop()
         end
 
-        # grid_helper.debug_grid()
-
         with_attr error_message("Something wrong with the battle"):
-            assert_ship_at(6, 3, ship1)
+            assert_ship_at(7, 2, ship1)  # assert_ship_at(6, 3, ship1)
             assert_ship_at(4, 1, ship2)
             assert_dust_count_at(3, 1, 1)
             assert_dust_count_at(4, 2, 1)
@@ -423,10 +406,10 @@ func test_play_game{syscall_ptr : felt*, range_check_ptr}():
 
     %{
         mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
-                        2, 2, # direction => (1, 1)
-                        0, 2, # position => (0, 2)
-                        1 # shuffled position (0, 2) => (2, 0)
-                        ])
+                                                2, 2, # direction => (1, 1)
+                                                0, 2, # position => (0, 2)
+                                                1 # shuffled position (0, 2) => (2, 0)
+                                                ])
 
         mock_call(ids.ship1, "move", [1, -1])
         mock_call(ids.ship2, "move", [0, -1])
