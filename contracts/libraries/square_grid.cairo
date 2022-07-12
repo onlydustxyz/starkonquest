@@ -1,5 +1,10 @@
 %lang starknet
 
+from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
+from starkware.cairo.common.dict_access import DictAccess
+from starkware.cairo.common.dict import dict_write, dict_read
+from starkware.cairo.common.registers import get_fp_and_pc
+
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import assert_nn_le
 
@@ -14,8 +19,8 @@ from contracts.libraries.cell import Cell, cell_access
 struct Grid:
     member width : felt
     member cell_count : felt
-    member current_cells : Cell*
-    member next_cells : Cell*
+    member cells_start : DictAccess*
+    member cells_end : DictAccess*
 end
 
 # ------------------
@@ -28,21 +33,27 @@ namespace grid_access:
     #   - width: The number of rows/columns
     # returns:
     #   - grid: The created grid
-    func create(width : felt) -> (grid : Grid):
+    func create{range_check_ptr}(width : felt) -> (grid : Grid):
         alloc_locals
 
         local grid : Grid
         assert grid.width = width
         assert grid.cell_count = width * width
-        let (cells : Cell*) = alloc()
-        assert grid.current_cells = cells
-        assert grid.next_cells = cells
 
-        let (empty_cell) = cell_access.create()
+        let (local empty_cell) = cell_access.create()
+        let (__fp__, _) = get_fp_and_pc()
 
+        let (local my_dict_start) = default_dict_new(default_value=0)
+        let my_dict = my_dict_start
+        let (finalized_dict_start, finalized_dict_end) = default_dict_finalize(
+            my_dict_start, my_dict, 0
+        )
+        # ALLOC
+
+        assert grid.cells_start = my_dict  # finalized_dict_start
+        assert grid.cells_end = my_dict + grid.cell_count * DictAccess.SIZE
         with grid:
-            internal.init_cells_loop(grid.current_cells, 0, empty_cell)
-            internal.init_cells_loop(grid.next_cells, 0, empty_cell)
+            internal.init_cells_loop(grid.cells_start, 0, &empty_cell)
         end
 
         return (grid=grid)
@@ -53,68 +64,77 @@ namespace grid_access:
     #   - x, y: The coordinates of the cell to retrieve
     # Returns:
     #   - cell: The cell
-    func get_current_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (cell : Cell):
+
+    func get_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (cell : Cell):
+        alloc_locals
         let (index) = internal.to_grid_index(x, y)
-        return (cell=grid.current_cells[index])
+
+        let current_cells_dict_end_ptr = grid.cells_end
+
+        let (local val : Cell*) = dict_read{dict_ptr=current_cells_dict_end_ptr}(key=index)
+        local new_grid : Grid
+        new_grid.width = grid.width
+        new_grid.cell_count = grid.cell_count
+        new_grid.cells_start = grid.cells_start
+        new_grid.cells_end = current_cells_dict_end_ptr  # This ptr was moved to the last entry by dict_read
+        let grid = new_grid
+
+        return (cell=[val])
     end
 
-    # Get a given cell in next state (after apply_modifications)
-    # params:
-    #   - x, y: The coordinates of the cell to retrieve
-    # Returns:
-    #   - cell: The cell
-    func get_next_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (cell : Cell):
-        let (index) = internal.to_grid_index(x, y)
-        return (cell=grid.next_cells[index])
-    end
+    func get_cell_at_index{range_check_ptr, grid : Grid}(index : felt) -> (cell : Cell):
+        alloc_locals
+        let current_cells_dict_end_ptr = grid.cells_end
 
+        let (local val : Cell*) = dict_read{dict_ptr=current_cells_dict_end_ptr}(key=index)
+        local new_grid : Grid
+        new_grid.width = grid.width
+        new_grid.cell_count = grid.cell_count
+        new_grid.cells_start = grid.cells_start
+        new_grid.cells_end = current_cells_dict_end_ptr  # This ptr was moved to the last entry by dict_read
+        let grid = new_grid
+
+        return (cell=[val])
+    end
     # Set a given cell in next state (after apply_modifications)
     # params:
     #   - x, y: The coordinates of the cell to retrieve
     #   - new_cell: The new cell value
-    func set_next_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt, new_cell : Cell):
+    func set_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt, new_cell : Cell):
         alloc_locals
+        let (__fp__, _) = get_fp_and_pc()
+
         let (new_cell_index) = internal.to_grid_index(x, y)
+        let cells_end_ptr = grid.cells_end
 
         local new_grid : Grid
         assert new_grid.width = grid.width
         assert new_grid.cell_count = grid.cell_count
-        assert new_grid.current_cells = grid.current_cells
+        assert new_grid.cells_start = grid.cells_start
+        dict_write{dict_ptr=cells_end_ptr}(key=new_cell_index, new_value=cast(&new_cell, felt))
 
-        let cells : Cell* = alloc()
-        assert new_grid.next_cells = cells
-
-        internal.modify_cells_loop(
-            grid.next_cells, new_grid.next_cells, 0, new_cell_index, new_cell
-        )
+        assert new_grid.cells_end = cells_end_ptr
 
         let grid = new_grid
         return ()
     end
-
-    # Apply modifications (next cells move to current cells)
+    # Apply modifications (squash grid dict)
     func apply_modifications{range_check_ptr, grid : Grid}():
         alloc_locals
+        let (__fp__, _) = get_fp_and_pc()
 
         local new_grid : Grid
         assert new_grid.width = grid.width
         assert new_grid.cell_count = grid.cell_count
-        assert new_grid.current_cells = grid.next_cells
-        let (cells : Cell*) = alloc()
-        assert new_grid.next_cells = cells
-
-        let (empty_cell) = cell_access.create()
-        internal.init_cells_loop(new_grid.next_cells, 0, empty_cell)
+        let (finalized_dict_start, finalized_dict_end) = default_dict_finalize(
+            grid.cells_start, grid.cells_end, 0
+        )
+        assert new_grid.cells_start = finalized_dict_start
+        assert new_grid.cells_end = finalized_dict_end
 
         let grid = new_grid
         return ()
     end
-
-    # Generate a random position on a given border (top, left, right, bottom)
-    # params:
-    #   - r1, r2, r3: Random number seeds
-    # returns:
-    #   - position(x,y) random position on a border
     func generate_random_position_on_border{range_check_ptr, grid : Grid}(r1, r2, r3) -> (
         position : Vector2
     ):
@@ -130,7 +150,6 @@ namespace grid_access:
         let (position) = internal.shuffled_position(x, y, r3)
         return (position=position)
     end
-
     # Return a couple of booleans that will be true of the givent position in on the border
     func is_crossing_border{grid : Grid}(position : Vector2, direction : Vector2) -> (
         crossing_border : Vector2
@@ -169,24 +188,7 @@ namespace grid_access:
         return (is_done=0)
     end
 
-    #
-    ####################
-
-    # ------------------
-    # PRIVATE NAMESPACE
-    # ------------------
-
     namespace internal:
-        func init_cells_loop{grid : Grid}(cells : Cell*, index : felt, init_cell : Cell):
-            if index == grid.cell_count:
-                return ()
-            end
-
-            assert [cells] = init_cell
-            init_cells_loop(cells + Cell.SIZE, index + 1, init_cell)
-            return ()
-        end
-
         func to_grid_index{range_check_ptr, grid : Grid}(x : felt, y : felt) -> (index : felt):
             with_attr error_message("Out of bound"):
                 assert_nn_le(x, grid.width - 1)
@@ -197,32 +199,20 @@ namespace grid_access:
             return (index=index)
         end
 
-        func modify_cells_loop{grid : Grid}(
-            old_cells : Cell*,
-            new_cells : Cell*,
-            current_cell_index : felt,
-            new_cell_index : felt,
-            new_cell : Cell,
+        func init_cells_loop{grid : Grid, range_check_ptr}(
+            end_cells : DictAccess*, index : felt, init_cell : Cell*
         ):
-            if current_cell_index == grid.cell_count:
+            alloc_locals
+            if index == grid.cell_count:
+                # -1 ?
                 return ()
             end
 
-            if current_cell_index == new_cell_index:
-                assert [new_cells] = new_cell
-            else:
-                assert [new_cells] = [old_cells]
-            end
+            dict_write{dict_ptr=end_cells}(key=index, new_value=cast(init_cell, felt))
 
-            return modify_cells_loop(
-                old_cells + Cell.SIZE,
-                new_cells + Cell.SIZE,
-                current_cell_index + 1,
-                new_cell_index,
-                new_cell,
-            )
+            init_cells_loop(end_cells, index + 1, init_cell)
+            return ()
         end
-
         # given x, y return randomly Position(x,y) or Position(y,x)
         func shuffled_position{range_check_ptr}(x : felt, y : felt, r) -> (position : Vector2):
             alloc_locals
@@ -239,7 +229,6 @@ namespace grid_access:
 
             return (position=position)
         end
-
         func is_crossing_border{grid : Grid}(position : felt, direction : felt) -> (
             crossing_border : felt
         ):
