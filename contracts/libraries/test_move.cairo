@@ -48,11 +48,9 @@ func test_move_dusts{syscall_ptr : felt*, range_check_ptr}():
         add_dust_at(0, 3, dust2)
         add_dust_at(3, 3, dust3)
         add_dust_at(3, 0, dust4)
-        # grid_access.apply_modifications()
         grid_helper.debug_grid()
 
         move_strategy.move_all_dusts()
-        # grid_access.apply_modifications()
         grid_helper.debug_grid()
         with_attr error_message("bad dust move"):
             assert_dust_at(1, 1, dust1)
@@ -86,10 +84,8 @@ func test_grid_move_dust_beyond_borders{syscall_ptr : felt*, range_check_ptr}():
         add_dust_at(0, 3, dust2)
         add_dust_at(3, 3, dust3)
         add_dust_at(3, 0, dust4)
-        # grid_access.apply_modifications()
 
         move_strategy.move_all_dusts()
-        # grid_access.apply_modifications()
 
         with_attr error_message("bad dust move"):
             assert_dust_at(1, 1, new_dust1)
@@ -115,12 +111,10 @@ func test_move_ship_nominal{syscall_ptr : felt*, range_check_ptr}():
     let (grid) = grid_access.create(4)
     with grid:
         add_ship_at(0, 0, ship)
-        # grid_access.apply_modifications()
 
         %{ stop_mock = mock_call(ids.ship_contract, "move", [1, 1]) %}
         move_strategy.move_all_ships(ship_addresses)
         %{ stop_mock() %}
-        # grid_access.apply_modifications()
 
         with_attr error_message("bad ship move"):
             assert_ship_at(1, 1, ship)
@@ -148,7 +142,6 @@ func test_move_ship_collision_in_current_grid{syscall_ptr : felt*, range_check_p
     with grid:
         add_ship_at(0, 0, ship1)
         add_ship_at(0, 1, ship2)
-        # grid_access.apply_modifications()
 
         %{
             stop_mocks_1 = mock_call(ids.ship1_contract, "move", [0, 1])
@@ -159,7 +152,6 @@ func test_move_ship_collision_in_current_grid{syscall_ptr : felt*, range_check_p
             stop_mocks_1()
             stop_mocks_2()
         %}
-        # grid_access.apply_modifications()
 
         with_attr error_message("bad ship move"):
             assert_ship_at(0, 0, ship1)
@@ -188,7 +180,6 @@ func test_move_ship_collision_in_next_grid{syscall_ptr : felt*, range_check_ptr}
     with grid:
         add_ship_at(0, 1, ship1)
         add_ship_at(1, 0, ship2)
-        # grid_access.apply_modifications()
         grid_helper.debug_grid()
 
         %{
@@ -202,7 +193,6 @@ func test_move_ship_collision_in_next_grid{syscall_ptr : felt*, range_check_ptr}
             stop_mock_1()
             stop_mock_2()
         %}
-        # grid_access.apply_modifications()
 
         with_attr error_message("bad ship move"):
             assert_ship_at(0, 1, ship1)
@@ -226,7 +216,6 @@ func test_move_ship_should_revert_if_out_of_bound{syscall_ptr : felt*, range_che
     let (grid) = grid_access.create(4)
     with grid:
         add_ship_at(0, 0, ship)
-        # grid_access.apply_modifications()
 
         %{
             stop_mock = mock_call(ids.ship_contract, "move", [-1, 1])

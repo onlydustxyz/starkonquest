@@ -32,13 +32,13 @@ namespace move_strategy:
     # Move all dusts on the grid according to their direction, bouncing if needed
     func move_all_dusts{syscall_ptr : felt*, range_check_ptr, grid : Grid}():
         let (grid_iterator) = grid_access.start()
-        let (vector_array : Vector2*) = alloc()
-        let vector_array_len = 0
-        with grid_iterator, vector_array, vector_array_len:
+        let (dust_positions_array : Vector2*) = alloc()
+        let dust_positions_array_len = 0
+        with grid_iterator, dust_positions_array, dust_positions_array_len:
             internal.find_dust_to_move_loop()
         end
-        with vector_array_len:
-            internal.move_relevant_dust_loop(vector_array, 0)
+        with dust_positions_array, dust_positions_array_len:
+            internal.move_relevant_dust_loop(0)
         end
 
         return ()
@@ -48,13 +48,13 @@ namespace move_strategy:
     func move_all_ships{syscall_ptr : felt*, range_check_ptr, grid : Grid}(ship_addresses : felt*):
         alloc_locals
         let (grid_iterator) = grid_access.start()
-        let (vector_array : Vector2*) = alloc()
-        let vector_array_len = 0
-        with grid_iterator, vector_array, vector_array_len:
+        let (ship_positions_array : Vector2*) = alloc()
+        let ship_positions_array_len = 0
+        with grid_iterator, ship_positions_array, ship_positions_array_len:
             internal.find_ship_to_move_loop(ship_addresses)
         end
-        with vector_array_len:
-            internal.move_relevant_ship_loop(vector_array, 0, ship_addresses)
+        with ship_positions_array, ship_positions_array_len:
+            internal.move_relevant_ship_loop(0, ship_addresses)
         end
         return ()
     end
@@ -68,8 +68,8 @@ namespace move_strategy:
             range_check_ptr,
             grid : Grid,
             grid_iterator : Vector2,
-            vector_array : Vector2*,
-            vector_array_len : felt,
+            dust_positions_array : Vector2*,
+            dust_positions_array_len : felt,
         }():
             alloc_locals
             local grid_iterator : Vector2 = grid_iterator
@@ -78,18 +78,18 @@ namespace move_strategy:
                 return ()
             end
 
-            try_move_single_dust()
+            try_add_single_dust_position()
             grid_access.next()
             return find_dust_to_move_loop()
         end
 
-        func try_move_single_dust{
+        func try_add_single_dust_position{
             syscall_ptr : felt*,
             range_check_ptr,
             grid : Grid,
             grid_iterator : Vector2,
-            vector_array : Vector2*,
-            vector_array_len : felt,
+            dust_positions_array : Vector2*,
+            dust_positions_array_len : felt,
         }():
             alloc_locals
 
@@ -102,19 +102,23 @@ namespace move_strategy:
                 return ()
             end
             # Add the dust psition to the end of vector_array
-            assert [vector_array + vector_array_len * Vector2.SIZE] = grid_iterator
-            let vector_array_len = vector_array_len + 1
+            assert dust_positions_array[dust_positions_array_len] = grid_iterator  # [vector_array + vector_array_len * Vector2.SIZE] = grid_iterator
+            let dust_positions_array_len = dust_positions_array_len + 1
 
             return ()
         end
         func move_relevant_dust_loop{
-            syscall_ptr : felt*, range_check_ptr, grid : Grid, vector_array_len : felt
-        }(vector_array : Vector2*, index : felt):
+            syscall_ptr : felt*,
+            range_check_ptr,
+            grid : Grid,
+            dust_positions_array : Vector2*,
+            dust_positions_array_len : felt,
+        }(index : felt):
             alloc_locals
-            if index == vector_array_len:
+            if index == dust_positions_array_len:
                 return ()
             end
-            let position : Vector2 = [vector_array + index * Vector2.SIZE]
+            let position : Vector2 = dust_positions_array[index]  # [vector_array + index * Vector2.SIZE]
             let (cell) = grid_access.get_cell_at(position.x, position.y)
             let (dust) = cell_access.get_dust{cell=cell}()
             move_single_dust(position, dust)
@@ -125,7 +129,7 @@ namespace move_strategy:
             end
             grid_access.set_cell_at(position.x, position.y, cell)
 
-            return move_relevant_dust_loop(vector_array, index + 1)
+            return move_relevant_dust_loop(index + 1)
         end
         func move_single_dust{syscall_ptr : felt*, range_check_ptr, grid : Grid}(
             position : Vector2, dust : Dust
@@ -158,8 +162,8 @@ namespace move_strategy:
             range_check_ptr,
             grid : Grid,
             grid_iterator : Vector2,
-            vector_array : Vector2*,
-            vector_array_len : felt,
+            ship_positions_array : Vector2*,
+            ship_positions_array_len : felt,
         }(ship_addresses : felt*):
             alloc_locals
             local grid_iterator : Vector2 = grid_iterator
@@ -169,19 +173,19 @@ namespace move_strategy:
                 return ()
             end
 
-            try_move_single_ship(ship_addresses)
+            try_add_single_ship_position(ship_addresses)
 
             grid_access.next()
             return find_ship_to_move_loop(ship_addresses)
         end
 
-        func try_move_single_ship{
+        func try_add_single_ship_position{
             syscall_ptr : felt*,
             range_check_ptr,
             grid : Grid,
             grid_iterator : Vector2,
-            vector_array : Vector2*,
-            vector_array_len : felt,
+            ship_positions_array : Vector2*,
+            ship_positions_array_len : felt,
         }(ship_addresses : felt*):
             alloc_locals
 
@@ -194,25 +198,29 @@ namespace move_strategy:
                 return ()
             end
             # Add ship position to move at the end of vector_array
-            assert [vector_array + vector_array_len * Vector2.SIZE] = grid_iterator
-            let vector_array_len = vector_array_len + 1
+            assert ship_positions_array[ship_positions_array_len] = grid_iterator
+            let ship_positions_array_len = ship_positions_array_len + 1
 
             return ()
         end
         func move_relevant_ship_loop{
-            syscall_ptr : felt*, range_check_ptr, grid : Grid, vector_array_len : felt
-        }(vector_array : Vector2*, index : felt, ship_addresses : felt*):
+            syscall_ptr : felt*,
+            range_check_ptr,
+            grid : Grid,
+            ship_positions_array : Vector2*,
+            ship_positions_array_len : felt,
+        }(index : felt, ship_addresses : felt*):
             alloc_locals
-            if index == vector_array_len:
+            if index == ship_positions_array_len:
                 return ()
             end
-            let position : Vector2 = [vector_array + index * Vector2.SIZE]
+            let position : Vector2 = ship_positions_array[index]  # [vector_array + index * Vector2.SIZE]
             let (cell) = grid_access.get_cell_at(position.x, position.y)
             let (ship_id) = cell_access.get_ship{cell=cell}()
             move_single_ship(ship_id, ship_addresses[ship_id - 1], position, cell)
             # grid_helper.debug_grid()
 
-            return move_relevant_ship_loop(vector_array, index + 1, ship_addresses)
+            return move_relevant_ship_loop(index + 1, ship_addresses)
         end
         func move_single_ship{syscall_ptr : felt*, range_check_ptr, grid : Grid}(
             ship_id : felt, ship_contract : felt, position : Vector2, original_cell : Cell
@@ -245,7 +253,6 @@ namespace move_strategy:
 
             cell_access.add_ship{cell=cell_new}(ship_id)
             grid_access.set_cell_at(new_position.x, new_position.y, cell_new)
-            %{ print(f"Ship id : {ids.ship_id} is now at position {ids.new_position.x}, {ids.new_position.y} \t was {ids.position.x}, {ids.position.y} ") %}
 
             # remove ship from cell after it has moved, only if it has moved
             let cell = original_cell
@@ -289,10 +296,6 @@ namespace move_strategy:
             # ! we need to ensure there will be no ship taking its place
             let (destination) = grid_access.get_cell_at(new_position.x, new_position.y)
             let (local has_ship_in_current_grid) = cell_access.has_ship{cell=destination}()
-            # %{ print(f"has ship in current grid: {ids.has_ship_in_current_grid}") %}
-
-            # let (destination) = grid_access.get_next_cell_at(new_position.x, new_position.y)
-            # let (has_ship_in_next_grid) = cell_access.has_ship{cell=destination}()
 
             let (collision) = is_not_zero(has_ship_in_current_grid)  # + has_ship_in_next_grid)
             return (collision=collision)
