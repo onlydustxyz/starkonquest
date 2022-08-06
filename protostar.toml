@@ -36,3 +36,6 @@ tournament = [
 starkonquest_boarding_pass = [
     "./contracts/tokens/starkonquest_boarding_pass/starkonquest_boarding_pass.cairo",
 ]
+account = [
+    "./contracts/account/account.cairo",
+]
