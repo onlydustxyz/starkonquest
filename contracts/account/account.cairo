@@ -102,12 +102,12 @@ func tokenURI{
 end
 
 @view
-func accountInformation{
+func account_information{
         syscall_ptr : felt*,
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(tokenId: Uint256) -> (account: Account):
-    return account.accountInformation(tokenId)
+    return account.account_information(tokenId)
 end
 
 #
@@ -165,8 +165,8 @@ func mint{
         pedersen_ptr: HashBuiltin*,
         syscall_ptr: felt*,
         range_check_ptr
-    }(to: felt, tokenId: Uint256, nickname: felt):
-    return account.mint(to, tokenId, nickname)
+    }(to: felt, nickname: felt):
+    return account.mint(to, nickname)
 end
 
 @external

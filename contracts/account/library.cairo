@@ -4,7 +4,7 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, uint256_add
 
 from openzeppelin.token.erc721.library import (
     ERC721_name,
@@ -45,9 +45,12 @@ end
 # STORAGE VARS
 # ------------
 
-# Id of the tournament
 @storage_var
 func account_information_(token_id: Uint256) -> (res : Account):
+end
+
+@storage_var
+func next_token_id_() -> (res : Uint256):
 end
 
 namespace account:
@@ -127,7 +130,7 @@ namespace account:
         return (tokenURI)
     end
 
-    func accountInformation{
+    func account_information{
             syscall_ptr : felt*,
             pedersen_ptr : HashBuiltin*,
             range_check_ptr
@@ -219,11 +222,16 @@ namespace account:
             pedersen_ptr: HashBuiltin*, 
             syscall_ptr: felt*, 
             range_check_ptr
-        }(to: felt, tokenId: Uint256, nickname: felt):
-        Ownable_only_owner()
-        ERC721_mint(to, tokenId)
+        }(to: felt, nickname: felt):
+        alloc_locals
+        let (next_token_id) = next_token_id_.read()
+        ERC721_mint(to, next_token_id)
+
         let account: Account = Account(nickname, 0, 0, 0, 0)
-        account_information_.write(tokenId, account)
+        account_information_.write(next_token_id, account)
+
+        let (incremented_token_id, _) = uint256_add(next_token_id, Uint256(1, 0))
+        next_token_id_.write(incremented_token_id)
         return ()
     end
 
