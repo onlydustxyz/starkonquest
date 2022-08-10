@@ -35,7 +35,7 @@ from openzeppelin.access.ownable import (
 
 struct Account:
     member nickname : felt
-    member win_tournament_count : felt
+    member won_tournament_count : felt
     member lost_tournament_count : felt
     member won_battle_count : felt
     member lost_battle_count : felt
