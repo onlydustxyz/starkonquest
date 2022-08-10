@@ -19,7 +19,15 @@ func test_mint_account{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashB
     let (account2: Account) = account_information(Uint256(1, 0))
     
     assert 0x321 = account1.nickname
+    assert 0 = account1.won_tournament_count
+    assert 0 = account1.lost_tournament_count
+    assert 0 = account1.won_battle_count
+    assert 0 = account1.lost_battle_count
     assert 0x432 = account2.nickname
+    assert 0 = account2.won_tournament_count
+    assert 0 = account2.lost_tournament_count
+    assert 0 = account2.won_battle_count
+    assert 0 = account2.lost_battle_count
     
     return ()
 end
