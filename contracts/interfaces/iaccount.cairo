@@ -1,7 +1,10 @@
 %lang starknet
 
+from starkware.cairo.common.uint256 import Uint256
+from contracts.account.library import Account
+
 @contract_interface
-namespace IBattle:
+namespace IAccount:
     
     func supportsInterface(interfaceId: felt) -> (success: felt):
     end

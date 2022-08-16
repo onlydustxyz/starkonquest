@@ -60,6 +60,11 @@ end
 func battle_contract_address_() -> (res : felt):
 end
 
+# Account contract address
+@storage_var
+func account_contract_address_() -> (res : felt):
+end
+
 # Number of ships per battle
 @storage_var
 func ship_count_per_battle_() -> (res : felt):
@@ -333,6 +338,7 @@ namespace tournament:
         boarding_pass_token_address : felt,
         rand_contract_address : felt,
         battle_contract_address : felt,
+        account_contract_address : felt,
         ship_count_per_battle : felt,
         required_total_ship_count : felt,
         grid_size : felt,
@@ -356,6 +362,7 @@ namespace tournament:
         boarding_pass_token_address_.write(boarding_pass_token_address)
         rand_contract_address_.write(rand_contract_address)
         battle_contract_address_.write(battle_contract_address)
+        account_contract_address_.write(account_contract_address)
         ship_count_per_battle_.write(ship_count_per_battle)
         required_total_ship_count_.write(required_total_ship_count)
         grid_size_.write(grid_size)
@@ -416,12 +423,23 @@ namespace tournament:
         alloc_locals
         internal.only_in_stage(STAGE_REGISTRATIONS_OPEN)
         let (player_address) = get_caller_address()
+
+        # Check that the user minted an account
+        let (account_contract_address) = account_contract_address_.read()
+        let (player_account_balance) = IERC721.balanceOf(
+            contract_address=account_contract_address, owner=player_address
+        )
+        let one = Uint256(1, 0)
+
+        with_attr error_message("Tournament: player needs an account to register"):
+            assert player_account_balance = one
+        end
+
         let (boarding_pass_token_address) = boarding_pass_token_address_.read()
         # Check access control with NFT boarding pass
         let (player_boarding_pass_balance) = IERC721.balanceOf(
             contract_address=boarding_pass_token_address, owner=player_address
         )
-        let one = Uint256(1, 0)
         let (is_allowed) = uint256_le(one, player_boarding_pass_balance)
         with_attr error_message("Tournament: player is not allowed to register"):
             assert is_allowed = TRUE
