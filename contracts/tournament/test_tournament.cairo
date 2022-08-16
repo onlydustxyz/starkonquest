@@ -15,6 +15,7 @@ from contracts.tournament.library import (
     winning_ships_,
     winning_ship_count_,
 )
+from contracts.interfaces.iaccount import IAccount
 
 # ---------
 # CONSTANTS
@@ -24,6 +25,7 @@ const ONLY_DUST_TOKEN_ADDRESS = 0x3fe90a1958bb8468fb1b62970747d8a00c435ef96cda70
 const BOARDING_TOKEN_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a95
 const RAND_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a91
 const BATTLE_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04aaa
+const ACCOUNT_TOKEN_ADDRESS = 0x4b8145115592590ecddac23732a454abfe682f02ab0a01b7682835eecd906f8a
 const ADMIN = 300
 const ANYONE = 301
 const PLAYER_1 = 302
@@ -45,6 +47,7 @@ struct Mocks:
     member boarding_pass_token_address : felt
     member rand_address : felt
     member battle_address : felt
+    member account_token_address : felt
 end
 
 struct TestContext:
@@ -85,6 +88,7 @@ func test_construct_tournament_with_invalid_ship_count{
         boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
         rand_contract_address=RAND_ADDRESS,
         battle_contract_address=BATTLE_ADDRESS,
+        account_contract_address=ACCOUNT_TOKEN_ADDRESS,
         ship_count_per_battle=ship_count_per_battle,
         required_total_ship_count=required_total_ship_count,
         grid_size=10,
@@ -109,6 +113,7 @@ func test_automatic_close_registrations{
     %{ stop_prank_admin() %}
 
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
+    %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
 
     # Register ship 1
     %{ stop_prank_player_1 = start_prank(ids.context.signers.player_1) %}
@@ -128,6 +133,31 @@ func test_automatic_close_registrations{
 end
 
 @external
+func test_register_without_account{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(2, 4)
+
+    # Start registration
+    %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
+    %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
+    tournament.open_registrations()
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
+    %{ stop_prank_admin() %}
+
+    # Fail to register
+    %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
+    %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [0, 0]) %}
+    %{ stop_prank_anyone = start_prank(ids.context.signers.anyone) %}
+    %{ expect_revert("TRANSACTION_FAILED", "Tournament: player needs an account to register") %}
+    tournament.register(1000)
+    %{ stop_prank_anyone() %}
+
+    return ()
+end
+
+@external
 func test_register_without_access{
     syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
 }():
@@ -142,6 +172,7 @@ func test_register_without_access{
     %{ stop_prank_admin() %}
 
     # Fail to register
+    %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [0, 0]) %}
     %{ stop_prank_anyone = start_prank(ids.context.signers.anyone) %}
     %{ expect_revert("TRANSACTION_FAILED", "Tournament: player is not allowed to register") %}
@@ -165,6 +196,7 @@ func test_register_with_access{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
 
     # Register
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
+    %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
     %{ stop_prank_player_1 = start_prank(ids.context.signers.player_1) %}
     let ship_address = 1000
     tournament.register(ship_address)
@@ -191,6 +223,7 @@ func test_register_when_registrations_are_not_yet_open{
 
     # Register
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
+    %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
     %{ stop_prank_player_1 = start_prank(ids.context.signers.player_1) %}
     let ship_address = 1000
 
@@ -216,6 +249,7 @@ func test_register_when_registrations_are_closed{
 
     # Register one ship to be able to close registrations
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
+    %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
     %{ stop_prank_player_1 = start_prank(ids.context.signers.player_1) %}
     let ship_address = 1001
     tournament.register(ship_address)
@@ -623,6 +657,13 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
                 [1, 0]
                 )
         %}
+        %{
+            mock_call(
+                ids.deployed_contracts.other_address.account_token_address,
+                "balanceOf",
+                [1, 0]
+                )
+        %}
 
         # PLAYER 1 registers
         %{
@@ -739,6 +780,7 @@ namespace test_internal:
             boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
             rand_address=RAND_ADDRESS,
             battle_address=BATTLE_ADDRESS,
+            account_token_address=ACCOUNT_TOKEN_ADDRESS
             )
 
         local context : TestContext = TestContext(
@@ -761,6 +803,7 @@ namespace test_internal:
             mocks.boarding_pass_token_address,
             mocks.rand_address,
             mocks.battle_address,
+            mocks.account_token_address,
             context.ships_per_battle,
             context.max_ships_per_tournament,
             context.grid_size,
@@ -792,6 +835,7 @@ namespace test_internal:
 
         # Register ships
         %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
+        %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
         _register_ships_loop(ships_len, ships)
 
         # Registration should now be closed
@@ -910,6 +954,7 @@ namespace test_integration:
                 ids.BOARDING_TOKEN_ADDRESS,
                 ids.RAND_ADDRESS,
                 ids.BATTLE_ADDRESS,
+                ids.ACCOUNT_TOKEN_ADDRESS,
                 # ship_count_per_battle, required_total_ship_count, grid_size, turn_count, max_dust
                 2, 2, 10, 10, 8
             ]).contract_address
@@ -922,7 +967,8 @@ namespace test_integration:
             only_dust_token_address=reward_token_address,
             boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
             rand_address=RAND_ADDRESS,
-            battle_address=BATTLE_ADDRESS
+            battle_address=BATTLE_ADDRESS,
+            account_token_address=ACCOUNT_TOKEN_ADDRESS
             ),
         )
         return (deployed_contracts)
