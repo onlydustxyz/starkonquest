@@ -6,7 +6,31 @@ from contracts.account.account import (
     Account,
     mint,
     account_information,
+    transferFrom,
+    safeTransferFrom
 )
+from contracts.interfaces.itournament import ITournament
+
+const ONLY_DUST_TOKEN_ADDRESS = 0x3fe90a1958bb8468fb1b62970747d8a00c435ef96cda708ae8de3d07f1bb56b
+const BOARDING_TOKEN_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a95
+const RAND_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a91
+const BATTLE_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04aaa
+const ADMIN = 300
+const ANYONE = 301
+const PLAYER_1 = 302
+const PLAYER_2 = 303
+
+struct Mocks:
+    member only_dust_token_address : felt
+    member boarding_pass_token_address : felt
+    member rand_address : felt
+    member battle_address : felt
+end
+
+struct DeployedContracts:
+    member tournament_address : felt
+    member other_address : Mocks
+end
 
 @external
 func test_mint_account{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashBuiltin*}():
@@ -15,8 +39,8 @@ func test_mint_account{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashB
     mint(0x123, 0x321)
     mint(0x124, 0x432)
 
-    let (account1: Account) = account_information(Uint256(0, 0))
-    let (account2: Account) = account_information(Uint256(1, 0))
+    let (account1: Account) = account_information(0x123)
+    let (account2: Account) = account_information(0x124)
     
     assert 0x321 = account1.nickname
     assert 0 = account1.won_tournament_count
@@ -30,4 +54,79 @@ func test_mint_account{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashB
     assert 0 = account2.lost_battle_count
     
     return ()
+end
+
+@external
+func test_should_not_accept_two_mints_for_one_address{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashBuiltin*}():
+    alloc_locals
+
+    mint(0x121, 0x321)
+    %{ expect_revert(error_message='Account: This address already has an associated account') %}
+    mint(0x121, 0x432)
+    
+    return ()
+end
+
+@external
+func test_should_not_accept_tranferring_accounts{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashBuiltin*}():
+    alloc_locals
+
+    mint(0x123, 0x321)
+    %{ expect_revert(error_message='Account: transferring account is disabled') %}
+    transferFrom(0x123, 0x124, Uint256(1, 0))
+    
+    return ()
+end
+
+@external
+func test_auto_increment_win_count{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashBuiltin*}():
+    let (deployed_contracts : DeployedContracts) = test_integration.deploy_contracts()
+
+    %{
+        stop_prank_admin = start_prank(
+            ids.ADMIN,
+            ids.deployed_contracts.tournament_address
+        )
+    %}
+    # Start registration
+    ITournament.open_registrations(deployed_contracts.tournament_address)
+    %{ stop_prank_admin() %}
+
+    return ()
+end
+
+namespace test_integration:
+    func deploy_contracts{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+        deployed_contracts : DeployedContracts
+    ):
+        alloc_locals
+
+        local reward_token_address : felt
+        local tournament_contract_address : felt
+
+        %{
+            ids.tournament_contract_address = deploy_contract(
+            "./contracts/tournament/tournament.cairo",
+            [   # owner, tournament_id, tournament_name
+                ids.ADMIN, 1, 11, 
+                0x01, # we don't care about reward token address here
+                ids.BOARDING_TOKEN_ADDRESS,
+                ids.RAND_ADDRESS,
+                ids.BATTLE_ADDRESS,
+                # ship_count_per_battle, required_total_ship_count, grid_size, turn_count, max_dust
+                2, 2, 10, 10, 8
+            ]).contract_address
+        %}
+
+        let deployed_contracts = DeployedContracts(
+            tournament_address=tournament_contract_address,
+            other_address=Mocks(
+            only_dust_token_address=0x01,
+            boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
+            rand_address=RAND_ADDRESS,
+            battle_address=BATTLE_ADDRESS
+            ),
+        )
+        return (deployed_contracts)
+    end
 end

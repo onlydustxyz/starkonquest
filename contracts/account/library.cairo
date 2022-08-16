@@ -5,6 +5,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_add
+from starkware.cairo.common.math import assert_le
 
 from openzeppelin.token.erc721.library import (
     ERC721_name,
@@ -47,6 +48,11 @@ end
 
 @storage_var
 func account_information_(token_id: Uint256) -> (res : Account):
+end
+
+# get the token associated with a given account
+@storage_var
+func account_id_(address: felt) -> (token_id : Uint256):
 end
 
 @storage_var
@@ -134,8 +140,9 @@ namespace account:
             syscall_ptr : felt*,
             pedersen_ptr : HashBuiltin*,
             range_check_ptr
-        }(tokenId: Uint256) -> (account: Account):
-        let (account: Account) = account_information_.read(tokenId)
+        }(address: felt) -> (account: Account):
+        let (token_id: Uint256) = account_id_.read(address)
+        let (account: Account) = account_information_.read(token_id)
         return (account)
     end
 
@@ -189,7 +196,9 @@ namespace account:
             to: felt, 
             tokenId: Uint256
         ):
-        ERC721_transferFrom(from_, to, tokenId)
+        with_attr error_message("Account: transferring account is disabled"):
+            assert 1 = 0
+        end
         return ()
     end
 
@@ -224,14 +233,25 @@ namespace account:
             range_check_ptr
         }(to: felt, nickname: felt):
         alloc_locals
+
+        # we check if the address already has an account
+        let (balance) = balanceOf(to)
+
+        with_attr error_message("Account: This address already has an associated account"):
+            assert_le(balance.low, 0)
+            assert_le(balance.high, 0)
+        end
+
         let (next_token_id) = next_token_id_.read()
         ERC721_mint(to, next_token_id)
 
         let account: Account = Account(nickname, 0, 0, 0, 0)
         account_information_.write(next_token_id, account)
+        account_id_.write(to, next_token_id)
 
         let (incremented_token_id, _) = uint256_add(next_token_id, Uint256(1, 0))
         next_token_id_.write(incremented_token_id)
+
         return ()
     end
 
