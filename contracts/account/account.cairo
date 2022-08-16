@@ -106,8 +106,8 @@ func account_information{
         syscall_ptr : felt*,
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(tokenId: Uint256) -> (account: Account):
-    return account.account_information(tokenId)
+    }(address: felt) -> (account: Account):
+    return account.account_information(address)
 end
 
 #
@@ -166,6 +166,7 @@ func mint{
         syscall_ptr: felt*,
         range_check_ptr
     }(to: felt, nickname: felt):
+
     return account.mint(to, nickname)
 end
 
