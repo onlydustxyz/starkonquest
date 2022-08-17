@@ -202,6 +202,8 @@ namespace battle:
             grid_access.set_cell_at(position.x, position.y, cell)
         end
 
+        # Store initial ship position
+        grid_access.add_ship_position(position)
         # Emit events
         let (battle_contract_address) = get_contract_address()
         ship_added.emit(battle_contract_address, ship_id, Vector2(position.x, position.y))

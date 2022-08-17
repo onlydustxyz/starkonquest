@@ -21,6 +21,8 @@ struct Grid:
     member cell_count : felt
     member cells_start : DictAccess*
     member cells_end : DictAccess*
+    member ships_positions : Vector2*
+    member ships_positions_len : felt
 end
 
 # ------------------
@@ -39,6 +41,9 @@ namespace grid_access:
         local grid : Grid
         assert grid.width = width
         assert grid.cell_count = width * width
+        let (positions : Vector2*) = alloc()
+        assert grid.ships_positions = positions
+        assert grid.ships_positions_len = 0
 
         let (local empty_cell) = cell_access.create()
         let (__fp__, _) = get_fp_and_pc()
@@ -48,9 +53,8 @@ namespace grid_access:
         let (finalized_dict_start, finalized_dict_end) = default_dict_finalize(
             my_dict_start, my_dict, 0
         )
-        # ALLOC
 
-        assert grid.cells_start = my_dict  # finalized_dict_start
+        assert grid.cells_start = my_dict
         assert grid.cells_end = my_dict + grid.cell_count * DictAccess.SIZE
         with grid:
             internal.init_cells_loop(grid.cells_start, 0, &empty_cell)
@@ -59,7 +63,7 @@ namespace grid_access:
         return (grid=grid)
     end
 
-    # Get a given cell in current turn (before apply_modifications)
+    # Get a given cell in current turn
     # params:
     #   - x, y: The coordinates of the cell to retrieve
     # Returns:
@@ -69,14 +73,16 @@ namespace grid_access:
         alloc_locals
         let (index) = internal.to_grid_index(x, y)
 
-        let current_cells_dict_end_ptr = grid.cells_end
+        let cells_end_ptr = grid.cells_end
 
-        let (local val : Cell*) = dict_read{dict_ptr=current_cells_dict_end_ptr}(key=index)
+        let (local val : Cell*) = dict_read{dict_ptr=cells_end_ptr}(key=index)
         local new_grid : Grid
-        new_grid.width = grid.width
-        new_grid.cell_count = grid.cell_count
-        new_grid.cells_start = grid.cells_start
-        new_grid.cells_end = current_cells_dict_end_ptr  # This ptr was moved to the last entry by dict_read
+        assert new_grid.width = grid.width
+        assert new_grid.cell_count = grid.cell_count
+        assert new_grid.cells_start = grid.cells_start
+        assert new_grid.cells_end = cells_end_ptr  # This ptr was moved to the last entry by dict_read
+        assert new_grid.ships_positions = grid.ships_positions
+        assert new_grid.ships_positions_len = grid.ships_positions_len
         let grid = new_grid
 
         return (cell=[val])
@@ -84,22 +90,21 @@ namespace grid_access:
 
     func get_cell_at_index{range_check_ptr, grid : Grid}(index : felt) -> (cell : Cell):
         alloc_locals
-        let current_cells_dict_end_ptr = grid.cells_end
+        let cells_end_ptr = grid.cells_end
 
-        let (local val : Cell*) = dict_read{dict_ptr=current_cells_dict_end_ptr}(key=index)
+        let (local val : Cell*) = dict_read{dict_ptr=cells_end_ptr}(key=index)
         local new_grid : Grid
-        new_grid.width = grid.width
-        new_grid.cell_count = grid.cell_count
-        new_grid.cells_start = grid.cells_start
-        new_grid.cells_end = current_cells_dict_end_ptr  # This ptr was moved to the last entry by dict_read
+        assert new_grid.width = grid.width
+        assert new_grid.cell_count = grid.cell_count
+        assert new_grid.cells_start = grid.cells_start
+        assert new_grid.cells_end = cells_end_ptr  # This ptr was moved to the last entry by dict_read
+        assert new_grid.ships_positions = grid.ships_positions
+        assert new_grid.ships_positions_len = grid.ships_positions_len
         let grid = new_grid
 
         return (cell=[val])
     end
-    # Set a given cell in next state (after apply_modifications)
-    # params:
-    #   - x, y: The coordinates of the cell to retrieve
-    #   - new_cell: The new cell value
+
     func set_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt, new_cell : Cell):
         alloc_locals
         let (__fp__, _) = get_fp_and_pc()
@@ -114,6 +119,8 @@ namespace grid_access:
         dict_write{dict_ptr=cells_end_ptr}(key=new_cell_index, new_value=cast(&new_cell, felt))
 
         assert new_grid.cells_end = cells_end_ptr
+        assert new_grid.ships_positions = grid.ships_positions
+        assert new_grid.ships_positions_len = grid.ships_positions_len
 
         let grid = new_grid
         return ()
@@ -131,10 +138,91 @@ namespace grid_access:
         )
         assert new_grid.cells_start = finalized_dict_start
         assert new_grid.cells_end = finalized_dict_end
+        assert new_grid.ships_positions = grid.ships_positions
+        assert new_grid.ships_positions_len = grid.ships_positions_len
 
         let grid = new_grid
         return ()
     end
+
+    func add_ship_position{range_check_ptr, grid : Grid}(ship_position : Vector2):
+        alloc_locals
+        local new_grid : Grid
+
+        assert new_grid.width = grid.width
+        assert new_grid.cell_count = grid.cell_count
+        assert new_grid.cells_start = grid.cells_start
+        assert new_grid.cells_end = grid.cells_end
+        assert new_grid.ships_positions = grid.ships_positions
+        assert new_grid.ships_positions[grid.ships_positions_len] = ship_position
+        assert new_grid.ships_positions_len = grid.ships_positions_len + 1
+
+        let grid = new_grid
+        return ()
+    end
+
+    func update_ship_position_at_index{range_check_ptr, grid : Grid}(
+        index : felt, new_ship_position : Vector2
+    ):
+        alloc_locals
+        assert_nn_le(index, grid.ships_positions_len - 1)
+
+        local new_grid : Grid
+        assert new_grid.width = grid.width
+        assert new_grid.cell_count = grid.cell_count
+        assert new_grid.cells_start = grid.cells_start
+        assert new_grid.cells_end = grid.cells_end
+        assert new_grid.ships_positions_len = grid.ships_positions_len
+
+        let (new_ships_positions : Vector2*) = alloc()
+        update_ship_position_at_index_loop(
+            0,
+            index,
+            grid.ships_positions_len,
+            grid.ships_positions,
+            new_ships_positions,
+            new_ship_position,
+        )
+        assert new_grid.ships_positions = new_ships_positions
+        let grid = new_grid
+        return ()
+    end
+    func update_ship_position_at_index_loop{range_check_ptr, grid : Grid}(
+        cursor : felt,
+        index : felt,
+        ships_positions_len : felt,
+        ships_positions : Vector2*,
+        new_ships_positions : Vector2*,
+        new_ship_position : Vector2,
+    ):
+        alloc_locals
+        if cursor == ships_positions_len:
+            return ()
+        end
+
+        if cursor == index:
+            assert new_ships_positions[cursor] = new_ship_position
+            return update_ship_position_at_index_loop(
+                cursor + 1,
+                index,
+                ships_positions_len,
+                ships_positions,
+                new_ships_positions,
+                new_ship_position,
+            )
+        end
+
+        assert new_ships_positions[cursor] = ships_positions[cursor]
+        return update_ship_position_at_index_loop(
+            cursor + 1,
+            index,
+            ships_positions_len,
+            ships_positions,
+            new_ships_positions,
+            new_ship_position,
+        )
+    end
+
     func generate_random_position_on_border{range_check_ptr, grid : Grid}(r1, r2, r3) -> (
         position : Vector2
     ):
