@@ -47,15 +47,7 @@ namespace move_strategy:
     # Move all ships on the grid, checking for ship collisions as we go
     func move_all_ships{syscall_ptr : felt*, range_check_ptr, grid : Grid}(ship_addresses : felt*):
         alloc_locals
-        let (grid_iterator) = grid_access.start()
-        let (ship_positions_array : Vector2*) = alloc()
-        let ship_positions_array_len = 0
-        with grid_iterator, ship_positions_array, ship_positions_array_len:
-            internal.find_ship_to_move_loop(ship_addresses)
-        end
-        with ship_positions_array, ship_positions_array_len:
-            internal.move_relevant_ship_loop(0, ship_addresses)
-        end
+        internal.move_relevant_ship_loop(0, ship_addresses)
         return ()
     end
 
@@ -157,64 +149,14 @@ namespace move_strategy:
             return ()
         end
 
-        func find_ship_to_move_loop{
-            syscall_ptr : felt*,
-            range_check_ptr,
-            grid : Grid,
-            grid_iterator : Vector2,
-            ship_positions_array : Vector2*,
-            ship_positions_array_len : felt,
-        }(ship_addresses : felt*):
+        func move_relevant_ship_loop{syscall_ptr : felt*, range_check_ptr, grid : Grid}(
+            index : felt, ship_addresses : felt*
+        ):
             alloc_locals
-            local grid_iterator : Vector2 = grid_iterator
-
-            let (done) = grid_access.done()
-            if done == 1:
+            if index == grid.ships_positions_len:
                 return ()
             end
-
-            try_add_single_ship_position(ship_addresses)
-
-            grid_access.next()
-            return find_ship_to_move_loop(ship_addresses)
-        end
-
-        func try_add_single_ship_position{
-            syscall_ptr : felt*,
-            range_check_ptr,
-            grid : Grid,
-            grid_iterator : Vector2,
-            ship_positions_array : Vector2*,
-            ship_positions_array_len : felt,
-        }(ship_addresses : felt*):
-            alloc_locals
-
-            let (cell) = grid_access.get_cell_at(grid_iterator.x, grid_iterator.y)
-
-            local range_check_ptr = range_check_ptr  # Revoked reference
-
-            let (has_ship) = cell_access.has_ship{cell=cell}()
-            if has_ship == 0:
-                return ()
-            end
-            # Add ship position to move at the end of vector_array
-            assert ship_positions_array[ship_positions_array_len] = grid_iterator
-            let ship_positions_array_len = ship_positions_array_len + 1
-
-            return ()
-        end
-        func move_relevant_ship_loop{
-            syscall_ptr : felt*,
-            range_check_ptr,
-            grid : Grid,
-            ship_positions_array : Vector2*,
-            ship_positions_array_len : felt,
-        }(index : felt, ship_addresses : felt*):
-            alloc_locals
-            if index == ship_positions_array_len:
-                return ()
-            end
-            let position : Vector2 = ship_positions_array[index]  # [vector_array + index * Vector2.SIZE]
+            let position : Vector2 = grid.ships_positions[index]
             let (cell) = grid_access.get_cell_at(position.x, position.y)
             let (ship_id) = cell_access.get_ship{cell=cell}()
             move_single_ship(ship_id, ship_addresses[ship_id - 1], position, cell)
@@ -260,6 +202,9 @@ namespace move_strategy:
                 cell_access.remove_ship()
             end
             grid_access.set_cell_at(position.x, position.y, cell)
+            # Update ships_positions in Grid
+            grid_access.update_ship_position_at_index(ship_id - 1, new_position)
+
             ship_moved.emit(space_contract_address, ship_id, position, new_position)
             return ()
         end

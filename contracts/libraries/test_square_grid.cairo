@@ -10,12 +10,6 @@ func assert_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt, cell : Cel
     return ()
 end
 
-# func assert_next_cell_at{range_check_ptr, grid : Grid}(x : felt, y : felt, cell : Cell):
-#     let (next_cell) = grid_access.get_next_cell_at(x, y)
-#     assert next_cell = cell
-#     return ()
-# end
-
 func assert_crossing_border{grid : Grid}(
     position : Vector2, direction : Vector2, crossing_border : Vector2
 ):
@@ -33,9 +27,6 @@ func test_grid_create{range_check_ptr}():
     let (local grid) = grid_access.create(2)
     let (empty_cell) = cell_access.create()
 
-    let (random_cell) = cell_access.create()
-    cell_access.add_ship{cell=random_cell}(23)
-
     assert grid.width = 2
     assert grid.cell_count = 4
 
@@ -44,15 +35,7 @@ func test_grid_create{range_check_ptr}():
         assert_cell_at(0, 1, empty_cell)
         assert_cell_at(1, 0, empty_cell)
         assert_cell_at(1, 1, empty_cell)
-
-        # assert_next_cell_at(0, 0, empty_cell)
-        # assert_next_cell_at(0, 1, empty_cell)
-        # assert_next_cell_at(1, 0, empty_cell)
-        # assert_next_cell_at(1, 1, empty_cell)
     end
-
-    # assert grid.current_cells[4] = random_cell  # Make sure the memory is free after the last cell
-    # assert grid.next_cells[4] = random_cell  # Make sure the memory is free after the last cell
 
     return ()
 end
@@ -72,12 +55,6 @@ func test_grid_update{range_check_ptr}():
 
         grid_access.set_cell_at(0, 1, cell_with_ship)
         assert_cell_at(0, 1, cell_with_ship)
-
-        # assert_next_cell_at(0, 1, cell_with_ship)
-
-        # grid_access.apply_modifications()
-
-        # assert_next_cell_at(0, 1, empty_cell)
     end
 
     return ()
@@ -199,6 +176,25 @@ func test_grid_iterator{range_check_ptr}():
         end
     end
 
+    return ()
+end
+
+@external
+func test_update_ship_position{range_check_ptr}():
+    let (grid) = grid_access.create(8)
+
+    with grid:
+        let pos1 = Vector2(0, 1)
+        let pos2 = Vector2(2, 2)
+        let pos3 = Vector2(1, 5)
+        grid_access.add_ship_position(pos1)
+        grid_access.add_ship_position(pos2)
+        grid_access.add_ship_position(pos3)
+
+        let new_pos2 = Vector2(2, 5)
+        grid_access.update_ship_position_at_index(1, new_pos2)
+    end
+    assert grid.ships_positions[1] = new_pos2
     return ()
 end
 

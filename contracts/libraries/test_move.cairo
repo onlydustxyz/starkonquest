@@ -24,6 +24,10 @@ func add_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : fel
     let (cell) = cell_access.create()
     cell_access.add_ship{cell=cell}(ship_id)
     grid_access.set_cell_at(x, y, cell)
+
+    let position = Vector2(x=x, y=y)
+
+    grid_access.add_ship_position(position)
     return ()
 end
 
@@ -195,8 +199,8 @@ func test_move_ship_collision_in_next_grid{syscall_ptr : felt*, range_check_ptr}
         %}
 
         with_attr error_message("bad ship move"):
-            assert_ship_at(0, 1, ship1)
-            assert_ship_at(1, 1, ship2)
+            assert_ship_at(1, 1, ship1)
+            assert_ship_at(1, 0, ship2)
             # TODO ship_moved.emit(space_contract_address, ship_id, grid_iterator, new_position)
         end
     end
