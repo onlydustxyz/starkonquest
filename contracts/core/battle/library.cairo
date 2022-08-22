@@ -118,14 +118,13 @@ namespace battle:
         scores : felt*,
     }():
         if current_turn == context.max_turn_count:
+            grid_access.apply_modifications()  # squash dict
             return ()  # end of the battle
         end
-        # %{ print(f"Current turn :{ids.current_turn}/{ids.context.max_turn_count}") %}
         let (battle_contract_address) = get_contract_address()
         new_turn.emit(battle_contract_address, current_turn + 1)
 
         one_turn()
-        # grid_helper.debug_grid()
 
         let current_turn = current_turn + 1
 
@@ -142,14 +141,16 @@ namespace battle:
         scores : felt*,
     }():
         alloc_locals
-
         local syscall_ptr : felt* = syscall_ptr
         move_strategy.move_all_ships(context.ship_contracts)
+
         move_strategy.move_all_dusts()
+
         burn_extra_dust()
-        check_ship_and_dust_collisions()
+
+        check_ship_and_dust_collisions_loop(0)
+
         spawn_dust()
-        # grid_access.apply_modifications()
 
         return ()
     end
@@ -241,7 +242,9 @@ namespace battle:
             # Finally, add dust to the grid
             cell_access.add_dust(dust)
         end
+        grid_access.add_dust_position(position)
         grid_access.set_cell_at(position.x, position.y, cell)
+
         let dust_count = dust_count + 1
 
         let (contract_address) = get_contract_address()
@@ -251,41 +254,41 @@ namespace battle:
     end
 
     func burn_extra_dust{syscall_ptr : felt*, range_check_ptr, grid : Grid, dust_count}():
-        let (grid_iterator) = grid_access.start()
-        with grid_iterator:
-            burn_extra_dust_loop()
+        let dusts_positions_len = grid.dusts_positions_len
+        with dusts_positions_len, dust_count:
+            burn_extra_dust_loop(dust_index=0)
         end
+
         return ()
     end
 
     func burn_extra_dust_loop{
-        syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2, dust_count
-    }():
-        let (done) = grid_access.done()
-        if done == 1:
+        syscall_ptr : felt*, range_check_ptr, grid : Grid, dusts_positions_len : felt, dust_count
+    }(dust_index : felt):
+        if dust_index == dusts_positions_len:
             return ()
         end
 
-        let (dust_burnt) = try_burn_extra_dust()
+        let dust_position = grid.dusts_positions[dust_index]
+        let (dust_burnt) = try_burn_extra_dust(dust_position)
         let dust_count = dust_count - dust_burnt
         if dust_burnt == 0:
-            # Do not go to next cell if dust was burnt, there might be other dust to burn
-            grid_access.next()
-            return burn_extra_dust_loop()
+            return burn_extra_dust_loop(dust_index=dust_index + 1)
         end
+        # Do not go to next cell if dust was burnt, there might be other dust to burn
 
-        return burn_extra_dust_loop()
+        return burn_extra_dust_loop(dust_index=dust_index)
     end
 
-    func try_burn_extra_dust{
-        syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2
-    }() -> (dust_burnt : felt):
+    func try_burn_extra_dust{syscall_ptr : felt*, range_check_ptr, grid : Grid}(
+        dust_position : Vector2
+    ) -> (dust_burnt : felt):
         alloc_locals
 
-        let (cell) = grid_access.get_cell_at(grid_iterator.x, grid_iterator.y)
+        let (cell) = grid_access.get_cell_at(dust_position.x, dust_position.y)
         local grid : Grid = grid  # revoked reference
         with cell:
-            let (dust_count) = cell_access.get_dust_count{cell=cell}()
+            let (local dust_count) = cell_access.get_dust_count{cell=cell}()
             let (extra_dust) = is_nn_le(2, dust_count)
             if extra_dust == 0:
                 return (dust_burnt=0)
@@ -294,61 +297,45 @@ namespace battle:
             cell_access.remove_dust()
         end
 
-        grid_access.set_cell_at(grid_iterator.x, grid_iterator.y, cell)
+        grid_access.set_cell_at(dust_position.x, dust_position.y, cell)
 
         let (contract_address) = get_contract_address()
-        dust_destroyed.emit(contract_address, grid_iterator)
+        dust_destroyed.emit(contract_address, dust_position)
 
         return (dust_burnt=1)
-    end
-
-    func check_ship_and_dust_collisions{
-        syscall_ptr : felt*,
-        range_check_ptr,
-        grid : Grid,
-        dust_count,
-        context : Context,
-        scores : felt*,
-    }():
-        let (grid_iterator) = grid_access.start()
-        with grid_iterator:
-            check_ship_and_dust_collisions_loop()
-        end
-        return ()
     end
 
     func check_ship_and_dust_collisions_loop{
         syscall_ptr : felt*,
         range_check_ptr,
         grid : Grid,
-        grid_iterator : Vector2,
         dust_count,
         context : Context,
         scores : felt*,
-    }():
-        let (done) = grid_access.done()
-        if done == 1:
+    }(index : felt):
+        if index == grid.ships_positions_len:
             return ()
         end
-
-        let (dust_absorbed) = try_ship_absorb_dust()
+        let ship_position = grid.ships_positions[index]
+        with ship_position:
+            let (dust_absorbed) = try_ship_absorb_dust()
+        end
         let dust_count = dust_count - dust_absorbed
 
-        grid_access.next()
-        return check_ship_and_dust_collisions_loop()
+        return check_ship_and_dust_collisions_loop(index + 1)
     end
 
     func try_ship_absorb_dust{
         syscall_ptr : felt*,
         range_check_ptr,
         grid : Grid,
-        grid_iterator : Vector2,
+        ship_position : Vector2,
         context : Context,
         scores : felt*,
     }() -> (dust_absorbed : felt):
         alloc_locals
 
-        let (cell) = grid_access.get_cell_at(grid_iterator.x, grid_iterator.y)
+        let (cell) = grid_access.get_cell_at(ship_position.x, ship_position.y)
         local grid : Grid = grid  # revoked reference
         with cell:
             let (has_ship) = cell_access.has_ship()
@@ -358,7 +345,8 @@ namespace battle:
             end
 
             cell_access.remove_dust()
-            grid_access.set_cell_at(grid_iterator.x, grid_iterator.y, cell)
+            grid_access.set_cell_at(ship_position.x, ship_position.y, cell)
+            grid_access.remove_dust_position_value(ship_position)
             increment_ship_score()
         end
 
@@ -369,13 +357,13 @@ namespace battle:
         syscall_ptr : felt*,
         range_check_ptr,
         grid : Grid,
-        grid_iterator : Vector2,
+        ship_position : Vector2,
         context : Context,
         scores : felt*,
     }():
         alloc_locals
 
-        let (cell) = grid_access.get_cell_at(grid_iterator.x, grid_iterator.y)
+        let (cell) = grid_access.get_cell_at(ship_position.x, ship_position.y)
         let (ship_id) = cell_access.get_ship{cell=cell}()
 
         let (new_array) = alloc()
@@ -395,7 +383,7 @@ namespace battle:
         syscall_ptr : felt*,
         range_check_ptr,
         grid : Grid,
-        grid_iterator : Vector2,
+        ship_position : Vector2,
         context : Context,
         scores : felt*,
     }(new_scores : felt*, index : felt, ship_index : felt, new_ship_score : felt):
