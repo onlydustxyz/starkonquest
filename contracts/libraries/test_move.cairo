@@ -8,9 +8,13 @@ from contracts.test.grid_helper import grid_helper
 from starkware.cairo.common.alloc import alloc
 
 func add_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
+    let position = Vector2(x=x, y=y)
+    grid_access.add_dust_position(position)
+
     let (cell) = cell_access.create()
     cell_access.add_dust{cell=cell}(dust)
     grid_access.set_cell_at(x, y, cell)
+
     return ()
 end
 
