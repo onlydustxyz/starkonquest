@@ -133,10 +133,11 @@ func played_battle_count{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
 end
 
 @view
-func battle_transaction_hash{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func round_battle_transaction_hash{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    round : felt, 
     battle_index : felt
 ) -> (hash : felt):
-    return tournament.battle_transaction_hash(battle_index)
+    return tournament.round_battle_transaction_hash(round, battle_index)
 end
 
 @view
