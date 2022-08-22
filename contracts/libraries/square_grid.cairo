@@ -4,6 +4,7 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_write, dict_read
 from starkware.cairo.common.registers import get_fp_and_pc
+from starkware.cairo.common.memcpy import memcpy
 
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import assert_nn_le
@@ -21,8 +22,10 @@ struct Grid:
     member cell_count : felt
     member cells_start : DictAccess*
     member cells_end : DictAccess*
-    member ships_positions : Vector2*
     member ships_positions_len : felt
+    member ships_positions : Vector2*
+    member dusts_positions_len : felt
+    member dusts_positions : Vector2*
 end
 
 # ------------------
@@ -41,9 +44,15 @@ namespace grid_access:
         local grid : Grid
         assert grid.width = width
         assert grid.cell_count = width * width
-        let (positions : Vector2*) = alloc()
-        assert grid.ships_positions = positions
+
+        let (ships_positions : Vector2*) = alloc()
+        let (dusts_positions : Vector2*) = alloc()
+
         assert grid.ships_positions_len = 0
+        assert grid.ships_positions = ships_positions
+
+        assert grid.dusts_positions_len = 0
+        assert grid.dusts_positions = dusts_positions
 
         let (local empty_cell) = cell_access.create()
         let (__fp__, _) = get_fp_and_pc()
@@ -83,6 +92,8 @@ namespace grid_access:
         assert new_grid.cells_end = cells_end_ptr  # This ptr was moved to the last entry by dict_read
         assert new_grid.ships_positions = grid.ships_positions
         assert new_grid.ships_positions_len = grid.ships_positions_len
+        assert new_grid.dusts_positions = grid.dusts_positions
+        assert new_grid.dusts_positions_len = grid.dusts_positions_len
         let grid = new_grid
 
         return (cell=[val])
@@ -100,6 +111,8 @@ namespace grid_access:
         assert new_grid.cells_end = cells_end_ptr  # This ptr was moved to the last entry by dict_read
         assert new_grid.ships_positions = grid.ships_positions
         assert new_grid.ships_positions_len = grid.ships_positions_len
+        assert new_grid.dusts_positions = grid.dusts_positions
+        assert new_grid.dusts_positions_len = grid.dusts_positions_len
         let grid = new_grid
 
         return (cell=[val])
@@ -121,6 +134,8 @@ namespace grid_access:
         assert new_grid.cells_end = cells_end_ptr
         assert new_grid.ships_positions = grid.ships_positions
         assert new_grid.ships_positions_len = grid.ships_positions_len
+        assert new_grid.dusts_positions = grid.dusts_positions
+        assert new_grid.dusts_positions_len = grid.dusts_positions_len
 
         let grid = new_grid
         return ()
@@ -140,6 +155,8 @@ namespace grid_access:
         assert new_grid.cells_end = finalized_dict_end
         assert new_grid.ships_positions = grid.ships_positions
         assert new_grid.ships_positions_len = grid.ships_positions_len
+        assert new_grid.dusts_positions = grid.dusts_positions
+        assert new_grid.dusts_positions_len = grid.dusts_positions_len
 
         let grid = new_grid
         return ()
@@ -153,9 +170,13 @@ namespace grid_access:
         assert new_grid.cell_count = grid.cell_count
         assert new_grid.cells_start = grid.cells_start
         assert new_grid.cells_end = grid.cells_end
+
+        assert new_grid.ships_positions_len = grid.ships_positions_len + 1
         assert new_grid.ships_positions = grid.ships_positions
         assert new_grid.ships_positions[grid.ships_positions_len] = ship_position
-        assert new_grid.ships_positions_len = grid.ships_positions_len + 1
+
+        assert new_grid.dusts_positions_len = grid.dusts_positions_len
+        assert new_grid.dusts_positions = grid.dusts_positions
 
         let grid = new_grid
         return ()
@@ -173,6 +194,8 @@ namespace grid_access:
         assert new_grid.cells_start = grid.cells_start
         assert new_grid.cells_end = grid.cells_end
         assert new_grid.ships_positions_len = grid.ships_positions_len
+        assert new_grid.dusts_positions = grid.dusts_positions
+        assert new_grid.dusts_positions_len = grid.dusts_positions_len
 
         let (new_ships_positions : Vector2*) = alloc()
         update_ship_position_at_index_loop(
@@ -221,6 +244,167 @@ namespace grid_access:
             new_ships_positions,
             new_ship_position,
         )
+    end
+
+    func add_dust_position{range_check_ptr, grid : Grid}(dust_position : Vector2):
+        alloc_locals
+        let (local cell) = grid_access.get_cell_at(dust_position.x, dust_position.y)
+        let (has_dust) = cell_access.has_dust{cell=cell}()
+        if has_dust == 1:
+            # If the cell at this position already has dust, the position should already be in grid.dusts_positions, no need to add a new one.
+            return ()
+        end
+        local new_grid : Grid
+
+        assert new_grid.width = grid.width
+        assert new_grid.cell_count = grid.cell_count
+        assert new_grid.cells_start = grid.cells_start
+        assert new_grid.cells_end = grid.cells_end
+        assert new_grid.ships_positions_len = grid.ships_positions_len
+        assert new_grid.ships_positions = grid.ships_positions
+
+        assert new_grid.dusts_positions_len = grid.dusts_positions_len + 1
+        assert new_grid.dusts_positions = grid.dusts_positions
+        assert new_grid.dusts_positions[grid.dusts_positions_len] = dust_position
+
+        let grid = new_grid
+
+        return ()
+    end
+    func update_dust_position_at_index{range_check_ptr, grid : Grid, dust_merged_count : felt}(
+        index : felt, new_dust_position : Vector2
+    ):
+        alloc_locals
+        assert_nn_le(index, grid.dusts_positions_len - 1)
+        let (local cell) = grid_access.get_cell_at(new_dust_position.x, new_dust_position.y)
+        let (has_dust_at_new_position) = cell_access.has_dust{cell=cell}()
+
+        local new_grid : Grid
+        assert new_grid.width = grid.width
+        assert new_grid.cell_count = grid.cell_count
+        assert new_grid.cells_start = grid.cells_start
+        assert new_grid.cells_end = grid.cells_end
+        assert new_grid.ships_positions_len = grid.ships_positions_len
+        assert new_grid.ships_positions = grid.ships_positions
+
+        assert new_grid.dusts_positions_len = grid.dusts_positions_len - has_dust_at_new_position
+
+        let (new_dusts_positions : Vector2*) = alloc()
+        update_dust_position_at_index_loop(
+            0,
+            0,
+            index,
+            grid.dusts_positions_len,
+            grid.dusts_positions,
+            new_dusts_positions,
+            new_dust_position,
+            has_dust_at_new_position,
+        )
+        assert new_grid.dusts_positions = new_dusts_positions
+        let grid = new_grid
+        return ()
+    end
+    func update_dust_position_at_index_loop{range_check_ptr, grid : Grid, dust_merged_count : felt}(
+        cursor : felt,
+        new_cursor : felt,
+        index : felt,
+        dusts_positions_len : felt,
+        dusts_positions : Vector2*,
+        new_dusts_positions : Vector2*,
+        new_dust_position : Vector2,
+        has_dust_at_new_position : felt,
+    ):
+        alloc_locals
+        if cursor == dusts_positions_len:
+            return ()
+        end
+
+        if cursor == index:
+            if has_dust_at_new_position == 1:
+                let dust_merged_count = dust_merged_count + 1
+                return update_dust_position_at_index_loop(
+                    cursor + 1,
+                    new_cursor,
+                    index,
+                    dusts_positions_len,
+                    dusts_positions,
+                    new_dusts_positions,
+                    new_dust_position,
+                    has_dust_at_new_position,
+                )
+            end
+            assert new_dusts_positions[new_cursor] = new_dust_position
+            return update_dust_position_at_index_loop(
+                cursor + 1,
+                new_cursor + 1,
+                index,
+                dusts_positions_len,
+                dusts_positions,
+                new_dusts_positions,
+                new_dust_position,
+                has_dust_at_new_position,
+            )
+        end
+
+        assert new_dusts_positions[new_cursor] = dusts_positions[cursor]
+        return update_dust_position_at_index_loop(
+            cursor + 1,
+            new_cursor + 1,
+            index,
+            dusts_positions_len,
+            dusts_positions,
+            new_dusts_positions,
+            new_dust_position,
+            has_dust_at_new_position,
+        )
+    end
+    func remove_dust_position_at_index{range_check_ptr, grid : Grid}(index : felt):
+        alloc_locals
+        local new_grid : Grid
+        assert new_grid.width = grid.width
+        assert new_grid.cell_count = grid.cell_count
+        assert new_grid.cells_start = grid.cells_start
+        assert new_grid.cells_end = grid.cells_end
+        assert new_grid.ships_positions_len = grid.ships_positions_len
+        assert new_grid.ships_positions = grid.ships_positions
+
+        assert new_grid.dusts_positions_len = grid.dusts_positions_len - 1
+        let (new_dusts_positions : Vector2*) = alloc()
+
+        memcpy(new_dusts_positions, grid.dusts_positions, index * Vector2.SIZE)
+        memcpy(
+            new_dusts_positions + index * Vector2.SIZE,
+            grid.dusts_positions + (index + 1) * Vector2.SIZE,
+            (grid.dusts_positions_len - index - 1) * Vector2.SIZE,
+        )
+        assert new_grid.dusts_positions = new_dusts_positions
+        let grid = new_grid
+        return ()
+    end
+    func remove_dust_position_value{range_check_ptr, grid : Grid}(value : Vector2):
+        alloc_locals
+        let (index) = grid_access.find_dust_index_loop(
+            grid.dusts_positions_len, grid.dusts_positions, value, 0
+        )
+        grid_access.remove_dust_position_at_index(index)
+        return ()
+    end
+
+    func find_dust_index_loop{range_check_ptr}(
+        dusts_positions_len : felt, dusts_positions : Vector2*, value : Vector2, cursor : felt
+    ) -> (index : felt):
+        alloc_locals
+        if cursor == dusts_positions_len:
+            return (index=dusts_positions_len + 1)
+        end
+        let pos = dusts_positions[cursor]
+        if pos.x == value.x:
+            if pos.y == value.y:
+                return (index=cursor)
+            end
+        end
+
+        return find_dust_index_loop(dusts_positions_len, dusts_positions, value, cursor + 1)
     end
 
     func generate_random_position_on_border{range_check_ptr, grid : Grid}(r1, r2, r3) -> (
