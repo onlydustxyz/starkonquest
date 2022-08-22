@@ -152,9 +152,9 @@ end
 func played_battle_count_() -> (res : felt):
 end
 
-# Player scores
+# Transaction hash by round number + battle index
 @storage_var
-func battle_transaction_hashes_(battle_index : felt) -> (hash : felt):
+func round_battle_transaction_hashes_(round : felt, battle_index : felt) -> (hash : felt):
 end
 
 # Current stage of the tournament
@@ -330,10 +330,11 @@ namespace tournament:
         return (played_battle_count)
     end
 
-    func battle_transaction_hash{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    func round_battle_transaction_hash{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        round : felt, 
         battle_index : felt
     ) -> (hash : felt):
-        let (hash) = battle_transaction_hashes_.read(battle_index)
+        let (hash) = round_battle_transaction_hashes_.read(round, battle_index)
         return (hash)
     end
 
@@ -649,6 +650,7 @@ namespace internal:
         let (grid_size) = grid_size_.read()
         let (turn_count) = turn_count_.read()
         let (max_dust) = max_dust_.read()
+        let (round) = current_round_.read()
 
         # Call battle contract to play the entire battle
         let (scores_len : felt, scores : felt*) = IBattle.play_game(
@@ -672,7 +674,7 @@ namespace internal:
 
         # Store transaction hash to make it easy to retreive associated events later
         let (tx_info : TxInfo*) = get_tx_info()
-        battle_transaction_hashes_.write(played_battle_count, tx_info.transaction_hash)
+        round_battle_transaction_hashes_.write(round, played_battle_count, tx_info.transaction_hash)
 
         return (winner_ship.address)
     end
