@@ -15,6 +15,10 @@ from contracts.tournament.library import (
     winning_ships_,
     winning_ship_count_,
 )
+from contracts.account.library import (
+    account,
+    Account
+)
 from contracts.interfaces.iaccount import IAccount
 
 # ---------
@@ -764,6 +768,60 @@ func test_event_sent_after_battle{syscall_ptr : felt*, pedersen_ptr : HashBuilti
     return ()
 end
 
+@external
+func test_auto_increment_accounts_information{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}():
+    alloc_locals
+    let (local context : TestContext) = test_internal.prepare(2, 4)
+    with context:
+        %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
+        test_internal.setup_tournament(ships_len=4, ships=new (1, 2, 3, 4))
+
+        # Play the first battle
+        %{ stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 60]) %}
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=1
+        )
+
+        # After the first battle, we are still in the round 1 so the list of playing ships is still the same
+        assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4))
+        assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (1))
+
+        # Play the second battle
+        %{
+            stop_mock()
+            stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [2, 80, 50])
+        %}
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=2, expected_round_before=1, expected_round_after=2
+        )
+
+        # After the second battle, we are in the round 2 so the list of playing ships has been updated
+        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 3))
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+
+        # Play the final battle
+        %{
+            stop_mock()
+            stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [2, 40, 70])
+        %}
+        %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
+        test_internal.invoke_battle(
+            expected_played_battle_count_after=3, expected_round_before=2, expected_round_after=3
+        )
+
+        %{ stop_mock() %}
+
+        # After the final battle, we have our winner
+        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (3))
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+        assert_that.stage_is(tournament.STAGE_FINISHED)
+        assert_that.won_tournament_count_is(3, 1, context.mocks.account_token_address)
+    end
+    return ()
+end
+
 # -----------------------
 # INTERNAL TEST FUNCTIONS
 # -----------------------
@@ -775,12 +833,21 @@ namespace test_internal:
         alloc_locals
         local signers : Signers = Signers(admin=ADMIN, anyone=ANYONE, player_1=PLAYER_1, player_2=PLAYER_2)
 
+        local account_address : felt
+
+        %{
+            ids.account_address = deploy_contract(
+            "./contracts/account/account.cairo",
+            # name, symbol, owner
+            [0, 0, ids.ADMIN]).contract_address
+        %}
+
         local mocks : Mocks = Mocks(
             only_dust_token_address=ONLY_DUST_TOKEN_ADDRESS,
             boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
             rand_address=RAND_ADDRESS,
             battle_address=BATTLE_ADDRESS,
-            account_token_address=ACCOUNT_TOKEN_ADDRESS
+            account_token_address=account_address
             )
 
         local context : TestContext = TestContext(
@@ -868,6 +935,8 @@ namespace test_internal:
         tempvar ship_address = [ships]
         local player_address = ship_address  # To keep it simple in tests, the player_address is equal to the ship_address
 
+        account.mint(player_address, player_address)
+
         # Register
         %{ stop_prank_player = start_prank(ids.player_address) %}
         tournament.register(ship_address)
@@ -932,6 +1001,7 @@ namespace test_integration:
 
         local reward_token_address : felt
         local tournament_contract_address : felt
+        local account_address : felt
 
         # Deploy the ERC20 contract and put its address into a local variable.
         # Second argument is calldata array, with 1000 initial tokens minted to ADMIN
@@ -940,6 +1010,13 @@ namespace test_integration:
             "./contracts/tokens/only_dust/only_dust.cairo",
             # name, symbol, decimals, initial_supply, recipient
             [420, 69, 0, 1000, 0, ids.ADMIN]).contract_address
+        %}
+
+        %{
+            ids.account_address = deploy_contract(
+            "./contracts/account/account.cairo",
+            # name, symbol, owner
+            [0, 0, ids.ADMIN]).contract_address
         %}
 
         # TO-DO: Deploy other contracts here
@@ -954,7 +1031,7 @@ namespace test_integration:
                 ids.BOARDING_TOKEN_ADDRESS,
                 ids.RAND_ADDRESS,
                 ids.BATTLE_ADDRESS,
-                ids.ACCOUNT_TOKEN_ADDRESS,
+                ids.account_address,
                 # ship_count_per_battle, required_total_ship_count, grid_size, turn_count, max_dust
                 2, 2, 10, 10, 8
             ]).contract_address
@@ -968,7 +1045,7 @@ namespace test_integration:
             boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
             rand_address=RAND_ADDRESS,
             battle_address=BATTLE_ADDRESS,
-            account_token_address=ACCOUNT_TOKEN_ADDRESS
+            account_token_address=account_address
             ),
         )
         return (deployed_contracts)
@@ -999,6 +1076,16 @@ namespace assert_that:
                 "Expected winner to be {expected_winner}, got {winner.player_address}"):
             assert winner.player_address = expected_winner
         end
+        return ()
+    end
+
+    func won_tournament_count_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        address : felt,
+        expected_won_count : felt,
+        account_address : felt
+    ):
+        let (_account : Account) = IAccount.account_information(account_address, address)
+        assert _account.won_tournament_count = expected_won_count
         return ()
     end
 

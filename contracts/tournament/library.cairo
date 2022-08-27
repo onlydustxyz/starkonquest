@@ -17,6 +17,7 @@ from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 from openzeppelin.token.erc721.interfaces.IERC721 import IERC721
 
 from contracts.interfaces.ibattle import IBattle
+from contracts.interfaces.iaccount import IAccount
 from contracts.models.common import ShipInit, Vector2, Player
 from contracts.libraries.math_utils import math_utils
 from contracts.libraries.array_utils import array_utils
@@ -732,8 +733,10 @@ namespace internal:
             # Record winner and emit event
             let (winner_ship) = playing_ships_.read(0)
             let (winner_address) = ship_player_.read(winner_ship)
+            let (account_contract_address) = account_contract_address_.read()
             let winner = Player(winner_address, winner_ship)
             tournament_winner_.write(winner)
+            IAccount.incrementWonTournamentCount(contract_address=account_contract_address, address=winner_address)
             tournament_finished.emit(winner)
             return ()
         end

@@ -138,23 +138,6 @@ func test_should_increment_lost_battle_count{syscall_ptr : felt*, range_check_pt
     return ()
 end
 
-#@external
-func test_auto_increment_win_count{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashBuiltin*}():
-    let (deployed_contracts : DeployedContracts) = test_integration.deploy_contracts()
-
-    %{
-        stop_prank_admin = start_prank(
-            ids.ADMIN,
-            ids.deployed_contracts.tournament_address
-        )
-    %}
-    # Start registration
-    ITournament.open_registrations(deployed_contracts.tournament_address)
-    %{ stop_prank_admin() %}
-
-    return ()
-end
-
 namespace test_integration:
     func deploy_contracts{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
         deployed_contracts : DeployedContracts
