@@ -63,4 +63,16 @@ namespace IAccount:
 
     func setTokenURI(tokenId: Uint256, tokenURI: felt):
     end
+
+    func incrementWonTournamentCount(address: felt):
+    end
+
+    func incrementLostTournamentCount(address: felt):
+    end
+
+    func incrementWonBattleCount(address: felt):
+    end
+
+    func incrementLostBattleCount(address: felt):
+    end
 end
