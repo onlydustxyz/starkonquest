@@ -7,7 +7,11 @@ from contracts.account.account import (
     mint,
     account_information,
     transferFrom,
-    safeTransferFrom
+    safeTransferFrom,
+    incrementWonTournamentCount,
+    incrementLostTournamentCount,
+    incrementWonBattleCount,
+    incrementLostBattleCount
 )
 from contracts.interfaces.itournament import ITournament
 
@@ -79,6 +83,62 @@ func test_should_not_accept_tranferring_accounts{syscall_ptr : felt*, range_chec
 end
 
 @external
+func test_should_increment_win_tournament_count{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashBuiltin*}():
+    alloc_locals
+
+    mint(0x123, 0x321)
+    incrementWonTournamentCount(0x123)
+    let (account1: Account) = account_information(0x123)
+    assert account1.won_tournament_count = 1
+    incrementWonTournamentCount(0x123)
+    let (account2: Account) = account_information(0x123)
+    assert account2.won_tournament_count = 2
+    return ()
+end
+
+@external
+func test_should_increment_lost_tournament_count{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashBuiltin*}():
+    alloc_locals
+
+    mint(0x123, 0x321)
+    incrementLostTournamentCount(0x123)
+    let (account1: Account) = account_information(0x123)
+    assert account1.lost_tournament_count = 1
+    incrementLostTournamentCount(0x123)
+    let (account2: Account) = account_information(0x123)
+    assert account2.lost_tournament_count = 2
+    return ()
+end
+
+@external
+func test_should_increment_won_battle_count{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashBuiltin*}():
+    alloc_locals
+
+    mint(0x123, 0x321)
+    incrementWonBattleCount(0x123)
+    let (account1: Account) = account_information(0x123)
+    assert account1.won_battle_count = 1
+    incrementWonBattleCount(0x123)
+    let (account2: Account) = account_information(0x123)
+    assert account2.won_battle_count = 2
+    return ()
+end
+
+@external
+func test_should_increment_lost_battle_count{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashBuiltin*}():
+    alloc_locals
+
+    mint(0x123, 0x321)
+    incrementLostBattleCount(0x123)
+    let (account1: Account) = account_information(0x123)
+    assert account1.lost_battle_count = 1
+    incrementLostBattleCount(0x123)
+    let (account2: Account) = account_information(0x123)
+    assert account2.lost_battle_count = 2
+    return ()
+end
+
+#@external
 func test_auto_increment_win_count{syscall_ptr : felt*, range_check_ptr, pedersen_ptr: HashBuiltin*}():
     let (deployed_contracts : DeployedContracts) = test_integration.deploy_contracts()
 

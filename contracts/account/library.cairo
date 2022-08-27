@@ -15,7 +15,6 @@ from openzeppelin.token.erc721.library import (
     ERC721_getApproved,
     ERC721_isApprovedForAll,
     ERC721_tokenURI,
-
     ERC721_initializer,
     ERC721_approve, 
     ERC721_setApprovalForAll, 
@@ -262,6 +261,54 @@ namespace account:
         }(tokenId: Uint256):
         ERC721_only_token_owner(tokenId)
         ERC721_burn(tokenId)
+        return ()
+    end
+
+    func incrementWonTournamentCount{
+            pedersen_ptr: HashBuiltin*, 
+            syscall_ptr: felt*, 
+            range_check_ptr
+        }(address: felt):
+        let (token_id: Uint256) = account_id_.read(address)
+        let (a: Account) = account_information_.read(token_id)
+        let new_account: Account = Account(a.nickname, a.won_tournament_count + 1, a.lost_tournament_count, a.won_battle_count, a.lost_battle_count)
+        account_information_.write(token_id, new_account)
+        return ()
+    end
+
+    func incrementLostTournamentCount{
+            pedersen_ptr: HashBuiltin*, 
+            syscall_ptr: felt*, 
+            range_check_ptr
+        }(address: felt):
+        let (token_id: Uint256) = account_id_.read(address)
+        let (a: Account) = account_information_.read(token_id)
+        let new_account: Account = Account(a.nickname, a.won_tournament_count, a.lost_tournament_count + 1, a.won_battle_count, a.lost_battle_count)
+        account_information_.write(token_id, new_account)
+        return ()
+    end
+
+    func incrementWonBattleCount{
+            pedersen_ptr: HashBuiltin*, 
+            syscall_ptr: felt*, 
+            range_check_ptr
+        }(address: felt):
+        let (token_id: Uint256) = account_id_.read(address)
+        let (a: Account) = account_information_.read(token_id)
+        let new_account: Account = Account(a.nickname, a.won_tournament_count, a.lost_tournament_count, a.won_battle_count + 1, a.lost_battle_count)
+        account_information_.write(token_id, new_account)
+        return ()
+    end
+
+    func incrementLostBattleCount{
+            pedersen_ptr: HashBuiltin*, 
+            syscall_ptr: felt*, 
+            range_check_ptr
+        }(address: felt):
+        let (token_id: Uint256) = account_id_.read(address)
+        let (a: Account) = account_information_.read(token_id)
+        let new_account: Account = Account(a.nickname, a.won_tournament_count, a.lost_tournament_count, a.won_battle_count, a.lost_battle_count + 1)
+        account_information_.write(token_id, new_account)
         return ()
     end
 end

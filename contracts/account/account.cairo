@@ -187,3 +187,39 @@ func setTokenURI{
     }(tokenId: Uint256, tokenURI: felt):
     return account.setTokenURI(tokenId, tokenURI)
 end
+
+@external
+func incrementWonTournamentCount{
+        pedersen_ptr: HashBuiltin*, 
+        syscall_ptr: felt*, 
+        range_check_ptr
+    }(address: felt):
+    return account.incrementWonTournamentCount(address)
+end
+
+@external
+func incrementLostTournamentCount{
+        pedersen_ptr: HashBuiltin*, 
+        syscall_ptr: felt*, 
+        range_check_ptr
+    }(address: felt):
+    return account.incrementLostTournamentCount(address)
+end
+
+@external
+func incrementWonBattleCount{
+        pedersen_ptr: HashBuiltin*, 
+        syscall_ptr: felt*, 
+        range_check_ptr
+    }(address: felt):
+    return account.incrementWonBattleCount(address)
+end
+
+@external
+func incrementLostBattleCount{
+        pedersen_ptr: HashBuiltin*, 
+        syscall_ptr: felt*, 
+        range_check_ptr
+    }(address: felt):
+    return account.incrementLostBattleCount(address)
+end
