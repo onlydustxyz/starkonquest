@@ -614,6 +614,7 @@ namespace internal:
 
         # Play the battle itself
         let (winner_ship) = play_battle(ships_len, ships)
+        update_won_and_lost_battle_counts(winner_ship, ships_len, ships)
 
         # Add winner ship to the list of winners of this round
         let (winning_ship_count) = winning_ship_count_.read()
@@ -662,6 +663,29 @@ namespace internal:
         battle_completed.emit(winner_address, played_battle_count + 1, round)
 
         return (winner_ship.address)
+    end
+
+    func update_won_and_lost_battle_counts{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        winner_ship : felt, ships_len : felt, ships : ShipInit*
+    ):
+        alloc_locals
+        if ships_len == 0:
+            return ()
+        end
+
+        let ship = [ships]
+        let (owner_address) = ship_player_.read(ship.address)
+        let (account_address) = account_contract_address_.read()
+
+        if ship.address == winner_ship:
+            IAccount.incrementWonBattleCount(account_address, owner_address)
+        else:
+            IAccount.incrementLostBattleCount(account_address, owner_address)
+            IAccount.incrementLostTournamentCount(account_address, owner_address)
+        end
+
+        # size of ShipInit type is 3
+        return update_won_and_lost_battle_counts(winner_ship, ships_len - 1, ships + 3)
     end
 
     # Get the ships that will participate in the next battle
