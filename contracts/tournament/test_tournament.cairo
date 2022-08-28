@@ -787,6 +787,14 @@ func test_auto_increment_accounts_information{
         # After the first battle, we are still in the round 1 so the list of playing ships is still the same
         assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4))
         assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (1))
+        assert_that.won_battle_count_is(1, 1, context.mocks.account_token_address)
+        assert_that.won_battle_count_is(2, 0, context.mocks.account_token_address)
+        assert_that.won_battle_count_is(3, 0, context.mocks.account_token_address)
+        assert_that.won_battle_count_is(4, 0, context.mocks.account_token_address)
+        assert_that.lost_battle_count_is(1, 0, context.mocks.account_token_address)
+        assert_that.lost_battle_count_is(2, 1, context.mocks.account_token_address)
+        assert_that.lost_battle_count_is(3, 0, context.mocks.account_token_address)
+        assert_that.lost_battle_count_is(4, 0, context.mocks.account_token_address)
 
         # Play the second battle
         %{
@@ -800,6 +808,14 @@ func test_auto_increment_accounts_information{
         # After the second battle, we are in the round 2 so the list of playing ships has been updated
         assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 3))
         assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+        assert_that.won_battle_count_is(1, 1, context.mocks.account_token_address)
+        assert_that.won_battle_count_is(2, 0, context.mocks.account_token_address)
+        assert_that.won_battle_count_is(3, 1, context.mocks.account_token_address)
+        assert_that.won_battle_count_is(4, 0, context.mocks.account_token_address)
+        assert_that.lost_battle_count_is(1, 0, context.mocks.account_token_address)
+        assert_that.lost_battle_count_is(2, 1, context.mocks.account_token_address)
+        assert_that.lost_battle_count_is(3, 0, context.mocks.account_token_address)
+        assert_that.lost_battle_count_is(4, 1, context.mocks.account_token_address)
 
         # Play the final battle
         %{
@@ -814,10 +830,22 @@ func test_auto_increment_accounts_information{
         %{ stop_mock() %}
 
         # After the final battle, we have our winner
-        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (3))
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(tournament.STAGE_FINISHED)
+        assert_that.won_battle_count_is(1, 1, context.mocks.account_token_address)
+        assert_that.lost_battle_count_is(1, 1, context.mocks.account_token_address)
+        assert_that.won_battle_count_is(3, 2, context.mocks.account_token_address)
+        assert_that.lost_battle_count_is(3, 0, context.mocks.account_token_address)
+
+
+
+        assert_that.won_tournament_count_is(1, 0, context.mocks.account_token_address)
+        assert_that.won_tournament_count_is(2, 0, context.mocks.account_token_address)
         assert_that.won_tournament_count_is(3, 1, context.mocks.account_token_address)
+        assert_that.won_tournament_count_is(4, 0, context.mocks.account_token_address)
+        assert_that.lost_tournament_count_is(1, 1, context.mocks.account_token_address)
+        assert_that.lost_tournament_count_is(2, 1, context.mocks.account_token_address)
+        assert_that.lost_tournament_count_is(3, 0, context.mocks.account_token_address)
+        assert_that.lost_tournament_count_is(4, 1, context.mocks.account_token_address)
+
     end
     return ()
 end
@@ -903,7 +931,7 @@ namespace test_internal:
         # Register ships
         %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
         %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
-        _register_ships_loop(ships_len, ships)
+        _register_ships_loop(context.mocks.account_token_address, ships_len, ships)
 
         # Registration should now be closed
         %{ expect_events({"name": "stage_changed", "data": [2, 3]}) %}
@@ -926,7 +954,7 @@ namespace test_internal:
 
     func _register_ships_loop{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
-    }(ships_len : felt, ships : felt*):
+    }(account_address: felt, ships_len : felt, ships : felt*):
         alloc_locals
         if ships_len == 0:
             return ()
@@ -935,7 +963,7 @@ namespace test_internal:
         tempvar ship_address = [ships]
         local player_address = ship_address  # To keep it simple in tests, the player_address is equal to the ship_address
 
-        account.mint(player_address, player_address)
+        IAccount.mint(account_address, player_address, player_address)
 
         # Register
         %{ stop_prank_player = start_prank(ids.player_address) %}
@@ -948,7 +976,7 @@ namespace test_internal:
             assert registered_player_address = player_address
         end
 
-        _register_ships_loop(ships_len - 1, &ships[1])
+        _register_ships_loop(account_address, ships_len - 1, &ships[1])
         return ()
     end
 
@@ -1086,6 +1114,36 @@ namespace assert_that:
     ):
         let (_account : Account) = IAccount.account_information(account_address, address)
         assert _account.won_tournament_count = expected_won_count
+        return ()
+    end
+
+    func lost_tournament_count_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        address : felt,
+        expected_lost_count : felt,
+        account_address : felt
+    ):
+        let (_account : Account) = IAccount.account_information(account_address, address)
+        assert _account.lost_tournament_count = expected_lost_count
+        return ()
+    end
+
+    func won_battle_count_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        address : felt,
+        expected_won_count : felt,
+        account_address : felt
+    ):
+        let (_account : Account) = IAccount.account_information(account_address, address)
+        assert _account.won_battle_count = expected_won_count
+        return ()
+    end
+
+    func lost_battle_count_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        address : felt,
+        expected_lost_count : felt,
+        account_address : felt
+    ):
+        let (_account : Account) = IAccount.account_information(account_address, address)
+        assert _account.lost_battle_count = expected_lost_count
         return ()
     end
 
