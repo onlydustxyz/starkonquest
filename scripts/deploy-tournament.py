@@ -41,6 +41,10 @@ def run(nre: NileRuntimeEnvironment):
     assert random_address != None
     print(f"random_address={random_address}")
 
+    account_address, _ = nre.get_deployment("account")
+    assert account_address != None
+    print(f"account_address={account_address}")
+
     params = [
         owner,
         tournament_id,
@@ -49,6 +53,7 @@ def run(nre: NileRuntimeEnvironment):
         boarding_pass_token_address,
         random_address,
         battle_address,
+        account_address,
         ships_per_battle,
         required_total_ship_count,
         grid_size,

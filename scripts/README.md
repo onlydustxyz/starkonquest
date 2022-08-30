@@ -38,6 +38,13 @@ nile run ./scripts/deploy-only-dust-erc20.py
 nile run ./scripts/deploy-starkonquest-boarding-pass.py
 ```
 
+## Deploy Account (ERC721)
+
+```sh
+nile run ./scripts/deploy-account-erc721.py
+```
+
+
 ## Deploy Random
 
 ```sh
@@ -89,6 +96,7 @@ You must register as many ships as required by the tournament settings.
 ```bash
 export PKEYPLAYER=100
 nile run ./scripts/run/setup-player.py
+nile run ./scripts/run/setup-account.py
 
 nile run ./scripts/deploy-basic-ship.py
 export SHIP_ADDRESS=<ship-address>
@@ -98,6 +106,7 @@ nile run ./scripts/run/register-ship.py
 ```bash
 export PKEYPLAYER=101
 nile run ./scripts/run/setup-player.py
+nile run ./scripts/run/setup-account.py
 
 nile run ./scripts/deploy-basic-ship.py
 export SHIP_ADDRESS=<ship-address>
