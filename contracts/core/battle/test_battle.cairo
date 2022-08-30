@@ -33,9 +33,13 @@ func assert_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dus
 end
 
 func add_dust_at{range_check_ptr, grid : Grid}(x : felt, y : felt, dust : Dust):
-    let (cell) = grid_access.get_cell_at(x, y)
+    alloc_locals
+    let (local cell) = grid_access.get_cell_at(x, y)
+    let position = Vector2(x=x, y=y)
+    grid_access.add_dust_position(position)
     cell_access.add_dust{cell=cell}(dust)
     grid_access.set_cell_at(x, y, cell)
+
     return ()
 end
 
@@ -46,6 +50,10 @@ func add_ship_at{range_check_ptr, grid : Grid}(x : felt, y : felt, ship_id : fel
     local range_check_ptr = range_check_ptr  # revoked reference
     cell_access.add_ship{cell=cell}(ship_id)
     grid_access.set_cell_at(x, y, cell)
+
+    let position = Vector2(x=x, y=y)
+    grid_access.add_ship_position(position)
+
     return ()
 end
 
@@ -258,7 +266,7 @@ func test_battle_ship_absorb_dust{syscall_ptr : felt*, range_check_ptr}():
 
         local dust_count = 1
         with dust_count:
-            battle.check_ship_and_dust_collisions()
+            battle.check_ship_and_dust_collisions_loop(0)
         end
 
         with_attr error_message("bad dust move"):
@@ -362,19 +370,19 @@ func test_full_battle{syscall_ptr : felt*, range_check_ptr}():
         with dust_count, current_turn:
             %{
                 mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
-                                        2, 2, # direction => (1, 1)
-                                        0, 2, # position => (0, 2)
-                                           1 # shuffled position (0, 2) => (2, 0)
-                                               ])
+                                                        2, 2, # direction => (1, 1)
+                                                        0, 2, # position => (0, 2)
+                                                        1 # shuffled position (0, 2) => (2, 0)
+                                                               ])
 
                 mock_call(ids.ship1, "move", [1, -1])
                 mock_call(ids.ship2, "move", [0, -1])
             %}
             battle.all_turns_loop()
         end
-
+        # grid_helper.debug_grid()
         with_attr error_message("Something wrong with the battle"):
-            assert_ship_at(7, 2, ship1)  # assert_ship_at(6, 3, ship1)
+            assert_ship_at(6, 3, ship1)  # assert_ship_at(7, 2, ship1)  # assert_ship_at(6, 3, ship1)
             assert_ship_at(4, 1, ship2)
             assert_dust_count_at(3, 1, 1)
             assert_dust_count_at(4, 2, 1)
@@ -406,10 +414,10 @@ func test_play_game{syscall_ptr : felt*, range_check_ptr}():
 
     %{
         mock_call(ids.RAND_CONTRACT, 'generate_random_numbers', [
-                                                2, 2, # direction => (1, 1)
-                                                0, 2, # position => (0, 2)
-                                                1 # shuffled position (0, 2) => (2, 0)
-                                                ])
+                                                                2, 2, # direction => (1, 1)
+                                                                0, 2, # position => (0, 2)
+                                                                1 # shuffled position (0, 2) => (2, 0)
+                                                                ])
 
         mock_call(ids.ship1, "move", [1, -1])
         mock_call(ids.ship2, "move", [0, -1])
