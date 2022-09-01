@@ -905,7 +905,7 @@ namespace test_integration:
             ids.tournament_contract_address = deploy_contract(
             "./contracts/tournament/tournament.cairo",
             [   # owner, tournament_id, tournament_name
-                ids.ADMIN, 1, 11, 
+                ids.ADMIN, 1, 11,
                 ids.reward_token_address,
                 ids.BOARDING_TOKEN_ADDRESS,
                 ids.RAND_ADDRESS,

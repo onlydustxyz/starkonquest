@@ -2,7 +2,7 @@
 
 from starkware.cairo.common.uint256 import Uint256
 
-from contracts.models.common import Dust
+from contracts.libraries.cell import Dust
 
 @contract_interface
 namespace IDustContract:

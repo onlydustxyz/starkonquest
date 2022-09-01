@@ -68,6 +68,9 @@ namespace ITournament:
     func played_battle_count() -> (res : felt):
     end
 
+    func current_round() -> (res : felt):
+    end
+
     func deposit_rewards(amount : Uint256) -> (res : felt):
     end
 
