@@ -10,15 +10,14 @@
     <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"
             alt="License"></a>
     <a href=""><img src="https://img.shields.io/badge/semver-0.0.1-blue"
-            alt="License"></a>            
+            alt="License"></a>
   </p>
-  
   <h3 align="center">StarKonquest Contracts written in Cairo for StarkNet.</h3>
 </div>
 
 StarKonquest is an educational game to learn Cairo, in which you implement ship AIs that fight each others in a finite 2D grid to catch as much dust as possible.
 
-The entire game runs in a single transaction, meaning the ships cannot be controlled manually. 
+The entire game runs in a single transaction, meaning the ships cannot be controlled manually.
 Players must implement an effective ship AI that will detect and catch dust as quickly as possible.
 
 Dust move in random directions and bounce on the borders of the grid. There can be at most one ship on a cell of the
