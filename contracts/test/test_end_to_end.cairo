@@ -311,28 +311,9 @@ end
         local battle_address = battle_contract_address
         local admin = admin
 
-        #let (local round) = tournament.current_round()
-        #with_attr error_message(
-        #       "Expected round number (before battle) to be {expected_round_before}, got {round}"):
-        #    assert round = expected_round_before
-        #end
-
         %{ stop_prank_admin = start_prank(ids.admin, ids.tournament_contract_address) %}
         ITournament.play_next_battle(tournament_contract_address)
         %{ stop_prank_admin() %}
 
-        #let (local played_battle_count) = ITournament.played_battle_count(tournament_contract_address)
-        #with_attr error_message(
-        #        "Expected played battle count (after battle) to be {expected_played_battle_count_after}, got {played_battle_count}"):
-        #    assert played_battle_count = expected_played_battle_count_after
-        #end
-
-        #let (local round) = tournament.current_round()
-        #with_attr error_message(
-        #        "Expected round number (after battle) to be {expected_round_after}, got {round}"):
-        #    assert round = expected_round_after
-        #end
-
-        
         return ()
     end
