@@ -2,7 +2,6 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_eq
 from contracts.interfaces.itournament import ITournament
-from contracts.interfaces.idust import IDustContract
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bool import TRUE, FALSE
 
