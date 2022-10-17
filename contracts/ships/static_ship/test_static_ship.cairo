@@ -8,18 +8,18 @@ from contracts.models.common import Vector2
 from contracts.libraries.cell import Dust, Cell
 
 @external
-func test_move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-    let grid : Cell* = alloc()
-    assert [grid] = Cell(1, Dust(Vector2(0, 0)), 0)
+func test_move{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    let grid: Cell* = alloc();
+    assert [grid] = Cell(1, Dust(Vector2(0, 0)), 0);
 
-    let grid_len = 1
-    let ship_id = 1
+    let grid_len = 1;
+    let ship_id = 1;
 
-    let (next_direction) = StaticShip.move(grid_len, grid, 1)
+    let (next_direction) = StaticShip.move(grid_len, grid, 1);
 
-    # Assert next_direction = Vector2(0, 0)
-    assert next_direction.x = 0
-    assert next_direction.y = 0
+    // Assert next_direction = Vector2(0, 0)
+    assert next_direction.x = 0;
+    assert next_direction.y = 0;
 
-    return ()
-end
+    return ();
+}

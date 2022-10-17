@@ -1,4 +1,4 @@
-# Declare this file as a StarkNet contract.
+// Declare this file as a StarkNet contract.
 %lang starknet
 
 from starkware.starknet.common.syscalls import get_contract_address
@@ -13,409 +13,404 @@ from contracts.libraries.move import move_strategy
 from contracts.libraries.math_utils import math_utils
 from contracts.test.grid_helper import grid_helper
 
-# ------------------
-# EVENTS
-# ------------------
+// ------------------
+// EVENTS
+// ------------------
 
 @event
-func ship_added(battle_contract_address : felt, ship_id : felt, position : Vector2):
-end
+func ship_added(battle_contract_address: felt, ship_id: felt, position: Vector2) {
+}
 
 @event
-func dust_spawned(battle_contract_address : felt, direction : Vector2, position : Vector2):
-end
+func dust_spawned(battle_contract_address: felt, direction: Vector2, position: Vector2) {
+}
 
 @event
-func dust_destroyed(battle_contract_address : felt, position : Vector2):
-end
+func dust_destroyed(battle_contract_address: felt, position: Vector2) {
+}
 
 @event
-func new_turn(battle_contract_address : felt, turn_number : felt):
-end
+func new_turn(battle_contract_address: felt, turn_number: felt) {
+}
 
 @event
-func game_finished(battle_contract_address : felt):
-end
+func game_finished(battle_contract_address: felt) {
+}
 
 @event
-func score_changed(battle_contract_address : felt, ship_id : felt, score : felt):
-end
+func score_changed(battle_contract_address: felt, ship_id: felt, score: felt) {
+}
 
-namespace battle:
-    func play_game{syscall_ptr : felt*, range_check_ptr}(
-        rand_contract_address : felt,
-        size : felt,
-        turn_count : felt,
-        max_dust : felt,
-        ships_len : felt,
-        ships : ShipInit*,
-    ) -> (scores_len : felt, scores : felt*):
-        alloc_locals
+namespace battle {
+    func play_game{syscall_ptr: felt*, range_check_ptr}(
+        rand_contract_address: felt,
+        size: felt,
+        turn_count: felt,
+        max_dust: felt,
+        ships_len: felt,
+        ships: ShipInit*,
+    ) -> (scores_len: felt, scores: felt*) {
+        alloc_locals;
 
-        let (local grid) = grid_access.create(size)
-        let (scores) = create_scores_array(ships_len)
+        let (local grid) = grid_access.create(size);
+        let (scores) = create_scores_array(ships_len);
         let (context) = battle.create_context(
             rand_contract_address, turn_count, max_dust, ships_len
-        )
+        );
 
-        with grid, context, scores:
-            battle.add_ships(ships_len, ships)
-            let dust_count = 0
-            let current_turn = 0
-            with dust_count, current_turn:
-                battle.all_turns_loop()
-            end
-        end
+        with grid, context, scores {
+            battle.add_ships(ships_len, ships);
+            let dust_count = 0;
+            let current_turn = 0;
+            with dust_count, current_turn {
+                battle.all_turns_loop();
+            }
+        }
 
-        let (battle_contract_address) = get_contract_address()
-        game_finished.emit(battle_contract_address)
+        let (battle_contract_address) = get_contract_address();
+        game_finished.emit(battle_contract_address);
 
-        return (scores_len=ships_len, scores=scores)
-    end
+        return (scores_len=ships_len, scores=scores);
+    }
 
-    func create_scores_array(scores_len : felt) -> (scores : felt*):
-        alloc_locals
+    func create_scores_array(scores_len: felt) -> (scores: felt*) {
+        alloc_locals;
 
-        let (new_array) = alloc()
-        local scores : felt* = new_array
-        init_scores_loop(scores_len, scores)
+        let (new_array) = alloc();
+        local scores: felt* = new_array;
+        init_scores_loop(scores_len, scores);
 
-        return (scores=scores)
-    end
+        return (scores=scores);
+    }
 
-    func init_scores_loop(scores_len : felt, scores : felt*):
-        if scores_len == 0:
-            return ()
-        end
+    func init_scores_loop(scores_len: felt, scores: felt*) {
+        if (scores_len == 0) {
+            return ();
+        }
 
-        assert [scores] = 0
-        return init_scores_loop(scores_len - 1, scores + 1)
-    end
+        assert [scores] = 0;
+        return init_scores_loop(scores_len - 1, scores + 1);
+    }
 
     func create_context(
-        rand_contract_address : felt, turn_count : felt, max_dust : felt, ships_len : felt
-    ) -> (context : Context):
-        alloc_locals
+        rand_contract_address: felt, turn_count: felt, max_dust: felt, ships_len: felt
+    ) -> (context: Context) {
+        alloc_locals;
 
-        local context : Context
-        let (ship_addresses) = alloc()
-        assert context.ship_contracts = ship_addresses
-        assert context.ship_count = ships_len
-        assert context.max_turn_count = turn_count
-        assert context.max_dust = max_dust
-        assert context.rand_contract = rand_contract_address
+        local context: Context;
+        let (ship_addresses) = alloc();
+        assert context.ship_contracts = ship_addresses;
+        assert context.ship_count = ships_len;
+        assert context.max_turn_count = turn_count;
+        assert context.max_dust = max_dust;
+        assert context.rand_contract = rand_contract_address;
 
-        return (context=context)
-    end
+        return (context=context);
+    }
 
     func all_turns_loop{
-        syscall_ptr : felt*,
+        syscall_ptr: felt*,
         range_check_ptr,
-        grid : Grid,
-        context : Context,
-        dust_count : felt,
-        current_turn : felt,
-        scores : felt*,
-    }():
-        if current_turn == context.max_turn_count:
-            grid_access.apply_modifications()  # squash dict
-            return ()  # end of the battle
-        end
-        let (battle_contract_address) = get_contract_address()
-        new_turn.emit(battle_contract_address, current_turn + 1)
+        grid: Grid,
+        context: Context,
+        dust_count: felt,
+        current_turn: felt,
+        scores: felt*,
+    }() {
+        if (current_turn == context.max_turn_count) {
+            grid_access.apply_modifications();  // squash dict
+            return ();  // end of the battle
+        }
+        let (battle_contract_address) = get_contract_address();
+        new_turn.emit(battle_contract_address, current_turn + 1);
 
-        one_turn()
+        one_turn();
 
-        let current_turn = current_turn + 1
+        let current_turn = current_turn + 1;
 
-        return all_turns_loop()
-    end
+        return all_turns_loop();
+    }
 
     func one_turn{
-        syscall_ptr : felt*,
+        syscall_ptr: felt*,
         range_check_ptr,
-        grid : Grid,
-        context : Context,
+        grid: Grid,
+        context: Context,
         dust_count,
         current_turn,
-        scores : felt*,
-    }():
-        alloc_locals
-        local syscall_ptr : felt* = syscall_ptr
-        move_strategy.move_all_ships(context.ship_contracts)
+        scores: felt*,
+    }() {
+        alloc_locals;
+        local syscall_ptr: felt* = syscall_ptr;
+        move_strategy.move_all_ships(context.ship_contracts);
 
-        move_strategy.move_all_dusts()
+        move_strategy.move_all_dusts();
 
-        burn_extra_dust()
+        burn_extra_dust();
 
-        check_ship_and_dust_collisions_loop(0)
+        check_ship_and_dust_collisions_loop(0);
 
-        spawn_dust()
+        spawn_dust();
 
-        return ()
-    end
+        return ();
+    }
 
-    func add_ships{syscall_ptr : felt*, range_check_ptr, grid : Grid, context : Context}(
-        ships_len : felt, ships : ShipInit*
-    ):
-        alloc_locals
+    func add_ships{syscall_ptr: felt*, range_check_ptr, grid: Grid, context: Context}(
+        ships_len: felt, ships: ShipInit*
+    ) {
+        alloc_locals;
 
-        if ships_len == 0:
-            return ()
-        end
+        if (ships_len == 0) {
+            return ();
+        }
 
-        add_ship_loop(ships_len, ships, 0)
-        local context : Context = context  # reference revoked
+        add_ship_loop(ships_len, ships, 0);
+        local context: Context = context;  // reference revoked
 
-        return ()
-    end
+        return ();
+    }
 
-    func add_ship_loop{syscall_ptr : felt*, range_check_ptr, grid : Grid, context : Context}(
-        ships_len : felt, ships : ShipInit*, ship_index : felt
-    ):
-        if ship_index == ships_len:
-            return ()
-        end
+    func add_ship_loop{syscall_ptr: felt*, range_check_ptr, grid: Grid, context: Context}(
+        ships_len: felt, ships: ShipInit*, ship_index: felt
+    ) {
+        if (ship_index == ships_len) {
+            return ();
+        }
 
-        let ship : ShipInit = ships[ship_index]
-        add_ship(ship.position, ship_index + 1)
-        assert context.ship_contracts[ship_index] = ship.address
+        let ship: ShipInit = ships[ship_index];
+        add_ship(ship.position, ship_index + 1);
+        assert context.ship_contracts[ship_index] = ship.address;
 
-        return add_ship_loop(ships_len, ships, ship_index + 1)
-    end
+        return add_ship_loop(ships_len, ships, ship_index + 1);
+    }
 
-    func add_ship{syscall_ptr : felt*, range_check_ptr, grid : Grid}(
-        position : Vector2, ship_id : felt
-    ):
-        alloc_locals
+    func add_ship{syscall_ptr: felt*, range_check_ptr, grid: Grid}(
+        position: Vector2, ship_id: felt
+    ) {
+        alloc_locals;
 
-        let (cell) = grid_access.get_cell_at(position.x, position.y)
-        local range_check_ptr = range_check_ptr  # revoked reference
-        with cell:
-            # Ensure the cell is free
-            let (cell_is_occupied : felt) = cell_access.is_occupied()
-            with_attr error_message("Battle: cell is not free"):
-                assert cell_is_occupied = 0
-            end
+        let (cell) = grid_access.get_cell_at(position.x, position.y);
+        local range_check_ptr = range_check_ptr;  // revoked reference
+        with cell {
+            // Ensure the cell is free
+            let (cell_is_occupied: felt) = cell_access.is_occupied();
+            with_attr error_message("Battle: cell is not free") {
+                assert cell_is_occupied = 0;
+            }
 
-            # Put the ship on the grid
-            cell_access.add_ship(ship_id)
-            grid_access.set_cell_at(position.x, position.y, cell)
-        end
+            // Put the ship on the grid
+            cell_access.add_ship(ship_id);
+            grid_access.set_cell_at(position.x, position.y, cell);
+        }
 
-        # Store initial ship position
-        grid_access.add_ship_position(position)
-        # Emit events
-        let (battle_contract_address) = get_contract_address()
-        ship_added.emit(battle_contract_address, ship_id, Vector2(position.x, position.y))
+        // Store initial ship position
+        grid_access.add_ship_position(position);
+        // Emit events
+        let (battle_contract_address) = get_contract_address();
+        ship_added.emit(battle_contract_address, ship_id, Vector2(position.x, position.y));
 
-        return ()
-    end
+        return ();
+    }
 
     func spawn_dust{
-        syscall_ptr : felt*,
+        syscall_ptr: felt*,
         range_check_ptr,
-        grid : Grid,
-        context : Context,
-        dust_count : felt,
-        current_turn : felt,
-    }():
-        alloc_locals
-        let max_dust = context.max_dust
+        grid: Grid,
+        context: Context,
+        dust_count: felt,
+        current_turn: felt,
+    }() {
+        alloc_locals;
+        let max_dust = context.max_dust;
 
-        # Check if we already reached the max amount of dust in the grid
-        if dust_count == max_dust:
-            return ()
-        end
+        // Check if we already reached the max amount of dust in the grid
+        if (dust_count == max_dust) {
+            return ();
+        }
 
-        # Create a new Dust at random position on a border and with random direction
-        let (local dust : Dust, position : Vector2) = battle.generate_random_dust_on_border()
+        // Create a new Dust at random position on a border and with random direction
+        let (local dust: Dust, position: Vector2) = battle.generate_random_dust_on_border();
 
-        # Prevent spawning if next cell is occupied
-        let (cell) = grid_access.get_cell_at(position.x, position.y)
-        with cell:
-            let (cell_is_occupied) = cell_access.is_occupied()
-            if cell_is_occupied == 1:
-                return ()
-            end
+        // Prevent spawning if next cell is occupied
+        let (cell) = grid_access.get_cell_at(position.x, position.y);
+        with cell {
+            let (cell_is_occupied) = cell_access.is_occupied();
+            if (cell_is_occupied == 1) {
+                return ();
+            }
 
-            # Finally, add dust to the grid
-            cell_access.add_dust(dust)
-        end
-        grid_access.add_dust_position(position)
-        grid_access.set_cell_at(position.x, position.y, cell)
+            // Finally, add dust to the grid
+            cell_access.add_dust(dust);
+        }
+        grid_access.add_dust_position(position);
+        grid_access.set_cell_at(position.x, position.y, cell);
 
-        let dust_count = dust_count + 1
+        let dust_count = dust_count + 1;
 
-        let (contract_address) = get_contract_address()
-        dust_spawned.emit(contract_address, dust.direction, position)
+        let (contract_address) = get_contract_address();
+        dust_spawned.emit(contract_address, dust.direction, position);
 
-        return ()
-    end
+        return ();
+    }
 
-    func burn_extra_dust{syscall_ptr : felt*, range_check_ptr, grid : Grid, dust_count}():
-        let dusts_positions_len = grid.dusts_positions_len
-        with dusts_positions_len, dust_count:
-            burn_extra_dust_loop(dust_index=0)
-        end
+    func burn_extra_dust{syscall_ptr: felt*, range_check_ptr, grid: Grid, dust_count}() {
+        let dusts_positions_len = grid.dusts_positions_len;
+        with dusts_positions_len, dust_count {
+            burn_extra_dust_loop(dust_index=0);
+        }
 
-        return ()
-    end
+        return ();
+    }
 
     func burn_extra_dust_loop{
-        syscall_ptr : felt*, range_check_ptr, grid : Grid, dusts_positions_len : felt, dust_count
-    }(dust_index : felt):
-        if dust_index == dusts_positions_len:
-            return ()
-        end
+        syscall_ptr: felt*, range_check_ptr, grid: Grid, dusts_positions_len: felt, dust_count
+    }(dust_index: felt) {
+        if (dust_index == dusts_positions_len) {
+            return ();
+        }
 
-        let dust_position = grid.dusts_positions[dust_index]
-        let (dust_burnt) = try_burn_extra_dust(dust_position)
-        let dust_count = dust_count - dust_burnt
-        if dust_burnt == 0:
-            return burn_extra_dust_loop(dust_index=dust_index + 1)
-        end
-        # Do not go to next cell if dust was burnt, there might be other dust to burn
+        let dust_position = grid.dusts_positions[dust_index];
+        let (dust_burnt) = try_burn_extra_dust(dust_position);
+        let dust_count = dust_count - dust_burnt;
+        if (dust_burnt == 0) {
+            return burn_extra_dust_loop(dust_index=dust_index + 1);
+        }
+        // Do not go to next cell if dust was burnt, there might be other dust to burn
 
-        return burn_extra_dust_loop(dust_index=dust_index)
-    end
+        return burn_extra_dust_loop(dust_index=dust_index);
+    }
 
-    func try_burn_extra_dust{syscall_ptr : felt*, range_check_ptr, grid : Grid}(
-        dust_position : Vector2
-    ) -> (dust_burnt : felt):
-        alloc_locals
+    func try_burn_extra_dust{syscall_ptr: felt*, range_check_ptr, grid: Grid}(
+        dust_position: Vector2
+    ) -> (dust_burnt: felt) {
+        alloc_locals;
 
-        let (cell) = grid_access.get_cell_at(dust_position.x, dust_position.y)
-        local grid : Grid = grid  # revoked reference
-        with cell:
-            let (local dust_count) = cell_access.get_dust_count{cell=cell}()
-            let (extra_dust) = is_nn_le(2, dust_count)
-            if extra_dust == 0:
-                return (dust_burnt=0)
-            end
+        let (cell) = grid_access.get_cell_at(dust_position.x, dust_position.y);
+        local grid: Grid = grid;  // revoked reference
+        with cell {
+            let (local dust_count) = cell_access.get_dust_count{cell=cell}();
+            let extra_dust = is_nn_le(2, dust_count);
+            if (extra_dust == 0) {
+                return (dust_burnt=0);
+            }
 
-            cell_access.remove_dust()
-        end
+            cell_access.remove_dust();
+        }
 
-        grid_access.set_cell_at(dust_position.x, dust_position.y, cell)
+        grid_access.set_cell_at(dust_position.x, dust_position.y, cell);
 
-        let (contract_address) = get_contract_address()
-        dust_destroyed.emit(contract_address, dust_position)
+        let (contract_address) = get_contract_address();
+        dust_destroyed.emit(contract_address, dust_position);
 
-        return (dust_burnt=1)
-    end
+        return (dust_burnt=1);
+    }
 
     func check_ship_and_dust_collisions_loop{
-        syscall_ptr : felt*,
-        range_check_ptr,
-        grid : Grid,
-        dust_count,
-        context : Context,
-        scores : felt*,
-    }(index : felt):
-        if index == grid.ships_positions_len:
-            return ()
-        end
-        let ship_position = grid.ships_positions[index]
-        with ship_position:
-            let (dust_absorbed) = try_ship_absorb_dust()
-        end
-        let dust_count = dust_count - dust_absorbed
+        syscall_ptr: felt*, range_check_ptr, grid: Grid, dust_count, context: Context, scores: felt*
+    }(index: felt) {
+        if (index == grid.ships_positions_len) {
+            return ();
+        }
+        let ship_position = grid.ships_positions[index];
+        with ship_position {
+            let (dust_absorbed) = try_ship_absorb_dust();
+        }
+        let dust_count = dust_count - dust_absorbed;
 
-        return check_ship_and_dust_collisions_loop(index + 1)
-    end
+        return check_ship_and_dust_collisions_loop(index + 1);
+    }
 
     func try_ship_absorb_dust{
-        syscall_ptr : felt*,
+        syscall_ptr: felt*,
         range_check_ptr,
-        grid : Grid,
-        ship_position : Vector2,
-        context : Context,
-        scores : felt*,
-    }() -> (dust_absorbed : felt):
-        alloc_locals
+        grid: Grid,
+        ship_position: Vector2,
+        context: Context,
+        scores: felt*,
+    }() -> (dust_absorbed: felt) {
+        alloc_locals;
 
-        let (cell) = grid_access.get_cell_at(ship_position.x, ship_position.y)
-        local grid : Grid = grid  # revoked reference
-        with cell:
-            let (has_ship) = cell_access.has_ship()
-            let (has_dust) = cell_access.has_dust()
-            if has_dust * has_ship == 0:
-                return (dust_absorbed=0)
-            end
+        let (cell) = grid_access.get_cell_at(ship_position.x, ship_position.y);
+        local grid: Grid = grid;  // revoked reference
+        with cell {
+            let (has_ship) = cell_access.has_ship();
+            let (has_dust) = cell_access.has_dust();
+            if (has_dust * has_ship == 0) {
+                return (dust_absorbed=0);
+            }
 
-            cell_access.remove_dust()
-            grid_access.set_cell_at(ship_position.x, ship_position.y, cell)
-            grid_access.remove_dust_position_value(ship_position)
-            increment_ship_score()
-        end
+            cell_access.remove_dust();
+            grid_access.set_cell_at(ship_position.x, ship_position.y, cell);
+            grid_access.remove_dust_position_value(ship_position);
+            increment_ship_score();
+        }
 
-        return (dust_absorbed=1)
-    end
+        return (dust_absorbed=1);
+    }
 
     func increment_ship_score{
-        syscall_ptr : felt*,
+        syscall_ptr: felt*,
         range_check_ptr,
-        grid : Grid,
-        ship_position : Vector2,
-        context : Context,
-        scores : felt*,
-    }():
-        alloc_locals
+        grid: Grid,
+        ship_position: Vector2,
+        context: Context,
+        scores: felt*,
+    }() {
+        alloc_locals;
 
-        let (cell) = grid_access.get_cell_at(ship_position.x, ship_position.y)
-        let (ship_id) = cell_access.get_ship{cell=cell}()
+        let (cell) = grid_access.get_cell_at(ship_position.x, ship_position.y);
+        let (ship_id) = cell_access.get_ship{cell=cell}();
 
-        let (new_array) = alloc()
-        local new_scores : felt* = new_array
-        let ship_index = ship_id - 1
-        let new_ship_score = scores[ship_index] + 1
-        update_scores_loop(new_scores, 0, ship_index, new_ship_score)
+        let (new_array) = alloc();
+        local new_scores: felt* = new_array;
+        let ship_index = ship_id - 1;
+        let new_ship_score = scores[ship_index] + 1;
+        update_scores_loop(new_scores, 0, ship_index, new_ship_score);
 
-        let (battle_contract_address) = get_contract_address()
-        score_changed.emit(battle_contract_address, ship_id, new_ship_score)
+        let (battle_contract_address) = get_contract_address();
+        score_changed.emit(battle_contract_address, ship_id, new_ship_score);
 
-        let scores = new_scores
-        return ()
-    end
+        let scores = new_scores;
+        return ();
+    }
 
     func update_scores_loop{
-        syscall_ptr : felt*,
+        syscall_ptr: felt*,
         range_check_ptr,
-        grid : Grid,
-        ship_position : Vector2,
-        context : Context,
-        scores : felt*,
-    }(new_scores : felt*, index : felt, ship_index : felt, new_ship_score : felt):
-        if index == context.ship_count:
-            return ()
-        end
+        grid: Grid,
+        ship_position: Vector2,
+        context: Context,
+        scores: felt*,
+    }(new_scores: felt*, index: felt, ship_index: felt, new_ship_score: felt) {
+        if (index == context.ship_count) {
+            return ();
+        }
 
-        if index == ship_index:
-            assert new_scores[index] = new_ship_score
-        else:
-            assert new_scores[index] = scores[index]
-        end
+        if (index == ship_index) {
+            assert new_scores[index] = new_ship_score;
+        } else {
+            assert new_scores[index] = scores[index];
+        }
 
-        return update_scores_loop(new_scores, index + 1, ship_index, new_ship_score)
-    end
+        return update_scores_loop(new_scores, index + 1, ship_index, new_ship_score);
+    }
 
-    # Generate random dust given a battle size
+    // Generate random dust given a battle size
     func generate_random_dust_on_border{
-        syscall_ptr : felt*, range_check_ptr, context : Context, grid : Grid, current_turn : felt
-    }() -> (dust : Dust, position : Vector2):
-        alloc_locals
-        local dust : Dust
+        syscall_ptr: felt*, range_check_ptr, context: Context, grid: Grid, current_turn: felt
+    }() -> (dust: Dust, position: Vector2) {
+        alloc_locals;
+        local dust: Dust;
 
         let (r1, r2, r3, r4, r5) = IRandom.generate_random_numbers(
             context.rand_contract, current_turn
-        )
+        );
 
-        let (direction : Vector2) = math_utils.random_direction(r1, r2)
-        assert dust.direction = direction
+        let (direction: Vector2) = math_utils.random_direction(r1, r2);
+        assert dust.direction = direction;
 
-        let (position : Vector2) = grid_access.generate_random_position_on_border(r3, r4, r5)
+        let (position: Vector2) = grid_access.generate_random_position_on_border(r3, r4, r5);
 
-        return (dust=dust, position=position)
-    end
-end
+        return (dust=dust, position=position);
+    }
+}

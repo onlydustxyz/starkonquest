@@ -7,36 +7,36 @@ from starkware.starknet.common.syscalls import get_block_timestamp, get_block_nu
 from contracts.interfaces.irand import IRandom
 from contracts.libraries.math_utils import math_utils
 
-# ------------
-# STORAGE VARS
-# ------------
+// ------------
+// STORAGE VARS
+// ------------
 
 @storage_var
-func random_contract() -> (random_contract : felt):
-end
+func random_contract() -> (random_contract: felt) {
+}
 
-namespace RandomMoveShip:
-    func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        random_contract_ : felt
-    ) -> ():
-        random_contract.write(random_contract_)
-        return ()
-    end
+namespace RandomMoveShip {
+    func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        random_contract_: felt
+    ) -> () {
+        random_contract.write(random_contract_);
+        return ();
+    }
 
-    # ---------
-    # EXTERNALS
-    # ---------
+    // ---------
+    // EXTERNALS
+    // ---------
 
-    func move{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        grid_state_len : felt, grid_state : Cell*, ship_id : felt
-    ) -> (new_direction : Vector2):
-        let (random_contract_address) = random_contract.read()
-        let (block_timestamp) = get_block_timestamp()
+    func move{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        grid_state_len: felt, grid_state: Cell*, ship_id: felt
+    ) -> (new_direction: Vector2) {
+        let (random_contract_address) = random_contract.read();
+        let (block_timestamp) = get_block_timestamp();
         let (r1, r2, _, _, _) = IRandom.generate_random_numbers(
             random_contract_address, block_timestamp
-        )
-        let (random_direction) = math_utils.random_direction(r1, r2)
+        );
+        let (random_direction) = math_utils.random_direction(r1, r2);
 
-        return (new_direction=random_direction)
-    end
-end
+        return (new_direction=random_direction);
+    }
+}

@@ -4,11 +4,11 @@ from contracts.libraries.square_grid import Grid, grid_access
 from contracts.libraries.cell import Cell
 from starkware.cairo.common.alloc import alloc
 
-namespace grid_helper:
-    func debug_grid{range_check_ptr, grid : Grid}():
-        alloc_locals
-        let (local dbg_cell_array : Cell*) = alloc()
-        dict_to_array(dbg_cell_array, 0)
+namespace grid_helper {
+    func debug_grid{range_check_ptr, grid: Grid}() {
+        alloc_locals;
+        let (local dbg_cell_array: Cell*) = alloc();
+        dict_to_array(dbg_cell_array, 0);
 
         %{
             def display(cell):
@@ -29,15 +29,15 @@ namespace grid_helper:
 
             print_cells(ids.dbg_cell_array._reference_value, ids.grid.width, ids.Cell.SIZE)
         %}
-        return ()
-    end
-    func dict_to_array{range_check_ptr, grid : Grid}(array : Cell*, index : felt):
-        if index == grid.cell_count:
-            return ()
-        end
-        let cell : Cell = grid_access.get_cell_at_index(index)
-        assert [array] = cell
-        dict_to_array(array + Cell.SIZE, index + 1)
-        return ()
-    end
-end
+        return ();
+    }
+    func dict_to_array{range_check_ptr, grid: Grid}(array: Cell*, index: felt) {
+        if (index == grid.cell_count) {
+            return ();
+        }
+        let cell: Cell = grid_access.get_cell_at_index(index);
+        assert [array] = cell;
+        dict_to_array(array + Cell.SIZE, index + 1);
+        return ();
+    }
+}

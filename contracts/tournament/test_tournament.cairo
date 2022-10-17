@@ -16,73 +16,70 @@ from contracts.tournament.library import (
     winning_ships_,
     winning_ship_count_,
 )
-from contracts.account.library import (
-    account,
-    Account
-)
+from contracts.account.library import account, Account
 from contracts.interfaces.iaccount import IAccount
 
-# ---------
-# CONSTANTS
-# ---------
+// ---------
+// CONSTANTS
+// ---------
 
-const ONLY_DUST_TOKEN_ADDRESS = 0x3fe90a1958bb8468fb1b62970747d8a00c435ef96cda708ae8de3d07f1bb56b
-const BOARDING_TOKEN_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a95
-const RAND_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a91
-const BATTLE_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04aaa
-const ACCOUNT_TOKEN_ADDRESS = 0x4b8145115592590ecddac23732a454abfe682f02ab0a01b7682835eecd906f8a
-const ADMIN = 300
-const ANYONE = 301
-const PLAYER_1 = 302
-const PLAYER_2 = 303
+const ONLY_DUST_TOKEN_ADDRESS = 0x3fe90a1958bb8468fb1b62970747d8a00c435ef96cda708ae8de3d07f1bb56b;
+const BOARDING_TOKEN_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a95;
+const RAND_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04a91;
+const BATTLE_ADDRESS = 0x00348f5537be66815eb7de63295fcb5d8b8b2ffe09bb712af4966db7cbb04aaa;
+const ACCOUNT_TOKEN_ADDRESS = 0x4b8145115592590ecddac23732a454abfe682f02ab0a01b7682835eecd906f8a;
+const ADMIN = 300;
+const ANYONE = 301;
+const PLAYER_1 = 302;
+const PLAYER_2 = 303;
 
-# -------
-# STRUCTS
-# -------
+// -------
+// STRUCTS
+// -------
 
-struct Signers:
-    member admin : felt
-    member anyone : felt
-    member player_1 : felt
-    member player_2 : felt
-end
+struct Signers {
+    admin: felt,
+    anyone: felt,
+    player_1: felt,
+    player_2: felt,
+}
 
-struct Mocks:
-    member only_dust_token_address : felt
-    member boarding_pass_token_address : felt
-    member rand_address : felt
-    member battle_address : felt
-    member account_token_address : felt
-end
+struct Mocks {
+    only_dust_token_address: felt,
+    boarding_pass_token_address: felt,
+    rand_address: felt,
+    battle_address: felt,
+    account_token_address: felt,
+}
 
-struct TestContext:
-    member signers : Signers
-    member mocks : Mocks
+struct TestContext {
+    signers: Signers,
+    mocks: Mocks,
 
-    member tournament_id : felt
-    member tournament_name : felt
-    member ships_per_battle : felt
-    member max_ships_per_tournament : felt
-    member grid_size : felt
-    member turn_count : felt
-    member max_dust : felt
-end
+    tournament_id: felt,
+    tournament_name: felt,
+    ships_per_battle: felt,
+    max_ships_per_tournament: felt,
+    grid_size: felt,
+    turn_count: felt,
+    max_dust: felt,
+}
 
-struct DeployedContracts:
-    member tournament_address : felt
-    member other_address : Mocks
-end
+struct DeployedContracts {
+    tournament_address: felt,
+    other_address: Mocks,
+}
 
-# -----
-# TESTS
-# -----
+// -----
+// TESTS
+// -----
 
 @external
 func test_construct_tournament_with_invalid_ship_count{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    let ship_count_per_battle = 2
-    let required_total_ship_count = 5  # Invalid. This should be a power of ship_count_per_battle.
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    let ship_count_per_battle = 2;
+    let required_total_ship_count = 5;  // Invalid. This should be a power of ship_count_per_battle.
 
     %{ expect_revert("TRANSACTION_FAILED", "Tournament: total ship count is expected to be a power of ship count per battle") %}
     tournament.constructor(
@@ -99,218 +96,216 @@ func test_construct_tournament_with_invalid_ship_count{
         grid_size=10,
         turn_count=10,
         max_dust=8,
-    )
-    return ()
-end
+    );
+    return ();
+}
 
 @external
 func test_automatic_close_registrations{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 2)
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(2, 2);
 
-    # Start registrations
+    // Start registrations
     %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
     %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
-    tournament.open_registrations()
-    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
+    tournament.open_registrations();
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN);
     %{ stop_prank_admin() %}
 
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
     %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
 
-    # Register ship 1
+    // Register ship 1
     %{ stop_prank_player_1 = start_prank(ids.context.signers.player_1) %}
-    tournament.register(ship_address=1000)
+    tournament.register(ship_address=1000);
     %{ stop_prank_player_1() %}
 
-    # Register ship 2
+    // Register ship 2
     %{ stop_prank_player_2 = start_prank(ids.context.signers.player_2) %}
     %{ expect_events({"name": "stage_changed", "data": [2, 3]}) %}
-    tournament.register(ship_address=1001)
+    tournament.register(ship_address=1001);
     %{ stop_prank_player_2() %}
 
-    # Registration should be closed automatically
-    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED)
+    // Registration should be closed automatically
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED);
 
-    return ()
-end
+    return ();
+}
 
 @external
-func test_register_without_account{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 4)
+func test_register_without_account{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    ) {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(2, 4);
 
-    # Start registration
+    // Start registration
     %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
     %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
-    tournament.open_registrations()
-    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
+    tournament.open_registrations();
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN);
     %{ stop_prank_admin() %}
 
-    # Fail to register
+    // Fail to register
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
     %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [0, 0]) %}
     %{ stop_prank_anyone = start_prank(ids.context.signers.anyone) %}
     %{ expect_revert("TRANSACTION_FAILED", "Tournament: player needs an account to register") %}
-    tournament.register(1000)
+    tournament.register(1000);
     %{ stop_prank_anyone() %}
 
-    return ()
-end
+    return ();
+}
 
 @external
-func test_register_without_access{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 4)
+func test_register_without_access{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    ) {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(2, 4);
 
-    # Start registration
+    // Start registration
     %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
     %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
-    tournament.open_registrations()
-    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
+    tournament.open_registrations();
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN);
     %{ stop_prank_admin() %}
 
-    # Fail to register
+    // Fail to register
     %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [0, 0]) %}
     %{ stop_prank_anyone = start_prank(ids.context.signers.anyone) %}
     %{ expect_revert("TRANSACTION_FAILED", "Tournament: player is not allowed to register") %}
-    tournament.register(1000)
+    tournament.register(1000);
     %{ stop_prank_anyone() %}
 
-    return ()
-end
+    return ();
+}
 
 @external
-func test_register_with_access{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 4)
+func test_register_with_access{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(2, 4);
 
-    # Start registration
+    // Start registration
     %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
     %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
-    tournament.open_registrations()
-    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
+    tournament.open_registrations();
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN);
     %{ stop_prank_admin() %}
 
-    # Register
+    // Register
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
     %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
     %{ stop_prank_player_1 = start_prank(ids.context.signers.player_1) %}
-    let ship_address = 1000
-    tournament.register(ship_address)
+    let ship_address = 1000;
+    tournament.register(ship_address);
     %{ expect_events({"name": "new_player_registered", "data": [ids.context.signers.player_1, 1, 5]}) %}
     %{ stop_prank_player_1() %}
 
-    # Check registration
-    let (player_address) = tournament.ship_player(ship_address)
-    with_attr error_message("Expected ship {ship_address} to be registered"):
-        assert player_address = context.signers.player_1
-    end
+    // Check registration
+    let (player_address) = tournament.ship_player(ship_address);
+    with_attr error_message("Expected ship {ship_address} to be registered") {
+        assert player_address = context.signers.player_1;
+    }
 
-    return ()
-end
+    return ();
+}
 
 @external
 func test_register_when_registrations_are_not_yet_open{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 4)
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(2, 4);
 
-    assert_that.stage_is(tournament.STAGE_CREATED)
+    assert_that.stage_is(tournament.STAGE_CREATED);
 
-    # Register
+    // Register
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
     %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
     %{ stop_prank_player_1 = start_prank(ids.context.signers.player_1) %}
-    let ship_address = 1000
+    let ship_address = 1000;
 
     %{ expect_revert("TRANSACTION_FAILED", "Tournament: current stage (1) is not 2") %}
-    tournament.register(ship_address)
+    tournament.register(ship_address);
     %{ stop_prank_player_1() %}
 
-    return ()
-end
+    return ();
+}
 
 @external
 func test_register_when_registrations_are_closed{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(1, 1)
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(1, 1);
 
-    # Open and close registrations
+    // Open and close registrations
     %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
     %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
-    tournament.open_registrations()
+    tournament.open_registrations();
     %{ stop_prank_admin() %}
 
-    # Register one ship to be able to close registrations
+    // Register one ship to be able to close registrations
     %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
     %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
     %{ stop_prank_player_1 = start_prank(ids.context.signers.player_1) %}
-    let ship_address = 1001
-    tournament.register(ship_address)
+    let ship_address = 1001;
+    tournament.register(ship_address);
     %{ stop_prank_player_1() %}
 
-    # Registration should be closed automatically
-    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED)
+    // Registration should be closed automatically
+    assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED);
 
-    # Register
+    // Register
     %{ stop_prank_player_2 = start_prank(ids.context.signers.player_2) %}
-    let ship_address = 1002
+    let ship_address = 1002;
 
     %{ expect_revert("TRANSACTION_FAILED", "Tournament: current stage (3) is not 2") %}
-    tournament.register(ship_address)
+    tournament.register(ship_address);
     %{ stop_prank_player_2() %}
 
-    return ()
-end
+    return ();
+}
 
 @external
 func test_tournament_with_4_ships_and_2_ships_per_battle{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 4)
-    with context:
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(2, 4);
+    with context {
         %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
-        test_internal.setup_tournament(ships_len=4, ships=new (1, 2, 3, 4))
-        assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4))
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(tournament.STAGE_STARTED)
+        test_internal.setup_tournament(ships_len=4, ships=new (1, 2, 3, 4));
+        assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4));
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ());
+        assert_that.stage_is(tournament.STAGE_STARTED);
 
-        # Play the first battle
+        // Play the first battle
         %{ stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 60]) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=1
-        )
+        );
 
-        # After the first battle, we are still in the round 1 so the list of playing ships is still the same
-        assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4))
-        assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (1))
+        // After the first battle, we are still in the round 1 so the list of playing ships is still the same
+        assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4));
+        assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (1));
 
-        # Play the second battle
+        // Play the second battle
         %{
             stop_mock()
             stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [2, 80, 50])
         %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=2, expected_round_before=1, expected_round_after=2
-        )
+        );
 
-        # After the second battle, we are in the round 2 so the list of playing ships has been updated
-        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 3))
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+        // After the second battle, we are in the round 2 so the list of playing ships has been updated
+        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 3));
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ());
 
-        # Play the final battle
+        // Play the final battle
         %{
             stop_mock()
             stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [2, 40, 70])
@@ -318,75 +313,75 @@ func test_tournament_with_4_ships_and_2_ships_per_battle{
         %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=3, expected_round_before=2, expected_round_after=3
-        )
+        );
 
         %{ stop_mock() %}
 
-        # After the final battle, we have our winner
-        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (3))
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(tournament.STAGE_FINISHED)
-        assert_that.tournament_winner_is(3)
-    end
-    return ()
-end
+        // After the final battle, we have our winner
+        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (3));
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ());
+        assert_that.stage_is(tournament.STAGE_FINISHED);
+        assert_that.tournament_winner_is(3);
+    }
+    return ();
+}
 
 @external
 func test_tournament_with_9_ships_and_3_ships_per_battle{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(3, 9)
-    with context:
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(3, 9);
+    with context {
         %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
-        test_internal.setup_tournament(ships_len=9, ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9))
+        test_internal.setup_tournament(ships_len=9, ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9));
         assert_that.playing_ships_are(
             playing_ships_len=9, playing_ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9)
-        )
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(tournament.STAGE_STARTED)
+        );
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ());
+        assert_that.stage_is(tournament.STAGE_STARTED);
 
-        # Play the first battle
+        // Play the first battle
         %{ stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [3, 10, 60, 80]) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=1
-        )
+        );
 
-        # After the first battle, we are still in the round 1 so the list of playing ships is still the same
+        // After the first battle, we are still in the round 1 so the list of playing ships is still the same
         assert_that.playing_ships_are(
             playing_ships_len=9, playing_ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9)
-        )
-        assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (3))
+        );
+        assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (3));
 
-        # Play the second battle
+        // Play the second battle
         %{
             stop_mock()
             stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [3, 100, 60, 80])
         %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=2, expected_round_before=1, expected_round_after=1
-        )
+        );
 
-        # After the second battle, we are still in the round 1 so the list of playing ships is still the same
+        // After the second battle, we are still in the round 1 so the list of playing ships is still the same
         assert_that.playing_ships_are(
             playing_ships_len=9, playing_ships=new (1, 2, 3, 4, 5, 6, 7, 8, 9)
-        )
-        assert_that.winning_ships_are(winning_ships_len=2, winning_ships=new (3, 4))
+        );
+        assert_that.winning_ships_are(winning_ships_len=2, winning_ships=new (3, 4));
 
-        # Play the third battle
+        // Play the third battle
         %{
             stop_mock()
             stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [3, 10, 60, 8])
         %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=3, expected_round_before=1, expected_round_after=2
-        )
+        );
 
-        # After the third battle, we are in the round 2 so the list of playing ships has been updated
-        assert_that.playing_ships_are(playing_ships_len=3, playing_ships=new (3, 4, 8))
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
+        // After the third battle, we are in the round 2 so the list of playing ships has been updated
+        assert_that.playing_ships_are(playing_ships_len=3, playing_ships=new (3, 4, 8));
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ());
 
-        # Play the final battle
+        // Play the final battle
         %{
             stop_mock()
             stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [3, 0, 10, 1300])
@@ -394,35 +389,35 @@ func test_tournament_with_9_ships_and_3_ships_per_battle{
         %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=4, expected_round_before=2, expected_round_after=3
-        )
+        );
 
-        # After the final battle, we have our winner
-        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (8))
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(tournament.STAGE_FINISHED)
-        assert_that.tournament_winner_is(8)
-    end
-    return ()
-end
+        // After the final battle, we have our winner
+        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (8));
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ());
+        assert_that.stage_is(tournament.STAGE_FINISHED);
+        assert_that.tournament_winner_is(8);
+    }
+    return ();
+}
 
 @external
 func test_deposit_rewards_with_less_allowance{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
 
-    let (deployed_contracts : DeployedContracts) = test_integration.deploy_contracts()
+    let (deployed_contracts: DeployedContracts) = test_integration.deploy_contracts();
 
-    # Get initial token balances
-    # ADMIN = 1000
+    // Get initial token balances
+    // ADMIN = 1000
     let (balance) = IERC20.balanceOf(
         contract_address=deployed_contracts.other_address.only_dust_token_address, account=ADMIN
-    )
-    assert balance.low = 1000
-    assert balance.high = 0
+    );
+    assert balance.low = 1000;
+    assert balance.high = 0;
 
-    # Admin deposits 100 tokens to the tournament contract
-    let deposit_amount = Uint256(100, 0)
+    // Admin deposits 100 tokens to the tournament contract
+    let deposit_amount = Uint256(100, 0);
 
     %{
         stop_prank = start_prank(
@@ -430,46 +425,46 @@ func test_deposit_rewards_with_less_allowance{
             ids.deployed_contracts.other_address.only_dust_token_address
         )
     %}
-    # Expect revert since there are no approvals yet
+    // Expect revert since there are no approvals yet
     %{ expect_revert("TRANSACTION_FAILED", "ERC20: transfer amount exceeds allowance") %}
     ITournament.deposit_rewards(
         contract_address=deployed_contracts.tournament_address, amount=deposit_amount
-    )
+    );
     %{ stop_prank() %}
-    return ()
-end
+    return ();
+}
 
 @external
 func test_deposit_rewards_with_enough_allowance{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
 
-    let (deployed_contracts : DeployedContracts) = test_integration.deploy_contracts()
+    let (deployed_contracts: DeployedContracts) = test_integration.deploy_contracts();
 
-    # Get initial token balances
-    # ADMIN = 1000, Contract = 0
-    let (local addresses : felt*) = alloc()
-    let (local token_balances_before : Uint256*) = alloc()
-    let (local token_balances_after : Uint256*) = alloc()
+    // Get initial token balances
+    // ADMIN = 1000, Contract = 0
+    let (local addresses: felt*) = alloc();
+    let (local token_balances_before: Uint256*) = alloc();
+    let (local token_balances_after: Uint256*) = alloc();
 
-    assert addresses[0] = ADMIN
-    assert addresses[1] = deployed_contracts.tournament_address
+    assert addresses[0] = ADMIN;
+    assert addresses[1] = deployed_contracts.tournament_address;
 
-    assert token_balances_before[0] = Uint256(1000, 0)
-    assert token_balances_before[1] = Uint256(0, 0)
+    assert token_balances_before[0] = Uint256(1000, 0);
+    assert token_balances_before[1] = Uint256(0, 0);
 
-    with deployed_contracts:
+    with deployed_contracts {
         assert_that.token_balances_are(
             addresses_len=2,
             addresses=addresses,
             token_balances_len=2,
             token_balances=token_balances_before,
             idx=0,
-        )
+        );
 
-        # Admin deposits 100 tokens to the tournament contract
-        local deposit_amount : Uint256 = Uint256(100, 0)
+        // Admin deposits 100 tokens to the tournament contract
+        local deposit_amount: Uint256 = Uint256(100, 0);
 
         %{
             stop_prank = start_prank(
@@ -477,12 +472,12 @@ func test_deposit_rewards_with_enough_allowance{
                 ids.deployed_contracts.other_address.only_dust_token_address
             )
         %}
-        # Approve the contract to spend 100 tokens
+        // Approve the contract to spend 100 tokens
         IERC20.approve(
             contract_address=deployed_contracts.other_address.only_dust_token_address,
             spender=deployed_contracts.tournament_address,
             amount=deposit_amount,
-        )
+        );
         %{ stop_prank() %}
 
         %{
@@ -494,11 +489,11 @@ func test_deposit_rewards_with_enough_allowance{
         %{ expect_events({"name": "rewards_deposited", "data": [ids.ADMIN, 100, 0]}) %}
         ITournament.deposit_rewards(
             contract_address=deployed_contracts.tournament_address, amount=deposit_amount
-        )
+        );
         %{ stop_prank() %}
 
-        assert token_balances_after[0] = Uint256(900, 0)
-        assert token_balances_after[1] = Uint256(100, 0)
+        assert token_balances_after[0] = Uint256(900, 0);
+        assert token_balances_after[1] = Uint256(100, 0);
 
         assert_that.token_balances_are(
             addresses_len=2,
@@ -506,124 +501,124 @@ func test_deposit_rewards_with_enough_allowance{
             token_balances_len=2,
             token_balances=token_balances_after,
             idx=0,
-        )
-    end
-    return ()
-end
+        );
+    }
+    return ();
+}
 
 @external
 func test_withdraw_reward_tournament_not_finished{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 2)
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(2, 2);
 
     %{ stop_prank = start_prank(ids.context.signers.player_1) %}
     %{ expect_revert("TRANSACTION_FAILED", "Tournament: tournament not yet FINISHED") %}
-    tournament.winner_withdraw()
+    tournament.winner_withdraw();
     %{ stop_prank() %}
 
-    return ()
-end
+    return ();
+}
 
 @external
 func test_withdraw_reward_by_zero_address{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 2)
-    with context:
-        # Tournament with 2 ships and 2 ships per battle
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(2, 2);
+    with context {
+        // Tournament with 2 ships and 2 ships per battle
         %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
-        test_internal.setup_tournament(ships_len=2, ships=new (1, 2))
-        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 2))
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(tournament.STAGE_STARTED)
+        test_internal.setup_tournament(ships_len=2, ships=new (1, 2));
+        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 2));
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ());
+        assert_that.stage_is(tournament.STAGE_STARTED);
 
-        # Play the first and final battle, only 1 round
+        // Play the first and final battle, only 1 round
         %{ mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 80]) %}
         %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=2
-        )
+        );
 
-        # We have our winner
-        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1))
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(tournament.STAGE_FINISHED)
-        assert_that.winner_is(1)
+        // We have our winner
+        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1));
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ());
+        assert_that.stage_is(tournament.STAGE_FINISHED);
+        assert_that.winner_is(1);
 
-        # zero address withdraws reward
+        // zero address withdraws reward
         %{ stop_prank = start_prank(caller_address=0) %}
         %{ expect_revert("TRANSACTION_FAILED", "caller cannot be zero address") %}
-        tournament.winner_withdraw()
-    end
+        tournament.winner_withdraw();
+    }
     %{ stop_prank() %}
-    return ()
-end
+    return ();
+}
 
 @external
 func test_withdraw_reward_not_by_winner{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 2)
-    with context:
-        # Tournament with 2 ships and 2 ships per battle
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(2, 2);
+    with context {
+        // Tournament with 2 ships and 2 ships per battle
         %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
-        test_internal.setup_tournament(ships_len=2, ships=new (1, 2))
-        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 2))
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(tournament.STAGE_STARTED)
+        test_internal.setup_tournament(ships_len=2, ships=new (1, 2));
+        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 2));
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ());
+        assert_that.stage_is(tournament.STAGE_STARTED);
 
-        # Play the first and final battle, only 1 round
+        // Play the first and final battle, only 1 round
         %{ mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 80]) %}
         %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=2
-        )
+        );
 
-        # We have our winner
-        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1))
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.stage_is(tournament.STAGE_FINISHED)
-        assert_that.winner_is(1)
+        // We have our winner
+        assert_that.playing_ships_are(playing_ships_len=1, playing_ships=new (1));
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ());
+        assert_that.stage_is(tournament.STAGE_FINISHED);
+        assert_that.winner_is(1);
 
-        # 2 withdraws reward
+        // 2 withdraws reward
         %{ stop_prank = start_prank(caller_address=2) %}
         %{ expect_revert("TRANSACTION_FAILED", "Tournament: caller is not the final winner") %}
-        tournament.winner_withdraw()
-    end
+        tournament.winner_withdraw();
+    }
     %{ stop_prank() %}
-    return ()
-end
+    return ();
+}
 
 @external
-func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-    alloc_locals
+func test_winner_withdraw{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    alloc_locals;
 
-    # Deploy the contracts
-    let (deployed_contracts : DeployedContracts) = test_integration.deploy_contracts()
+    // Deploy the contracts
+    let (deployed_contracts: DeployedContracts) = test_integration.deploy_contracts();
 
-    # Get initial token balances
-    # ADMIN = 1000, Winner = 0
-    tempvar addresses : felt* = new (ADMIN, PLAYER_1)
-    let (local token_balances_before : Uint256*) = alloc()
+    // Get initial token balances
+    // ADMIN = 1000, Winner = 0
+    tempvar addresses: felt* = new (ADMIN, PLAYER_1);
+    let (local token_balances_before: Uint256*) = alloc();
 
-    assert token_balances_before[0] = Uint256(1000, 0)
-    assert token_balances_before[1] = Uint256(0, 0)
+    assert token_balances_before[0] = Uint256(1000, 0);
+    assert token_balances_before[1] = Uint256(0, 0);
 
-    with deployed_contracts:
+    with deployed_contracts {
         assert_that.token_balances_are(
             addresses_len=2,
             addresses=addresses,
             token_balances_len=2,
             token_balances=token_balances_before,
             idx=0,
-        )
+        );
 
-        # Admin deposits 100 tokens to the tournament contract
-        let deposit_amount = Uint256(100, 0)
+        // Admin deposits 100 tokens to the tournament contract
+        let deposit_amount = Uint256(100, 0);
 
         %{
             stop_prank_admin = start_prank(
@@ -631,12 +626,12 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
                 ids.deployed_contracts.other_address.only_dust_token_address
             )
         %}
-        # ADMIN approves the contract to spend 100 tokens
+        // ADMIN approves the contract to spend 100 tokens
         IERC20.approve(
             contract_address=deployed_contracts.other_address.only_dust_token_address,
             spender=deployed_contracts.tournament_address,
             amount=deposit_amount,
-        )
+        );
         %{ stop_prank_admin() %}
 
         %{
@@ -646,17 +641,17 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
             )
         %}
         %{ expect_events({"name": "rewards_deposited", "data": [ids.ADMIN, 100, 0]}) %}
-        # ADMIN deposits 100 tokens to the tournament contract
+        // ADMIN deposits 100 tokens to the tournament contract
         ITournament.deposit_rewards(
             contract_address=deployed_contracts.tournament_address, amount=deposit_amount
-        )
+        );
 
-        # Start registration
-        ITournament.open_registrations(deployed_contracts.tournament_address)
+        // Start registration
+        ITournament.open_registrations(deployed_contracts.tournament_address);
         %{ stop_prank_admin() %}
 
-        # Register ships, tournament with 2 ships and 2 ships per battle
-        # For simplicity, player_address = ship_address
+        // Register ships, tournament with 2 ships and 2 ships per battle
+        // For simplicity, player_address = ship_address
         %{
             mock_call(
                 ids.deployed_contracts.other_address.boarding_pass_token_address,
@@ -672,7 +667,7 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
                 )
         %}
 
-        # PLAYER 1 registers
+        // PLAYER 1 registers
         %{
             stop_prank_player_1 = start_prank(
                 ids.PLAYER_1,
@@ -681,10 +676,10 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
         %}
         ITournament.register(
             contract_address=deployed_contracts.tournament_address, ship_address=PLAYER_1
-        )
+        );
         %{ stop_prank_player_1() %}
 
-        # PLAYER 2 registers
+        // PLAYER 2 registers
         %{
             stop_prank_player_2 = start_prank(
                 ids.ADMIN,
@@ -693,7 +688,7 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
         %}
         ITournament.register(
             contract_address=deployed_contracts.tournament_address, ship_address=PLAYER_2
-        )
+        );
         %{ stop_prank_player_2() %}
 
         %{
@@ -703,10 +698,10 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
             )
         %}
 
-        # Start tournament
-        ITournament.start(deployed_contracts.tournament_address)
+        // Start tournament
+        ITournament.start(deployed_contracts.tournament_address);
 
-        # Play first and final battle, tournament_finished event is emitted
+        // Play first and final battle, tournament_finished event is emitted
         %{
             mock_call(
                 ids.deployed_contracts.other_address.battle_address,
@@ -716,16 +711,16 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
         %}
         %{ expect_events({"name": "tournament_finished", "data": [ids.PLAYER_1, ids.PLAYER_1]}) %}
         %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
-        ITournament.play_next_battle(deployed_contracts.tournament_address)
+        ITournament.play_next_battle(deployed_contracts.tournament_address);
         %{ stop_prank_admin() %}
 
-        # We have our winner PLAYER_1
-        let (stage) = ITournament.stage(deployed_contracts.tournament_address)
-        let (winner) = ITournament.tournament_winner(deployed_contracts.tournament_address)
-        assert stage = tournament.STAGE_FINISHED
-        assert winner.player_address = PLAYER_1
+        // We have our winner PLAYER_1
+        let (stage) = ITournament.stage(deployed_contracts.tournament_address);
+        let (winner) = ITournament.tournament_winner(deployed_contracts.tournament_address);
+        assert stage = tournament.STAGE_FINISHED;
+        assert winner.player_address = PLAYER_1;
 
-        # Winner withdraws rewards, rewards_withdrawn event is emitted
+        // Winner withdraws rewards, rewards_withdrawn event is emitted
         %{
             stop_prank_winner = start_prank(
                 ids.PLAYER_1,
@@ -733,94 +728,95 @@ func test_winner_withdraw{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
             )
         %}
         %{ expect_events({"name": "rewards_withdrawn", "data": [ids.PLAYER_1, 100, 0]}) %}
-        ITournament.winner_withdraw(deployed_contracts.tournament_address)
+        ITournament.winner_withdraw(deployed_contracts.tournament_address);
         %{ stop_prank_winner() %}
 
-        # Check token balances
-        # ADMIN = 900, Winner = 100
-        let (local token_balances_after : Uint256*) = alloc()
+        // Check token balances
+        // ADMIN = 900, Winner = 100
+        let (local token_balances_after: Uint256*) = alloc();
 
-        assert token_balances_after[0] = Uint256(900, 0)
-        assert token_balances_after[1] = Uint256(100, 0)
+        assert token_balances_after[0] = Uint256(900, 0);
+        assert token_balances_after[1] = Uint256(100, 0);
         assert_that.token_balances_are(
             addresses_len=2,
             addresses=addresses,
             token_balances_len=2,
             token_balances=token_balances_after,
             idx=0,
-        )
-    end
-    return ()
-end
+        );
+    }
+    return ();
+}
 
 @external
-func test_event_sent_after_battle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 2)
-    with context:
-        # Tournament with 2 ships and 2 ships per battle
-        test_internal.setup_tournament(ships_len=2, ships=new (1, 2))
+func test_event_sent_after_battle{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    ) {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(2, 2);
+    with context {
+        // Tournament with 2 ships and 2 ships per battle
+        test_internal.setup_tournament(ships_len=2, ships=new (1, 2));
 
-        # Play the first and final battle, only 1 round and test if the event data is correct
+        // Play the first and final battle, only 1 round and test if the event data is correct
         %{ mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 80]) %}
         %{ expect_events({"name": "battle_completed", "data": [1, 1, 1]}) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=2
-        )
-    end
-    return ()
-end
+        );
+    }
+    return ();
+}
 
 @external
 func test_auto_increment_accounts_information{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}():
-    alloc_locals
-    let (local context : TestContext) = test_internal.prepare(2, 4)
-    with context:
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() {
+    alloc_locals;
+    let (local context: TestContext) = test_internal.prepare(2, 4);
+    with context {
         %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
-        test_internal.setup_tournament(ships_len=4, ships=new (1, 2, 3, 4))
+        test_internal.setup_tournament(ships_len=4, ships=new (1, 2, 3, 4));
 
-        # Play the first battle
+        // Play the first battle
         %{ stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [2, 100, 60]) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=1, expected_round_before=1, expected_round_after=1
-        )
+        );
 
-        # After the first battle, we are still in the round 1 so the list of playing ships is still the same
-        assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4))
-        assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (1))
-        assert_that.won_battle_count_is(1, 1, context.mocks.account_token_address)
-        assert_that.won_battle_count_is(2, 0, context.mocks.account_token_address)
-        assert_that.won_battle_count_is(3, 0, context.mocks.account_token_address)
-        assert_that.won_battle_count_is(4, 0, context.mocks.account_token_address)
-        assert_that.lost_battle_count_is(1, 0, context.mocks.account_token_address)
-        assert_that.lost_battle_count_is(2, 1, context.mocks.account_token_address)
-        assert_that.lost_battle_count_is(3, 0, context.mocks.account_token_address)
-        assert_that.lost_battle_count_is(4, 0, context.mocks.account_token_address)
+        // After the first battle, we are still in the round 1 so the list of playing ships is still the same
+        assert_that.playing_ships_are(playing_ships_len=4, playing_ships=new (1, 2, 3, 4));
+        assert_that.winning_ships_are(winning_ships_len=1, winning_ships=new (1));
+        assert_that.won_battle_count_is(1, 1, context.mocks.account_token_address);
+        assert_that.won_battle_count_is(2, 0, context.mocks.account_token_address);
+        assert_that.won_battle_count_is(3, 0, context.mocks.account_token_address);
+        assert_that.won_battle_count_is(4, 0, context.mocks.account_token_address);
+        assert_that.lost_battle_count_is(1, 0, context.mocks.account_token_address);
+        assert_that.lost_battle_count_is(2, 1, context.mocks.account_token_address);
+        assert_that.lost_battle_count_is(3, 0, context.mocks.account_token_address);
+        assert_that.lost_battle_count_is(4, 0, context.mocks.account_token_address);
 
-        # Play the second battle
+        // Play the second battle
         %{
             stop_mock()
             stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [2, 80, 50])
         %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=2, expected_round_before=1, expected_round_after=2
-        )
+        );
 
-        # After the second battle, we are in the round 2 so the list of playing ships has been updated
-        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 3))
-        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ())
-        assert_that.won_battle_count_is(1, 1, context.mocks.account_token_address)
-        assert_that.won_battle_count_is(2, 0, context.mocks.account_token_address)
-        assert_that.won_battle_count_is(3, 1, context.mocks.account_token_address)
-        assert_that.won_battle_count_is(4, 0, context.mocks.account_token_address)
-        assert_that.lost_battle_count_is(1, 0, context.mocks.account_token_address)
-        assert_that.lost_battle_count_is(2, 1, context.mocks.account_token_address)
-        assert_that.lost_battle_count_is(3, 0, context.mocks.account_token_address)
-        assert_that.lost_battle_count_is(4, 1, context.mocks.account_token_address)
+        // After the second battle, we are in the round 2 so the list of playing ships has been updated
+        assert_that.playing_ships_are(playing_ships_len=2, playing_ships=new (1, 3));
+        assert_that.winning_ships_are(winning_ships_len=0, winning_ships=new ());
+        assert_that.won_battle_count_is(1, 1, context.mocks.account_token_address);
+        assert_that.won_battle_count_is(2, 0, context.mocks.account_token_address);
+        assert_that.won_battle_count_is(3, 1, context.mocks.account_token_address);
+        assert_that.won_battle_count_is(4, 0, context.mocks.account_token_address);
+        assert_that.lost_battle_count_is(1, 0, context.mocks.account_token_address);
+        assert_that.lost_battle_count_is(2, 1, context.mocks.account_token_address);
+        assert_that.lost_battle_count_is(3, 0, context.mocks.account_token_address);
+        assert_that.lost_battle_count_is(4, 1, context.mocks.account_token_address);
 
-        # Play the final battle
+        // Play the final battle
         %{
             stop_mock()
             stop_mock = mock_call(ids.context.mocks.battle_address, "play_game", [2, 40, 70])
@@ -828,43 +824,40 @@ func test_auto_increment_accounts_information{
         %{ expect_events({"name": "stage_changed", "data": [4, 5]}) %}
         test_internal.invoke_battle(
             expected_played_battle_count_after=3, expected_round_before=2, expected_round_after=3
-        )
+        );
 
         %{ stop_mock() %}
 
-        # After the final battle, we have our winner
-        assert_that.won_battle_count_is(1, 1, context.mocks.account_token_address)
-        assert_that.lost_battle_count_is(1, 1, context.mocks.account_token_address)
-        assert_that.won_battle_count_is(3, 2, context.mocks.account_token_address)
-        assert_that.lost_battle_count_is(3, 0, context.mocks.account_token_address)
+        // After the final battle, we have our winner
+        assert_that.won_battle_count_is(1, 1, context.mocks.account_token_address);
+        assert_that.lost_battle_count_is(1, 1, context.mocks.account_token_address);
+        assert_that.won_battle_count_is(3, 2, context.mocks.account_token_address);
+        assert_that.lost_battle_count_is(3, 0, context.mocks.account_token_address);
 
+        assert_that.won_tournament_count_is(1, 0, context.mocks.account_token_address);
+        assert_that.won_tournament_count_is(2, 0, context.mocks.account_token_address);
+        assert_that.won_tournament_count_is(3, 1, context.mocks.account_token_address);
+        assert_that.won_tournament_count_is(4, 0, context.mocks.account_token_address);
+        assert_that.lost_tournament_count_is(1, 1, context.mocks.account_token_address);
+        assert_that.lost_tournament_count_is(2, 1, context.mocks.account_token_address);
+        assert_that.lost_tournament_count_is(3, 0, context.mocks.account_token_address);
+        assert_that.lost_tournament_count_is(4, 1, context.mocks.account_token_address);
+    }
+    return ();
+}
 
+// -----------------------
+// INTERNAL TEST FUNCTIONS
+// -----------------------
 
-        assert_that.won_tournament_count_is(1, 0, context.mocks.account_token_address)
-        assert_that.won_tournament_count_is(2, 0, context.mocks.account_token_address)
-        assert_that.won_tournament_count_is(3, 1, context.mocks.account_token_address)
-        assert_that.won_tournament_count_is(4, 0, context.mocks.account_token_address)
-        assert_that.lost_tournament_count_is(1, 1, context.mocks.account_token_address)
-        assert_that.lost_tournament_count_is(2, 1, context.mocks.account_token_address)
-        assert_that.lost_tournament_count_is(3, 0, context.mocks.account_token_address)
-        assert_that.lost_tournament_count_is(4, 1, context.mocks.account_token_address)
+namespace test_internal {
+    func prepare{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        ships_per_battle: felt, max_ships_per_tournament: felt
+    ) -> (test_context: TestContext) {
+        alloc_locals;
+        local signers: Signers = Signers(admin=ADMIN, anyone=ANYONE, player_1=PLAYER_1, player_2=PLAYER_2);
 
-    end
-    return ()
-end
-
-# -----------------------
-# INTERNAL TEST FUNCTIONS
-# -----------------------
-
-namespace test_internal:
-    func prepare{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        ships_per_battle : felt, max_ships_per_tournament : felt
-    ) -> (test_context : TestContext):
-        alloc_locals
-        local signers : Signers = Signers(admin=ADMIN, anyone=ANYONE, player_1=PLAYER_1, player_2=PLAYER_2)
-
-        local account_address : felt
+        local account_address: felt;
 
         %{
             ids.account_address = deploy_contract(
@@ -873,15 +866,15 @@ namespace test_internal:
             [0, 0, ids.ADMIN]).contract_address
         %}
 
-        local mocks : Mocks = Mocks(
+        local mocks: Mocks = Mocks(
             only_dust_token_address=ONLY_DUST_TOKEN_ADDRESS,
             boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
             rand_address=RAND_ADDRESS,
             battle_address=BATTLE_ADDRESS,
             account_token_address=account_address
-            )
+            );
 
-        local context : TestContext = TestContext(
+        local context: TestContext = TestContext(
             signers=signers,
             mocks=mocks,
             tournament_id=420,
@@ -891,7 +884,7 @@ namespace test_internal:
             grid_size=5,
             turn_count=10,
             max_dust=2,
-            )
+            );
 
         tournament.constructor(
             signers.admin,
@@ -907,140 +900,140 @@ namespace test_internal:
             context.grid_size,
             context.turn_count,
             context.max_dust,
-        )
+        );
 
-        assert_that.stage_is(tournament.STAGE_CREATED)
-        return (test_context=context)
-    end
+        assert_that.stage_is(tournament.STAGE_CREATED);
+        return (test_context=context);
+    }
 
     func setup_tournament{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
-    }(ships_len : felt, ships : felt*):
-        alloc_locals
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, context: TestContext
+    }(ships_len: felt, ships: felt*) {
+        alloc_locals;
 
         %{ mock_call(ids.context.mocks.only_dust_token_address, "balanceOf", [100, 0]) %}
-        let (reward_total_amount) = tournament.reward_total_amount()
-        assert reward_total_amount.low = 100
-        assert reward_total_amount.high = 0
+        let (reward_total_amount) = tournament.reward_total_amount();
+        assert reward_total_amount.low = 100;
+        assert reward_total_amount.high = 0;
 
-        # Start registration
+        // Start registration
         %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
-        assert_that.stage_is(tournament.STAGE_CREATED)
+        assert_that.stage_is(tournament.STAGE_CREATED);
         %{ expect_events({"name": "stage_changed", "data": [1, 2]}) %}
-        tournament.open_registrations()
-        assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN)
+        tournament.open_registrations();
+        assert_that.stage_is(tournament.STAGE_REGISTRATIONS_OPEN);
         %{ stop_prank_admin() %}
 
-        # Register ships
+        // Register ships
         %{ mock_call(ids.context.mocks.boarding_pass_token_address, "balanceOf", [1, 0]) %}
         %{ mock_call(ids.context.mocks.account_token_address, "balanceOf", [1, 0]) %}
-        _register_ships_loop(context.mocks.account_token_address, ships_len, ships)
+        _register_ships_loop(context.mocks.account_token_address, ships_len, ships);
 
-        # Registration should now be closed
+        // Registration should now be closed
         %{ expect_events({"name": "stage_changed", "data": [2, 3]}) %}
-        assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED)
+        assert_that.stage_is(tournament.STAGE_REGISTRATIONS_CLOSED);
 
-        # Start the tournament
+        // Start the tournament
         %{ stop_prank_admin= start_prank(ids.context.signers.admin) %}
         %{ expect_events({"name": "stage_changed", "data": [3, 4]}) %}
-        tournament.start()
-        assert_that.stage_is(tournament.STAGE_STARTED)
+        tournament.start();
+        assert_that.stage_is(tournament.STAGE_STARTED);
         %{ stop_prank_admin() %}
 
-        let (played_battle_count) = tournament.played_battle_count()
-        assert played_battle_count = 0
-        let (round) = tournament.current_round()
-        assert round = 1
+        let (played_battle_count) = tournament.played_battle_count();
+        assert played_battle_count = 0;
+        let (round) = tournament.current_round();
+        assert round = 1;
 
-        return ()
-    end
+        return ();
+    }
 
     func _register_ships_loop{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
-    }(account_address: felt, ships_len : felt, ships : felt*):
-        alloc_locals
-        if ships_len == 0:
-            return ()
-        end
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, context: TestContext
+    }(account_address: felt, ships_len: felt, ships: felt*) {
+        alloc_locals;
+        if (ships_len == 0) {
+            return ();
+        }
 
-        tempvar ship_address = [ships]
-        local player_address = ship_address  # To keep it simple in tests, the player_address is equal to the ship_address
+        tempvar ship_address = [ships];
+        local player_address = ship_address;  // To keep it simple in tests, the player_address is equal to the ship_address
 
-        IAccount.mint(account_address, player_address, player_address)
+        IAccount.mint(account_address, player_address, player_address);
 
-        # Register
+        // Register
         %{ stop_prank_player = start_prank(ids.player_address) %}
-        tournament.register(ship_address)
+        tournament.register(ship_address);
         %{ stop_prank_player() %}
 
-        # Check registration
-        let (registered_player_address) = tournament.ship_player(ship_address)
-        with_attr error_message("Expected ship {ship_address} to be registered"):
-            assert registered_player_address = player_address
-        end
+        // Check registration
+        let (registered_player_address) = tournament.ship_player(ship_address);
+        with_attr error_message("Expected ship {ship_address} to be registered") {
+            assert registered_player_address = player_address;
+        }
 
-        _register_ships_loop(account_address, ships_len - 1, &ships[1])
-        return ()
-    end
+        _register_ships_loop(account_address, ships_len - 1, &ships[1]);
+        return ();
+    }
 
     func invoke_battle{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, context : TestContext
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, context: TestContext
     }(
-        expected_played_battle_count_after : felt,
-        expected_round_before : felt,
-        expected_round_after : felt,
-    ):
-        alloc_locals
-        local battle_address = BATTLE_ADDRESS
-        local admin = ADMIN
+        expected_played_battle_count_after: felt,
+        expected_round_before: felt,
+        expected_round_after: felt,
+    ) {
+        alloc_locals;
+        local battle_address = BATTLE_ADDRESS;
+        local admin = ADMIN;
 
-        let (local round) = tournament.current_round()
+        let (local round) = tournament.current_round();
         with_attr error_message(
-                "Expected round number (before battle) to be {expected_round_before}, got {round}"):
-            assert round = expected_round_before
-        end
+                "Expected round number (before battle) to be {expected_round_before}, got {round}") {
+            assert round = expected_round_before;
+        }
 
-        let (local battle_index) = tournament.played_battle_count()
-        assert_that.battle_transaction_hash_is_not_set(battle_index)
+        let (local battle_index) = tournament.played_battle_count();
+        assert_that.battle_transaction_hash_is_not_set(battle_index);
 
         %{ stop_prank_admin = start_prank(ids.context.signers.admin) %}
-        tournament.play_next_battle()
+        tournament.play_next_battle();
         %{ stop_prank_admin() %}
 
-        assert_that.battle_transaction_hash_is_set(battle_index)
+        assert_that.battle_transaction_hash_is_set(battle_index);
 
-        let (local played_battle_count) = tournament.played_battle_count()
+        let (local played_battle_count) = tournament.played_battle_count();
         with_attr error_message(
-                "Expected played battle count (after battle) to be {expected_played_battle_count_after}, got {played_battle_count}"):
-            assert played_battle_count = expected_played_battle_count_after
-        end
+                "Expected played battle count (after battle) to be {expected_played_battle_count_after}, got {played_battle_count}") {
+            assert played_battle_count = expected_played_battle_count_after;
+        }
 
-        let (local round) = tournament.current_round()
+        let (local round) = tournament.current_round();
         with_attr error_message(
-                "Expected round number (after battle) to be {expected_round_after}, got {round}"):
-            assert round = expected_round_after
-        end
+                "Expected round number (after battle) to be {expected_round_after}, got {round}") {
+            assert round = expected_round_after;
+        }
 
-        return ()
-    end
-end
+        return ();
+    }
+}
 
-# --------------------------
-# INTEGRATION TEST FUNCTIONS
-# --------------------------
+// --------------------------
+// INTEGRATION TEST FUNCTIONS
+// --------------------------
 
-namespace test_integration:
-    func deploy_contracts{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-        deployed_contracts : DeployedContracts
-    ):
-        alloc_locals
+namespace test_integration {
+    func deploy_contracts{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
+        deployed_contracts: DeployedContracts
+    ) {
+        alloc_locals;
 
-        local reward_token_address : felt
-        local tournament_contract_address : felt
-        local account_address : felt
+        local reward_token_address: felt;
+        local tournament_contract_address: felt;
+        local account_address: felt;
 
-        # Deploy the ERC20 contract and put its address into a local variable.
-        # Second argument is calldata array, with 1000 initial tokens minted to ADMIN
+        // Deploy the ERC20 contract and put its address into a local variable.
+        // Second argument is calldata array, with 1000 initial tokens minted to ADMIN
         %{
             ids.reward_token_address = deploy_contract(
             "./contracts/tokens/only_dust/only_dust.cairo",
@@ -1055,9 +1048,9 @@ namespace test_integration:
             [0, 0, ids.ADMIN]).contract_address
         %}
 
-        # TO-DO: Deploy other contracts here
+        // TO-DO: Deploy other contracts here
 
-        # Replace mocks with deployed contract addresses here and deploy the tournament contract
+        // Replace mocks with deployed contract addresses here and deploy the tournament contract
         %{
             ids.tournament_contract_address = deploy_contract(
             "./contracts/tournament/tournament.cairo",
@@ -1073,7 +1066,7 @@ namespace test_integration:
             ]).contract_address
         %}
 
-        # Replace mocks with deployed contract addresses here
+        // Replace mocks with deployed contract addresses here
         let deployed_contracts = DeployedContracts(
             tournament_address=tournament_contract_address,
             other_address=Mocks(
@@ -1083,217 +1076,209 @@ namespace test_integration:
             battle_address=BATTLE_ADDRESS,
             account_token_address=account_address
             ),
-        )
-        return (deployed_contracts)
-    end
-end
+        );
+        return (deployed_contracts,);
+    }
+}
 
-# -----------------
-# CUSTOM ASSERTIONS
-# -----------------
+// -----------------
+// CUSTOM ASSERTIONS
+// -----------------
 
-namespace assert_that:
-    func stage_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        expected_stage : felt
-    ):
-        alloc_locals
-        let (local stage) = tournament.stage()
-        with_attr error_message("Expected stage to be {expected_stage}, got {stage}"):
-            assert stage = expected_stage
-        end
-        return ()
-    end
+namespace assert_that {
+    func stage_is{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        expected_stage: felt
+    ) {
+        alloc_locals;
+        let (local stage) = tournament.stage();
+        with_attr error_message("Expected stage to be {expected_stage}, got {stage}") {
+            assert stage = expected_stage;
+        }
+        return ();
+    }
 
-    func winner_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        expected_winner : felt
-    ):
-        let (winner : Player) = tournament.tournament_winner()
+    func winner_is{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        expected_winner: felt
+    ) {
+        let (winner: Player) = tournament.tournament_winner();
         with_attr error_message(
-                "Expected winner to be {expected_winner}, got {winner.player_address}"):
-            assert winner.player_address = expected_winner
-        end
-        return ()
-    end
+                "Expected winner to be {expected_winner}, got {winner.player_address}") {
+            assert winner.player_address = expected_winner;
+        }
+        return ();
+    }
 
-    func won_tournament_count_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        address : felt,
-        expected_won_count : felt,
-        account_address : felt
-    ):
-        let (_account : Account) = IAccount.account_information(account_address, address)
-        assert _account.won_tournament_count = expected_won_count
-        return ()
-    end
+    func won_tournament_count_is{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        address: felt, expected_won_count: felt, account_address: felt
+    ) {
+        let (_account: Account) = IAccount.account_information(account_address, address);
+        assert _account.won_tournament_count = expected_won_count;
+        return ();
+    }
 
-    func lost_tournament_count_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        address : felt,
-        expected_lost_count : felt,
-        account_address : felt
-    ):
-        let (_account : Account) = IAccount.account_information(account_address, address)
-        assert _account.lost_tournament_count = expected_lost_count
-        return ()
-    end
+    func lost_tournament_count_is{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        address: felt, expected_lost_count: felt, account_address: felt
+    ) {
+        let (_account: Account) = IAccount.account_information(account_address, address);
+        assert _account.lost_tournament_count = expected_lost_count;
+        return ();
+    }
 
-    func won_battle_count_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        address : felt,
-        expected_won_count : felt,
-        account_address : felt
-    ):
-        let (_account : Account) = IAccount.account_information(account_address, address)
-        assert _account.won_battle_count = expected_won_count
-        return ()
-    end
+    func won_battle_count_is{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        address: felt, expected_won_count: felt, account_address: felt
+    ) {
+        let (_account: Account) = IAccount.account_information(account_address, address);
+        assert _account.won_battle_count = expected_won_count;
+        return ();
+    }
 
-    func lost_battle_count_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        address : felt,
-        expected_lost_count : felt,
-        account_address : felt
-    ):
-        let (_account : Account) = IAccount.account_information(account_address, address)
-        assert _account.lost_battle_count = expected_lost_count
-        return ()
-    end
+    func lost_battle_count_is{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        address: felt, expected_lost_count: felt, account_address: felt
+    ) {
+        let (_account: Account) = IAccount.account_information(account_address, address);
+        assert _account.lost_battle_count = expected_lost_count;
+        return ();
+    }
 
-    func winning_ships_are{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        winning_ships_len : felt, winning_ships : felt*
-    ):
-        alloc_locals
-        let (local winning_ship_count) = winning_ship_count_.read()
+    func winning_ships_are{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        winning_ships_len: felt, winning_ships: felt*
+    ) {
+        alloc_locals;
+        let (local winning_ship_count) = winning_ship_count_.read();
         with_attr error_message(
-                "Expected winning_ship_count to be {winning_ships_len}, got {winning_ship_count}"):
-            assert winning_ship_count = winning_ships_len
-        end
+                "Expected winning_ship_count to be {winning_ships_len}, got {winning_ship_count}") {
+            assert winning_ship_count = winning_ships_len;
+        }
 
-        _assert_winning_ships_loop(0, winning_ships_len, winning_ships)
-        return ()
-    end
+        _assert_winning_ships_loop(0, winning_ships_len, winning_ships);
+        return ();
+    }
 
     func _assert_winning_ships_loop{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }(winning_index : felt, winning_ships_len : felt, winning_ships : felt*):
-        alloc_locals
-        if winning_ships_len == 0:
-            return ()
-        end
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    }(winning_index: felt, winning_ships_len: felt, winning_ships: felt*) {
+        alloc_locals;
+        if (winning_ships_len == 0) {
+            return ();
+        }
 
-        local expected_winning_ship_address = [winning_ships]
-        let (local winning_ship_address : felt) = winning_ships_.read(winning_index)
+        local expected_winning_ship_address = [winning_ships];
+        let (local winning_ship_address: felt) = winning_ships_.read(winning_index);
 
         with_attr error_message(
-                "Expected winning_ship_address to be {expected_winning_ship_address} at index {winning_index}, got {winning_ship_address}"):
-            assert winning_ship_address = expected_winning_ship_address
-        end
+                "Expected winning_ship_address to be {expected_winning_ship_address} at index {winning_index}, got {winning_ship_address}") {
+            assert winning_ship_address = expected_winning_ship_address;
+        }
 
-        _assert_winning_ships_loop(winning_index + 1, winning_ships_len - 1, &winning_ships[1])
-        return ()
-    end
+        _assert_winning_ships_loop(winning_index + 1, winning_ships_len - 1, &winning_ships[1]);
+        return ();
+    }
 
-    func playing_ships_are{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        playing_ships_len : felt, playing_ships : felt*
-    ):
-        alloc_locals
-        let (local playing_ship_count) = playing_ship_count_.read()
+    func playing_ships_are{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        playing_ships_len: felt, playing_ships: felt*
+    ) {
+        alloc_locals;
+        let (local playing_ship_count) = playing_ship_count_.read();
         with_attr error_message(
-                "Expected playing_ship_count to be {playing_ships_len}, got {playing_ship_count}"):
-            assert playing_ship_count = playing_ships_len
-        end
+                "Expected playing_ship_count to be {playing_ships_len}, got {playing_ship_count}") {
+            assert playing_ship_count = playing_ships_len;
+        }
 
-        _assert_playing_ships_loop(0, playing_ships_len, playing_ships)
-        return ()
-    end
+        _assert_playing_ships_loop(0, playing_ships_len, playing_ships);
+        return ();
+    }
 
     func _assert_playing_ships_loop{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }(playing_index : felt, playing_ships_len : felt, playing_ships : felt*):
-        alloc_locals
-        if playing_ships_len == 0:
-            return ()
-        end
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    }(playing_index: felt, playing_ships_len: felt, playing_ships: felt*) {
+        alloc_locals;
+        if (playing_ships_len == 0) {
+            return ();
+        }
 
-        local expected_playing_ship_address = [playing_ships]
-        let (local playing_ship_address : felt) = playing_ships_.read(playing_index)
+        local expected_playing_ship_address = [playing_ships];
+        let (local playing_ship_address: felt) = playing_ships_.read(playing_index);
 
         with_attr error_message(
-                "Expected playing_ship_address to be {expected_playing_ship_address} at index {playing_index}, got {playing_ship_address}"):
-            assert playing_ship_address = expected_playing_ship_address
-        end
+                "Expected playing_ship_address to be {expected_playing_ship_address} at index {playing_index}, got {playing_ship_address}") {
+            assert playing_ship_address = expected_playing_ship_address;
+        }
 
-        _assert_playing_ships_loop(playing_index + 1, playing_ships_len - 1, &playing_ships[1])
-        return ()
-    end
+        _assert_playing_ships_loop(playing_index + 1, playing_ships_len - 1, &playing_ships[1]);
+        return ();
+    }
 
     func token_balances_are{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
+        syscall_ptr: felt*,
+        pedersen_ptr: HashBuiltin*,
         range_check_ptr,
-        deployed_contracts : DeployedContracts,
+        deployed_contracts: DeployedContracts,
     }(
-        addresses_len : felt,
-        addresses : felt*,
-        token_balances_len : felt,
-        token_balances : Uint256*,
-        idx : felt,
-    ):
-        alloc_locals
-        if addresses_len == 0:
-            return ()
-        end
+        addresses_len: felt,
+        addresses: felt*,
+        token_balances_len: felt,
+        token_balances: Uint256*,
+        idx: felt,
+    ) {
+        alloc_locals;
+        if (addresses_len == 0) {
+            return ();
+        }
 
-        if token_balances_len == 0:
-            return ()
-        end
+        if (token_balances_len == 0) {
+            return ();
+        }
 
-        let address = addresses[idx]
-        let expected_balance = token_balances[idx]
+        let address = addresses[idx];
+        let expected_balance = token_balances[idx];
         let (balance) = IERC20.balanceOf(
             contract_address=deployed_contracts.other_address.only_dust_token_address,
             account=address,
-        )
-        let (is_equal) = uint256_eq(balance, expected_balance)
-        with_attr error_message("Expected token balance to be {expected_balance}, got {balance}"):
-            assert is_equal = TRUE
-        end
+        );
+        let (is_equal) = uint256_eq(balance, expected_balance);
+        with_attr error_message("Expected token balance to be {expected_balance}, got {balance}") {
+            assert is_equal = TRUE;
+        }
 
         token_balances_are(
             addresses_len - 1, addresses, token_balances_len - 1, token_balances, idx + 1
-        )
-        return ()
-    end
+        );
+        return ();
+    }
 
-    func tournament_winner_is{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        expected_winner_ship : felt
-    ):
-        alloc_locals
-        let (local winner_ship) = tournament.tournament_winner()
+    func tournament_winner_is{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        expected_winner_ship: felt
+    ) {
+        alloc_locals;
+        let (local winner_ship) = tournament.tournament_winner();
         with_attr error_message(
-                "Expected tournament winner ship to be {expected_winner_ship}, got {winner_ship}"):
-            assert winner_ship = expected_winner_ship
-        end
-        return ()
-    end
+                "Expected tournament winner ship to be {expected_winner_ship}, got {winner_ship}") {
+            assert winner_ship = expected_winner_ship;
+        }
+        return ();
+    }
 
     func battle_transaction_hash_is_set{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }(battle_index : felt):
-        alloc_locals
-        let (local hash) = tournament.battle_transaction_hash(battle_index)
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    }(battle_index: felt) {
+        alloc_locals;
+        let (local hash) = tournament.battle_transaction_hash(battle_index);
         with_attr error_message(
-                "Expected battle transaction hash at index {battle_index} to be set"):
-            assert_not_zero(hash)
-        end
-        return ()
-    end
+                "Expected battle transaction hash at index {battle_index} to be set") {
+            assert_not_zero(hash);
+        }
+        return ();
+    }
 
     func battle_transaction_hash_is_not_set{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }(battle_index : felt):
-        alloc_locals
-        let (local hash) = tournament.battle_transaction_hash(battle_index)
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    }(battle_index: felt) {
+        alloc_locals;
+        let (local hash) = tournament.battle_transaction_hash(battle_index);
         with_attr error_message(
-                "Expected battle transaction hash at index {battle_index} not to be set"):
-            assert hash = 0
-        end
-        return ()
-    end
-end
+                "Expected battle transaction hash at index {battle_index} not to be set") {
+            assert hash = 0;
+        }
+        return ();
+    }
+}

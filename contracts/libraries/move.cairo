@@ -11,221 +11,219 @@ from starkware.starknet.common.syscalls import get_contract_address
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 
-# ------------------
-# EVENTS
-# ------------------
+// ------------------
+// EVENTS
+// ------------------
 
 @event
-func dust_moved(space_contract_address : felt, previous_position : Vector2, position : Vector2):
-end
+func dust_moved(space_contract_address: felt, previous_position: Vector2, position: Vector2) {
+}
 
 @event
 func ship_moved(
-    space_contract_address : felt, ship_id : felt, previous_position : Vector2, position : Vector2
-):
-end
+    space_contract_address: felt, ship_id: felt, previous_position: Vector2, position: Vector2
+) {
+}
 
-# ------------------
-# PUBLIC NAMESPACE
-# ------------------
-namespace move_strategy:
-    # Move all dusts on the grid according to their direction, bouncing if needed
-    func move_all_dusts{syscall_ptr : felt*, range_check_ptr, grid : Grid}():
-        alloc_locals
-        local dusts_positions : Vector2*
-        local dusts_positions_len : felt
-        assert dusts_positions = grid.dusts_positions
-        assert dusts_positions_len = grid.dusts_positions_len
-        let dust_merged_count = 0
-        with dusts_positions_len, dusts_positions, dust_merged_count:
-            internal.move_relevant_dust_loop(0)
-        end
+// ------------------
+// PUBLIC NAMESPACE
+// ------------------
+namespace move_strategy {
+    // Move all dusts on the grid according to their direction, bouncing if needed
+    func move_all_dusts{syscall_ptr: felt*, range_check_ptr, grid: Grid}() {
+        alloc_locals;
+        local dusts_positions: Vector2*;
+        local dusts_positions_len: felt;
+        assert dusts_positions = grid.dusts_positions;
+        assert dusts_positions_len = grid.dusts_positions_len;
+        let dust_merged_count = 0;
+        with dusts_positions_len, dusts_positions, dust_merged_count {
+            internal.move_relevant_dust_loop(0);
+        }
 
-        return ()
-    end
+        return ();
+    }
 
-    # Move all ships on the grid, checking for ship collisions as we go
-    func move_all_ships{syscall_ptr : felt*, range_check_ptr, grid : Grid}(ship_addresses : felt*):
-        alloc_locals
-        internal.move_relevant_ship_loop(0, ship_addresses)
-        return ()
-    end
+    // Move all ships on the grid, checking for ship collisions as we go
+    func move_all_ships{syscall_ptr: felt*, range_check_ptr, grid: Grid}(ship_addresses: felt*) {
+        alloc_locals;
+        internal.move_relevant_ship_loop(0, ship_addresses);
+        return ();
+    }
 
-    # ------------------
-    # PUBLIC NAMESPACE
-    # ------------------
-    namespace internal:
+    // ------------------
+    // PUBLIC NAMESPACE
+    // ------------------
+    namespace internal {
         func move_relevant_dust_loop{
-            syscall_ptr : felt*,
+            syscall_ptr: felt*,
             range_check_ptr,
-            grid : Grid,
-            dusts_positions_len : felt,
-            dusts_positions : Vector2*,
-            dust_merged_count : felt,
-        }(index : felt):
-            alloc_locals
-            if index == dusts_positions_len:
-                return ()
-            end
-            let position : Vector2 = dusts_positions[index]
-            let (cell) = grid_access.get_cell_at(position.x, position.y)
-            let (dust) = cell_access.get_dust{cell=cell}()
-            move_single_dust(position, dust, index)
+            grid: Grid,
+            dusts_positions_len: felt,
+            dusts_positions: Vector2*,
+            dust_merged_count: felt,
+        }(index: felt) {
+            alloc_locals;
+            if (index == dusts_positions_len) {
+                return ();
+            }
+            let position: Vector2 = dusts_positions[index];
+            let (cell) = grid_access.get_cell_at(position.x, position.y);
+            let (dust) = cell_access.get_dust{cell=cell}();
+            move_single_dust(position, dust, index);
 
-            # Remove dust from current cell
-            with cell:
-                cell_access.remove_dust()
-            end
-            grid_access.set_cell_at(position.x, position.y, cell)
+            // Remove dust from current cell
+            with cell {
+                cell_access.remove_dust();
+            }
+            grid_access.set_cell_at(position.x, position.y, cell);
 
-            return move_relevant_dust_loop(index + 1)
-        end
+            return move_relevant_dust_loop(index + 1);
+        }
         func move_single_dust{
-            syscall_ptr : felt*, range_check_ptr, grid : Grid, dust_merged_count : felt
-        }(position : Vector2, dust : Dust, index : felt):
-            alloc_locals
+            syscall_ptr: felt*, range_check_ptr, grid: Grid, dust_merged_count: felt
+        }(position: Vector2, dust: Dust, index: felt) {
+            alloc_locals;
 
-            # Bounce if needed
-            let (local new_direction) = bounce(position, dust.direction)
+            // Bounce if needed
+            let (local new_direction) = bounce(position, dust.direction);
 
-            # Get the next cell
-            local new_dust_position : Vector2 = Vector2(
+            // Get the next cell
+            local new_dust_position: Vector2 = Vector2(
                 position.x + new_direction.x, position.y + new_direction.y
-                )
-            let (new_cell) = grid_access.get_cell_at(new_dust_position.x, new_dust_position.y)
+                );
+            let (new_cell) = grid_access.get_cell_at(new_dust_position.x, new_dust_position.y);
 
-            # Modify the dust direction in it
-            cell_access.add_dust{cell=new_cell}(Dust(new_direction))
-            # Update dusts position
-            grid_access.update_dust_position_at_index(index - dust_merged_count, new_dust_position)
-            # Store the new cell
-            grid_access.set_cell_at(new_dust_position.x, new_dust_position.y, new_cell)
+            // Modify the dust direction in it
+            cell_access.add_dust{cell=new_cell}(Dust(new_direction));
+            // Update dusts position
+            grid_access.update_dust_position_at_index(index - dust_merged_count, new_dust_position);
+            // Store the new cell
+            grid_access.set_cell_at(new_dust_position.x, new_dust_position.y, new_cell);
 
-            let (space_contract_address) = get_contract_address()
-            dust_moved.emit(space_contract_address, position, new_dust_position)
+            let (space_contract_address) = get_contract_address();
+            dust_moved.emit(space_contract_address, position, new_dust_position);
 
-            return ()
-        end
+            return ();
+        }
 
-        func move_relevant_ship_loop{syscall_ptr : felt*, range_check_ptr, grid : Grid}(
-            index : felt, ship_addresses : felt*
-        ):
-            alloc_locals
-            if index == grid.ships_positions_len:
-                return ()
-            end
-            let position : Vector2 = grid.ships_positions[index]
-            let (cell) = grid_access.get_cell_at(position.x, position.y)
-            let (ship_id) = cell_access.get_ship{cell=cell}()
-            move_single_ship(ship_id, ship_addresses[ship_id - 1], position, cell)
-            # grid_helper.debug_grid()
+        func move_relevant_ship_loop{syscall_ptr: felt*, range_check_ptr, grid: Grid}(
+            index: felt, ship_addresses: felt*
+        ) {
+            alloc_locals;
+            if (index == grid.ships_positions_len) {
+                return ();
+            }
+            let position: Vector2 = grid.ships_positions[index];
+            let (cell) = grid_access.get_cell_at(position.x, position.y);
+            let (ship_id) = cell_access.get_ship{cell=cell}();
+            move_single_ship(ship_id, ship_addresses[ship_id - 1], position, cell);
+            // grid_helper.debug_grid()
 
-            return move_relevant_ship_loop(index + 1, ship_addresses)
-        end
-        func move_single_ship{syscall_ptr : felt*, range_check_ptr, grid : Grid}(
-            ship_id : felt, ship_contract : felt, position : Vector2, original_cell : Cell
-        ):
-            alloc_locals
+            return move_relevant_ship_loop(index + 1, ship_addresses);
+        }
+        func move_single_ship{syscall_ptr: felt*, range_check_ptr, grid: Grid}(
+            ship_id: felt, ship_contract: felt, position: Vector2, original_cell: Cell
+        ) {
+            alloc_locals;
 
-            # Call ship interface
+            // Call ship interface
 
-            let (cell_array : Cell*) = alloc()
-            dict_to_array(cell_array, 0)
+            let (cell_array: Cell*) = alloc();
+            dict_to_array(cell_array, 0);
 
-            let (ship_direction) = IShip.move(ship_contract, grid.cell_count, cell_array, ship_id)
+            let (ship_direction) = IShip.move(ship_contract, grid.cell_count, cell_array, ship_id);
 
             let new_position_candidate = Vector2(
                 position.x + ship_direction.x, position.y + ship_direction.y
-            )
+            );
 
             let (new_position) = validate_new_position_candidate{grid_iterator=position}(
                 new_position_candidate
-            )
-            let (space_contract_address) = get_contract_address()
+            );
+            let (space_contract_address) = get_contract_address();
 
-            if new_position.x == position.x:
-                if new_position.y == position.y:
-                    ship_moved.emit(space_contract_address, ship_id, position, new_position)
-                    return ()
-                end
-            end
-            let (cell_new) = grid_access.get_cell_at(new_position.x, new_position.y)
+            if (new_position.x == position.x) {
+                if (new_position.y == position.y) {
+                    ship_moved.emit(space_contract_address, ship_id, position, new_position);
+                    return ();
+                }
+            }
+            let (cell_new) = grid_access.get_cell_at(new_position.x, new_position.y);
 
-            cell_access.add_ship{cell=cell_new}(ship_id)
-            grid_access.set_cell_at(new_position.x, new_position.y, cell_new)
+            cell_access.add_ship{cell=cell_new}(ship_id);
+            grid_access.set_cell_at(new_position.x, new_position.y, cell_new);
 
-            # remove ship from cell after it has moved, only if it has moved
-            let cell = original_cell
-            with cell:
-                cell_access.remove_ship()
-            end
-            grid_access.set_cell_at(position.x, position.y, cell)
-            # Update ships_positions in Grid
-            grid_access.update_ship_position_at_index(ship_id - 1, new_position)
+            // remove ship from cell after it has moved, only if it has moved
+            let cell = original_cell;
+            with cell {
+                cell_access.remove_ship();
+            }
+            grid_access.set_cell_at(position.x, position.y, cell);
+            // Update ships_positions in Grid
+            grid_access.update_ship_position_at_index(ship_id - 1, new_position);
 
-            ship_moved.emit(space_contract_address, ship_id, position, new_position)
-            return ()
-        end
+            ship_moved.emit(space_contract_address, ship_id, position, new_position);
+            return ();
+        }
 
-        func dict_to_array{syscall_ptr : felt*, range_check_ptr, grid : Grid}(
-            array : Cell*, index : felt
-        ):
-            if index == grid.cell_count:
-                return ()
-            end
-            let cell : Cell = grid_access.get_cell_at_index(index)
-            assert [array] = cell
-            dict_to_array(array + Cell.SIZE, index + 1)
-            return ()
-        end
+        func dict_to_array{syscall_ptr: felt*, range_check_ptr, grid: Grid}(
+            array: Cell*, index: felt
+        ) {
+            if (index == grid.cell_count) {
+                return ();
+            }
+            let cell: Cell = grid_access.get_cell_at_index(index);
+            assert [array] = cell;
+            dict_to_array(array + Cell.SIZE, index + 1);
+            return ();
+        }
 
         func validate_new_position_candidate{
-            syscall_ptr : felt*, range_check_ptr, grid : Grid, grid_iterator : Vector2
-        }(new_position_candidate : Vector2) -> (new_position : Vector2):
-            let (ship_collision) = ship_can_collide(new_position_candidate)
-            if ship_collision == 1:
-                # Ship collision => do not move
-                return (new_position=grid_iterator)
-            end
-            return (new_position=new_position_candidate)
-        end
+            syscall_ptr: felt*, range_check_ptr, grid: Grid, grid_iterator: Vector2
+        }(new_position_candidate: Vector2) -> (new_position: Vector2) {
+            let (ship_collision) = ship_can_collide(new_position_candidate);
+            if (ship_collision == 1) {
+                // Ship collision => do not move
+                return (new_position=grid_iterator);
+            }
+            return (new_position=new_position_candidate);
+        }
 
-        func ship_can_collide{range_check_ptr, grid : Grid}(new_position : Vector2) -> (
-            collision : felt
-        ):
-            alloc_locals
-            # ! We check ship collision on both current and next cells
-            # ! as if there is a collition, the ship will not move
-            # ! we need to ensure there will be no ship taking its place
-            let (destination) = grid_access.get_cell_at(new_position.x, new_position.y)
-            let (local has_ship_in_current_grid) = cell_access.has_ship{cell=destination}()
+        func ship_can_collide{range_check_ptr, grid: Grid}(new_position: Vector2) -> (
+            collision: felt
+        ) {
+            alloc_locals;
+            // ! We check ship collision on both current and next cells
+            // ! as if there is a collition, the ship will not move
+            // ! we need to ensure there will be no ship taking its place
+            let (destination) = grid_access.get_cell_at(new_position.x, new_position.y);
+            let (local has_ship_in_current_grid) = cell_access.has_ship{cell=destination}();
 
-            let (collision) = is_not_zero(has_ship_in_current_grid)  # + has_ship_in_next_grid)
-            return (collision=collision)
-        end
+            let collision = is_not_zero(has_ship_in_current_grid);  // + has_ship_in_next_grid)
+            return (collision=collision);
+        }
 
-        func bounce{grid : Grid}(position : Vector2, direction : Vector2) -> (
-            new_direction : Vector2
-        ):
-            alloc_locals
+        func bounce{grid: Grid}(position: Vector2, direction: Vector2) -> (new_direction: Vector2) {
+            alloc_locals;
 
-            local new_direction : Vector2
+            local new_direction: Vector2;
 
-            let (crossing) = grid_access.is_crossing_border(position, direction)
+            let (crossing) = grid_access.is_crossing_border(position, direction);
 
-            if crossing.x == 1:
-                assert new_direction.x = -direction.x
-            else:
-                assert new_direction.x = direction.x
-            end
+            if (crossing.x == 1) {
+                assert new_direction.x = -direction.x;
+            } else {
+                assert new_direction.x = direction.x;
+            }
 
-            if crossing.y == 1:
-                assert new_direction.y = -direction.y
-            else:
-                assert new_direction.y = direction.y
-            end
+            if (crossing.y == 1) {
+                assert new_direction.y = -direction.y;
+            } else {
+                assert new_direction.y = direction.y;
+            }
 
-            return (new_direction=new_direction)
-        end
-    end
-end
+            return (new_direction=new_direction);
+        }
+    }
+}

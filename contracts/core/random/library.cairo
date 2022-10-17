@@ -6,39 +6,39 @@ from starkware.cairo.common.bitwise import bitwise_and
 from starkware.cairo.common.hash import hash2
 from starkware.starknet.common.syscalls import get_block_number, get_block_timestamp, get_tx_info
 
-namespace Random:
-    # ---------
-    # EXTERNALS
-    # ---------
+namespace Random {
+    // ---------
+    // EXTERNALS
+    // ---------
 
     func generate_random_numbers{
-        pedersen_ptr : HashBuiltin*,
-        syscall_ptr : felt*,
+        pedersen_ptr: HashBuiltin*,
+        syscall_ptr: felt*,
         range_check_ptr,
-        bitwise_ptr : BitwiseBuiltin*,
-    }(seed : felt) -> (r1, r2, r3, r4, r5):
-        let (random) = hash2{hash_ptr=pedersen_ptr}(seed, 12345)
+        bitwise_ptr: BitwiseBuiltin*,
+    }(seed: felt) -> (r1: felt, r2: felt, r3: felt, r4: felt, r5: felt) {
+        let (random) = hash2{hash_ptr=pedersen_ptr}(seed, 12345);
 
-        let (block_number) = get_block_number()
-        let (random) = hash2{hash_ptr=pedersen_ptr}(random, block_number + 98765)
+        let (block_number) = get_block_number();
+        let (random) = hash2{hash_ptr=pedersen_ptr}(random, block_number + 98765);
 
-        let (block_timestamp) = get_block_timestamp()
-        let (random) = hash2{hash_ptr=pedersen_ptr}(random, block_timestamp + 55555)
+        let (block_timestamp) = get_block_timestamp();
+        let (random) = hash2{hash_ptr=pedersen_ptr}(random, block_timestamp + 55555);
 
-        let (tx_info) = get_tx_info()
-        let (random) = hash2{hash_ptr=pedersen_ptr}(random, tx_info.transaction_hash)
+        let (tx_info) = get_tx_info();
+        let (random) = hash2{hash_ptr=pedersen_ptr}(random, tx_info.transaction_hash);
 
-        # Make sure random is not too big
-        const ALL_ONES = 2 ** 128 - 1
-        let (random) = bitwise_and(ALL_ONES, random)
+        // Make sure random is not too big
+        const ALL_ONES = 2 ** 128 - 1;
+        let (random) = bitwise_and(ALL_ONES, random);
 
-        # Now let's split it as much as we need as this "random" will be the same for the whole transaction
-        let (random, r1) = unsigned_div_rem(random, 2 ** 16 - 1)
-        let (random, r2) = unsigned_div_rem(random, 2 ** 16 - 1)
-        let (random, r3) = unsigned_div_rem(random, 2 ** 16 - 1)
-        let (random, r4) = unsigned_div_rem(random, 2 ** 16 - 1)
-        let (random, r5) = unsigned_div_rem(random, 2 ** 16 - 1)
+        // Now let's split it as much as we need as this "random" will be the same for the whole transaction
+        let (random, r1) = unsigned_div_rem(random, 2 ** 16 - 1);
+        let (random, r2) = unsigned_div_rem(random, 2 ** 16 - 1);
+        let (random, r3) = unsigned_div_rem(random, 2 ** 16 - 1);
+        let (random, r4) = unsigned_div_rem(random, 2 ** 16 - 1);
+        let (random, r5) = unsigned_div_rem(random, 2 ** 16 - 1);
 
-        return (r1, r2, r3, r4, r5)
-    end
-end
+        return (r1, r2, r3, r4, r5);
+    }
+}
