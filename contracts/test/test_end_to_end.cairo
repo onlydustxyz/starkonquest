@@ -7,8 +7,8 @@ from starkware.cairo.common.bool import TRUE, FALSE
 
 from contracts.tournament.library import tournament
 
-from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
-from openzeppelin.token.erc721.interfaces.IERC721 import IERC721
+from openzeppelin.token.erc20.IERC20 import IERC20
+from openzeppelin.token.erc721.IERC721 import IERC721
 
 // ---------
 // CONSTANTS
@@ -33,6 +33,7 @@ func test_end_to_end_testing{syscall_ptr: felt*, range_check_ptr, pedersen_ptr: 
     local reward_token_address: felt;
     local boarding_pass_token_address: felt;
     local battle_contract_address: felt;
+    local account_contract_address: felt;
     local tournament_contract_address: felt;
     local basic_ship_1: felt;
     local basic_ship_2: felt;
@@ -43,12 +44,16 @@ func test_end_to_end_testing{syscall_ptr: felt*, range_check_ptr, pedersen_ptr: 
     local static_ship_2: felt;
     local static_ship_3: felt;
 
+    const account_name = 'StarKonquestAccount';
+    const account_symbol = 'SKA';
+
     // We deploy all the contracts and put their address into local variables (declare above). Second argument is calldata array
     %{ ids.rand_contract_address = deploy_contract("./contracts/core/random/random.cairo", []).contract_address %}
     %{ ids.reward_token_address = deploy_contract("./contracts/tokens/only_dust/only_dust.cairo", [404, 405, 5, 100000, 0, ids.ADMIN]).contract_address %}
     %{ ids.boarding_pass_token_address = deploy_contract("./contracts/tokens/starkonquest_boarding_pass/starkonquest_boarding_pass.cairo", [406, 407, ids.ADMIN]).contract_address %}
     %{ ids.battle_contract_address = deploy_contract("./contracts/core/battle/battle.cairo", []).contract_address %}
-    %{ ids.tournament_contract_address = deploy_contract("./contracts/tournament/tournament.cairo", [ids.ADMIN, 101, 102, ids.reward_token_address, ids.boarding_pass_token_address, ids.rand_contract_address, ids.battle_contract_address, ids.SHIPS_PER_BATTLE, ids.SHIPS_IN_TOTAL, ids.GRID_SIZE, 3,2]).contract_address %}
+    %{ ids.account_contract_address = deploy_contract("./contracts/account/account.cairo", [ids.account_name, ids.account_symbol, ids.ADMIN]).contract_address %}
+    %{ ids.tournament_contract_address = deploy_contract("./contracts/tournament/tournament.cairo", [ids.ADMIN, 101, 102, ids.reward_token_address, ids.boarding_pass_token_address, ids.rand_contract_address, ids.battle_contract_address, ids.account_contract_address, ids.SHIPS_PER_BATTLE, ids.SHIPS_IN_TOTAL, ids.GRID_SIZE, 3,2]).contract_address %}
 
     // Deploy all the ships contracts (5 basic ships and 3 static ships)
 
@@ -162,6 +167,10 @@ func test_end_to_end_testing{syscall_ptr: felt*, range_check_ptr, pedersen_ptr: 
     assert [ships + 5] = static_ship_2;
     assert [ships + 6] = basic_ship_2;
     assert [ships + 7] = static_ship_3;
+
+    with account_contract_address {
+        Account.mint_all(ships_len, ships);
+    }
 
     // Register ships
     _register_ships_loop(ships_len, ships, tournament_contract_address);
@@ -356,4 +365,34 @@ func invoke_battle{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     %{ stop_prank_admin() %}
 
     return ();
+}
+
+@contract_interface
+namespace IAccount {
+    func mint(to: felt, nickname: felt) {
+    }
+}
+
+namespace Account {
+    func mint_all{
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, account_contract_address
+    }(accounts_len: felt, accounts: felt*) {
+        if (accounts_len == 0) {
+            return ();
+        }
+
+        mint(account=[accounts], nickname=accounts_len);
+
+        return mint_all(accounts_len - 1, accounts + 1);
+    }
+
+    func mint{
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, account_contract_address
+    }(account: felt, nickname: felt) {
+        %{ stop_prank_admin = start_prank(ids.ADMIN, ids.account_contract_address) %}
+        IAccount.mint(account_contract_address, account, nickname);
+        %{ stop_prank_admin() %}
+
+        return ();
+    }
 }
