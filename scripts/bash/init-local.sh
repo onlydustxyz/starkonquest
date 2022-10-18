@@ -2,7 +2,7 @@
 
 set -e
 
-source ./utils.sh
+source $( dirname -- "$0" )/utils.sh
 
 # Create Account
 echo "Start by re-creating the account"
