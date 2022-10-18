@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  starknet-devnet:
+    container_name: starknet-devnet
+    image: shardlabs/starknet-devnet:0.3.1${ARM_TAG:-}
+    ports:
+      - 5050:5050
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:5050/is_alive || exit 1
+      interval: 5s
+      retries: 10
+      start_period: 5s
+      timeout: 1s
