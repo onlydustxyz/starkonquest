@@ -9,9 +9,11 @@ env
 node.json
 *.deployments.txt
 artifacts
+.starknet_accounts
 
 # nile
 127.0.0.1.*
 
 # Protostar
 build
+
