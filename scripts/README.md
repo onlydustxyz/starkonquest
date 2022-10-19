@@ -11,7 +11,7 @@ Once you're happy with the values, export environement variables to make them av
 set -a # automatically export all variables
 source assets/addresses.sh
 source .env
-source scripts/bash/utils.sh
+source scripts/utils.sh
 set +a
 ```
 
@@ -33,4 +33,10 @@ You can control the parameters with your env variables
 
 ```
 play_game
+```
+
+## Update dump
+
+```bash
+./scripts/init-local.sh
 ```
