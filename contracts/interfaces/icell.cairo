@@ -62,63 +62,63 @@ namespace ICell {
 // PUBLIC NAMESPACE
 // ------------------
 namespace cell_access {
-    func create{syscall_ptr: felt*}() -> (cell: Cell) {
-        let (cell) = ICell.library_call_create(cell.class_hash);
-        return (cell);
+    func create{syscall_ptr: felt*, range_check_ptr}(cell_class_hash) -> (cell: Cell) {
+        let (cell) = ICell.library_call_create(cell_class_hash);
+        return (cell,);
     }
 
-    func add_ship{syscall_ptr: felt*, cell: Cell}(ship_id: felt) {
+    func add_ship{syscall_ptr: felt*, range_check_ptr, cell: Cell}(ship_id: felt) {
         let (cell) = ICell.library_call_add_ship(cell.class_hash, cell, ship_id);
         return ();
     }
 
-    func remove_ship{syscall_ptr: felt*, cell: Cell}() {
+    func remove_ship{syscall_ptr: felt*, range_check_ptr, cell: Cell}() {
         let (cell) = ICell.library_call_remove_ship(cell.class_hash, cell);
         return ();
     }
 
-    func get_ship{syscall_ptr: felt*, cell: Cell}() -> (ship_id: felt) {
+    func get_ship{syscall_ptr: felt*, range_check_ptr, cell: Cell}() -> (ship_id: felt) {
         let (ship_id) = ICell.library_call_get_ship(cell.class_hash, cell);
-        return (ship_id);
+        return (ship_id,);
     }
 
-    func has_ship{syscall_ptr: felt*, cell: Cell}() -> (has_ship: felt) {
+    func has_ship{syscall_ptr: felt*, range_check_ptr, cell: Cell}() -> (has_ship: felt) {
         let (has_ship) = ICell.library_call_has_ship(cell.class_hash, cell);
-        return (has_ship);
+        return (has_ship,);
     }
 
-    func add_dust{syscall_ptr: felt*, cell: Cell}(dust: Dust) {
+    func add_dust{syscall_ptr: felt*, range_check_ptr, cell: Cell}(dust: Dust) {
         let (cell) = ICell.library_call_add_dust(cell.class_hash, cell, dust);
         return ();
     }
 
-    func remove_dust{syscall_ptr: felt*, cell: Cell}() {
+    func remove_dust{syscall_ptr: felt*, range_check_ptr, cell: Cell}() {
         let (cell) = ICell.library_call_remove_dust(cell.class_hash, cell);
         return ();
     }
 
-    func get_dust_count{syscall_ptr: felt*, cell: Cell}() -> (dust_count: felt) {
+    func get_dust_count{syscall_ptr: felt*, range_check_ptr, cell: Cell}() -> (dust_count: felt) {
         let (dust_count) = ICell.library_call_get_dust_count(cell.class_hash, cell);
-        return (dust_count);
+        return (dust_count,);
     }
 
-    func get_dust{syscall_ptr: felt*, cell: Cell}() -> (dust: Dust) {
+    func get_dust{syscall_ptr: felt*, range_check_ptr, cell: Cell}() -> (dust: Dust) {
         let (dust) = ICell.library_call_get_dust(cell.class_hash, cell);
-        return (dust);
+        return (dust,);
     }
 
-    func has_dust{syscall_ptr: felt*, cell: Cell}() -> (has_dust: felt) {
+    func has_dust{syscall_ptr: felt*, range_check_ptr, cell: Cell}() -> (has_dust: felt) {
         let (has_dust) = ICell.library_call_has_dust(cell.class_hash, cell);
-        return (has_dust);
+        return (has_dust,);
     }
 
-    func is_free{syscall_ptr: felt*, cell: Cell}() -> (is_free: felt) {
+    func is_free{syscall_ptr: felt*, range_check_ptr, cell: Cell}() -> (is_free: felt) {
         let (is_free) = ICell.library_call_is_free(cell.class_hash, cell);
-        return (is_free);
+        return (is_free,);
     }
 
-    func is_occupied{syscall_ptr: felt*, cell: Cell}() -> (is_occupied: felt) {
+    func is_occupied{syscall_ptr: felt*, range_check_ptr, cell: Cell}() -> (is_occupied: felt) {
         let (is_occupied) = ICell.library_call_is_occupied(cell.class_hash, cell);
-        return (is_occupied);
+        return (is_occupied,);
     }
 }

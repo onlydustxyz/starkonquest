@@ -8,7 +8,7 @@ from starkware.cairo.common.math_cmp import is_nn_le
 from contracts.models.common import ShipInit, Vector2, Context
 from contracts.interfaces.irand import IRandom
 from contracts.libraries.square_grid import grid_access, Grid
-from contracts.libraries.cell import cell_access, Cell, Dust
+from contracts.interfaces.icell import cell_access, Cell, Dust
 from contracts.libraries.move import move_strategy
 from contracts.libraries.math_utils import math_utils
 from contracts.test.grid_helper import grid_helper
@@ -44,6 +44,7 @@ func score_changed(battle_contract_address: felt, ship_id: felt, score: felt) {
 namespace battle {
     func play_game{syscall_ptr: felt*, range_check_ptr}(
         rand_contract_address: felt,
+        cell_class_hash: felt,
         size: felt,
         turn_count: felt,
         max_dust: felt,
@@ -52,7 +53,7 @@ namespace battle {
     ) -> (scores_len: felt, scores: felt*) {
         alloc_locals;
 
-        let (local grid) = grid_access.create(size);
+        let (local grid) = grid_access.create(cell_class_hash, size);
         let (scores) = create_scores_array(ships_len);
         let (context) = battle.create_context(
             rand_contract_address, turn_count, max_dust, ships_len

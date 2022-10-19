@@ -5,7 +5,7 @@ from starkware.starknet.common.syscalls import get_contract_address, get_caller_
 from starkware.cairo.common.alloc import alloc
 from contracts.ships.static_ship.library import StaticShip
 from contracts.models.common import Vector2
-from contracts.libraries.cell import Dust, Cell
+from contracts.interfaces.icell import Dust, Cell
 
 @external
 func test_move{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {

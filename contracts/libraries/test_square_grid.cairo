@@ -1,7 +1,7 @@
 %lang starknet
 
 from contracts.libraries.square_grid import Grid, grid_access
-from contracts.libraries.cell import Cell, cell_access
+from contracts.interfaces.icell import Cell, cell_access
 from contracts.models.common import Vector2
 
 func assert_cell_at{range_check_ptr, grid: Grid}(x: felt, y: felt, cell: Cell) {
