@@ -47,7 +47,6 @@ protostar install
 python -m venv env
 source env/bin/activate
 pip install -r requirements.txt
-nile install
 ```
 
 ### ⛏️ Compile

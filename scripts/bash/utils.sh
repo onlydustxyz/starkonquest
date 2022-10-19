@@ -1,3 +1,5 @@
+source ./.env
+
 DEVNET_URL=http://127.0.0.1:5050
 ACCOUNT_NAME=starkonquest-local
 ACCOUNT_DIRECTORY=./assets/.starknet_accounts
@@ -43,4 +45,19 @@ function deploy_class() {
 
 function create_dump() {
 	curl -X POST $DEVNET_URL/dump -d '{ "path": "/tmp/dump.pkl" }' -H "Content-Type: application/json"
+}
+
+function play_game() {
+	starknet_local invoke \
+	--abi ./build/battle_abi.json \
+	--address $BATTLE_CONTRACT_ADDRESS \
+	--function play_game \
+	--inputs \
+		$RAND_CONTRACT_ADDRESS \
+		$GRID_SIZE \
+		$TURN_COUNT \
+		$MAX_DUST \
+		2 \
+		$BASIC_SHIP_CONTRACT_ADDRESS 1 1 \
+		$BASIC_SHIP_CONTRACT_ADDRESS 7 7
 }
