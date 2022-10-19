@@ -41,20 +41,6 @@ echo ""
 
 # Start battle
 echo "Playing game"
-function play_game() {
-	starknet_local invoke \
-	--abi ./build/battle_abi.json \
-	--address $BATTLE_CONTRACT_ADDRESS \
-	--function play_game \
-	--inputs \
-		$RAND_CONTRACT_ADDRESS \
-		10 \
-		20 \
-		3 \
-		2 \
-		$BASIC_SHIP_CONTRACT_ADDRESS 1 1 \
-		$BASIC_SHIP_CONTRACT_ADDRESS 7 7
-}
 
 GAME_TRANSACTION_HASH=$(play_game | grep "$TRANSACTION_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
 echo "Game is ready at $GAME_TRANSACTION_HASH"
