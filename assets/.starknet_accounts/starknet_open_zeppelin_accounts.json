@@ -1,0 +1,9 @@
+{
+    "alpha-goerli": {
+        "starkonquest-local": {
+            "private_key": "0x9b8cbfc2ca0baad71674d4436bc1d844022f40ffd97c44399fbdb504e7b38",
+            "public_key": "0x315eed3033c0cc2cd4b0d7c653489c3d9aa8cfc9eb146095dbfb22460ca8339",
+            "address": "0x4fb19723d75d351746de237870f04df0bbe804c16b74d676b43bf2ccc8c5118"
+        }
+    }
+}
