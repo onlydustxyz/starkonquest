@@ -2,52 +2,60 @@
 
 from contracts.interfaces.icell import Cell, Dust, cell_access
 from contracts.models.common import Vector2
+from contracts.test.standard_cell import StandardCell
 
-func assert_dust_count{cell: Cell}(dust_count: felt) {
+func assert_dust_count{syscall_ptr: felt*, range_check_ptr, cell: Cell}(dust_count: felt) {
     let (value) = cell_access.get_dust_count();
     assert value = dust_count;
     return ();
 }
 
-func assert_dust{cell: Cell}(dust: Dust) {
+func assert_dust{syscall_ptr: felt*, range_check_ptr, cell: Cell}(dust: Dust) {
     let (value) = cell_access.get_dust();
     assert value = dust;
     return ();
 }
 
-func assert_has_dust{cell: Cell}(has_dust: felt) {
+func assert_has_dust{syscall_ptr: felt*, range_check_ptr, cell: Cell}(has_dust: felt) {
     let (value) = cell_access.has_dust();
     assert value = has_dust;
     return ();
 }
 
-func assert_ship{cell: Cell}(ship_id: felt) {
+func assert_ship{syscall_ptr: felt*, range_check_ptr, cell: Cell}(ship_id: felt) {
     let (value) = cell_access.get_ship();
     assert value = ship_id;
     return ();
 }
 
-func assert_has_ship{cell: Cell}(has_ship: felt) {
+func assert_has_ship{syscall_ptr: felt*, range_check_ptr, cell: Cell}(has_ship: felt) {
     let (value) = cell_access.has_ship();
     assert value = has_ship;
     return ();
 }
 
-func assert_occupied{cell: Cell}(occupied: felt) {
+func assert_occupied{syscall_ptr: felt*, range_check_ptr, cell: Cell}(occupied: felt) {
     let (value) = cell_access.is_occupied();
     assert value = occupied;
     return ();
 }
 
-func assert_free{cell: Cell}(free: felt) {
+func assert_free{syscall_ptr: felt*, range_check_ptr, cell: Cell}(free: felt) {
     let (value) = cell_access.is_free();
     assert value = free;
     return ();
 }
 
+@view
+func __setup__{syscall_ptr: felt*, range_check_ptr}() {
+    StandardCell.declare();
+    return ();
+}
+
 @external
-func test_cell_empty() {
-    let (cell) = cell_access.create();
+func test_cell_empty{syscall_ptr: felt*, range_check_ptr}() {
+    let cell_class_hash = StandardCell.class_hash();
+    let (cell) = cell_access.create(cell_class_hash);
     let dust = Dust(Vector2(0, 0));
 
     with cell {
@@ -64,8 +72,9 @@ func test_cell_empty() {
 }
 
 @external
-func test_cell_add_dust() {
-    let (cell) = cell_access.create();
+func test_cell_add_dust{syscall_ptr: felt*, range_check_ptr}() {
+    let cell_class_hash = StandardCell.class_hash();
+    let (cell) = cell_access.create(cell_class_hash);
     let dust1 = Dust(Vector2(0, 1));
     let dust2 = Dust(Vector2(1, 1));
 
@@ -93,8 +102,9 @@ func test_cell_add_dust() {
 }
 
 @external
-func test_cell_remove_dust() {
-    let (cell) = cell_access.create();
+func test_cell_remove_dust{syscall_ptr: felt*, range_check_ptr}() {
+    let cell_class_hash = StandardCell.class_hash();
+    let (cell) = cell_access.create(cell_class_hash);
     let dust = Dust(Vector2(0, 1));
 
     with cell {
@@ -122,8 +132,9 @@ func test_cell_remove_dust() {
 }
 
 @external
-func test_cell_remove_dust_should_revert_if_no_dust() {
-    let (cell) = cell_access.create();
+func test_cell_remove_dust_should_revert_if_no_dust{syscall_ptr: felt*, range_check_ptr}() {
+    let cell_class_hash = StandardCell.class_hash();
+    let (cell) = cell_access.create(cell_class_hash);
 
     with cell {
         %{ expect_revert(error_message="Cell: No dust here") %}
@@ -134,8 +145,9 @@ func test_cell_remove_dust_should_revert_if_no_dust() {
 }
 
 @external
-func test_cell_add_ship() {
-    let (cell) = cell_access.create();
+func test_cell_add_ship{syscall_ptr: felt*, range_check_ptr}() {
+    let cell_class_hash = StandardCell.class_hash();
+    let (cell) = cell_access.create(cell_class_hash);
 
     with cell {
         // Add one ship
@@ -151,8 +163,9 @@ func test_cell_add_ship() {
 }
 
 @external
-func test_cell_remove_ship() {
-    let (cell) = cell_access.create();
+func test_cell_remove_ship{syscall_ptr: felt*, range_check_ptr}() {
+    let cell_class_hash = StandardCell.class_hash();
+    let (cell) = cell_access.create(cell_class_hash);
 
     with cell {
         // Add one ship and remove it
@@ -169,8 +182,9 @@ func test_cell_remove_ship() {
 }
 
 @external
-func test_cell_add_ship_should_revert_if_already_a_ship() {
-    let (cell) = cell_access.create();
+func test_cell_add_ship_should_revert_if_already_a_ship{syscall_ptr: felt*, range_check_ptr}() {
+    let cell_class_hash = StandardCell.class_hash();
+    let (cell) = cell_access.create(cell_class_hash);
 
     with cell {
         // Add one ship
@@ -185,8 +199,9 @@ func test_cell_add_ship_should_revert_if_already_a_ship() {
 }
 
 @external
-func test_cell_remove_ship_should_revert_if_no_ship() {
-    let (cell) = cell_access.create();
+func test_cell_remove_ship_should_revert_if_no_ship{syscall_ptr: felt*, range_check_ptr}() {
+    let cell_class_hash = StandardCell.class_hash();
+    let (cell) = cell_access.create(cell_class_hash);
 
     with cell {
         %{ expect_revert(error_message="Cell: No ship here") %}
@@ -197,8 +212,9 @@ func test_cell_remove_ship_should_revert_if_no_ship() {
 }
 
 @external
-func test_cell_play_with_both_dust_and_ship() {
-    let (cell) = cell_access.create();
+func test_cell_play_with_both_dust_and_ship{syscall_ptr: felt*, range_check_ptr}() {
+    let cell_class_hash = StandardCell.class_hash();
+    let (cell) = cell_access.create(cell_class_hash);
     let dust = Dust(Vector2(0, 1));
 
     with cell {

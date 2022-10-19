@@ -12,10 +12,11 @@ from contracts.interfaces.icell import Dust, Cell
 
 // create an empty cell
 @view
-func create() -> (cell: Cell) {
+func create(cell_class_hash: felt) -> (cell: Cell) {
     alloc_locals;
 
     local cell: Cell;
+    assert cell.class_hash = cell_class_hash;
     assert cell.dust_count = 0;
     assert cell.dust.direction = Vector2(0, 0);
     assert cell.ship_id = 0;
@@ -34,6 +35,7 @@ func add_ship(cell: Cell, ship_id: felt) -> (cell: Cell) {
     }
 
     local new_cell: Cell;
+    assert new_cell.class_hash = cell.class_hash;
     assert new_cell.dust_count = cell.dust_count;
     assert new_cell.dust.direction = cell.dust.direction;
     assert new_cell.ship_id = ship_id;
@@ -52,6 +54,7 @@ func remove_ship(cell: Cell) -> (cell: Cell) {
     }
 
     local new_cell: Cell;
+    assert new_cell.class_hash = cell.class_hash;
     assert new_cell.dust_count = cell.dust_count;
     assert new_cell.dust.direction = cell.dust.direction;
     assert new_cell.ship_id = 0;
@@ -80,6 +83,7 @@ func add_dust(cell: Cell, dust: Dust) -> (cell: Cell) {
     alloc_locals;
 
     local new_cell: Cell;
+    assert new_cell.class_hash = cell.class_hash;
     assert new_cell.dust_count = cell.dust_count + 1;
     assert new_cell.dust = dust;
     assert new_cell.ship_id = cell.ship_id;
@@ -99,6 +103,7 @@ func remove_dust(cell: Cell) -> (cell: Cell) {
     }
 
     local new_cell: Cell;
+    assert new_cell.class_hash = cell.class_hash;
     assert new_cell.dust_count = cell.dust_count - 1;
     assert new_cell.dust = cell.dust;
     assert new_cell.ship_id = cell.ship_id;

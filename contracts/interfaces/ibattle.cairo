@@ -6,6 +6,7 @@ from contracts.models.common import ShipInit
 namespace IBattle {
     func play_game(
         rand_contract_address: felt,
+        cell_class_hash: felt,
         size: felt,
         turn_count: felt,
         max_dust: felt,

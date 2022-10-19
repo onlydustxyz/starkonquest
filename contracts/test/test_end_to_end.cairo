@@ -6,6 +6,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bool import TRUE, FALSE
 
 from contracts.tournament.library import tournament
+from contracts.test.standard_cell import StandardCell
 
 from openzeppelin.token.erc20.IERC20 import IERC20
 from openzeppelin.token.erc721.IERC721 import IERC721
@@ -23,6 +24,12 @@ const GRID_SIZE = 10;
 namespace IBoardingPassContract {
     func mint(to: felt, tokenId: Uint256) {
     }
+}
+
+@external
+func __setup__{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    StandardCell.declare();
+    return ();
 }
 
 @external
@@ -53,7 +60,11 @@ func test_end_to_end_testing{syscall_ptr: felt*, range_check_ptr, pedersen_ptr: 
     %{ ids.boarding_pass_token_address = deploy_contract("./contracts/tokens/starkonquest_boarding_pass/starkonquest_boarding_pass.cairo", [406, 407, ids.ADMIN]).contract_address %}
     %{ ids.battle_contract_address = deploy_contract("./contracts/core/battle/battle.cairo", []).contract_address %}
     %{ ids.account_contract_address = deploy_contract("./contracts/account/account.cairo", [ids.account_name, ids.account_symbol, ids.ADMIN]).contract_address %}
-    %{ ids.tournament_contract_address = deploy_contract("./contracts/tournament/tournament.cairo", [ids.ADMIN, 101, 102, ids.reward_token_address, ids.boarding_pass_token_address, ids.rand_contract_address, ids.battle_contract_address, ids.account_contract_address, ids.SHIPS_PER_BATTLE, ids.SHIPS_IN_TOTAL, ids.GRID_SIZE, 3,2]).contract_address %}
+    %{
+        print (f'{hex(context.standard_cell_class_hash)}')
+        print (f'{hex(1361988661637630506705348415121518422262920180927839806841920498576318073158)}')
+        ids.tournament_contract_address = deploy_contract("./contracts/tournament/tournament.cairo", [ids.ADMIN, 101, 102, ids.reward_token_address, ids.boarding_pass_token_address, ids.rand_contract_address, context.standard_cell_class_hash, ids.battle_contract_address, ids.account_contract_address, ids.SHIPS_PER_BATTLE, ids.SHIPS_IN_TOTAL, ids.GRID_SIZE, 3,2]).contract_address
+    %}
 
     // Deploy all the ships contracts (5 basic ships and 3 static ships)
 
