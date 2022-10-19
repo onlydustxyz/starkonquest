@@ -48,17 +48,23 @@ function create_dump() {
 	curl -X POST $DEVNET_URL/dump -d '{ "path": "/tmp/dump.pkl" }' -H "Content-Type: application/json"
 }
 
-function play_game() {
+function _play_game() {
 	starknet_local invoke \
 	--abi $STARKONQUEST_DIR/build/battle_abi.json \
 	--address $BATTLE_CONTRACT_ADDRESS \
 	--function play_game \
 	--inputs \
 		$RAND_CONTRACT_ADDRESS \
+		$STANDARD_CELL_CLASS_HASH \
 		$GRID_SIZE \
 		$TURN_COUNT \
 		$MAX_DUST \
 		2 \
 		$BASIC_SHIP_CONTRACT_ADDRESS 1 1 \
 		$BASIC_SHIP_CONTRACT_ADDRESS 7 7
+}
+
+function play_game() {
+	GAME_TRANSACTION_HASH=$(_play_game | grep "$TRANSACTION_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
+	echo "Game is ready at http://localhost:3000/game/$GAME_TRANSACTION_HASH"
 }

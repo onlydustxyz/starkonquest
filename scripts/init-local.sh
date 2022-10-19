@@ -21,6 +21,13 @@ echo "Ship contract deployed at $BASIC_SHIP_CONTRACT_ADDRESS"
 
 echo ""
 
+# Declare standard cell contract
+echo "Declare standard cell contract..."
+STANDARD_CELL_CLASS_HASH=$(declare_contract $STARKONQUEST_DIR/build/standard_cell.json | grep "$CLASS_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
+echo "Cell class hash declared at $STANDARD_CELL_CLASS_HASH"
+
+echo ""
+
 # Deploy Battle contract
 echo "Deploy Battle Contract..."
 BATTLE_CLASS_HASH=$(declare_contract $STARKONQUEST_DIR/build/battle.json | grep "$CLASS_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
@@ -39,22 +46,21 @@ echo "Random contract deployed at $RAND_CONTRACT_ADDRESS"
 
 echo ""
 
-# Start battle
-echo "Playing game"
-
-GAME_TRANSACTION_HASH=$(play_game | grep "$TRANSACTION_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
-echo "Game is ready at $GAME_TRANSACTION_HASH"
-
-echo "Creating dump"
-create_dump
-echo "Dump as been updated!"
-
 echo "Loading variables to $ASSETS_DIRECTORY/addresses.sh"
 rm -f $ASSETS_DIRECTORY/addresses.sh
 touch $ASSETS_DIRECTORY/addresses.sh
 echo "BATTLE_CONTRACT_ADDRESS=$BATTLE_CONTRACT_ADDRESS" >> $ASSETS_DIRECTORY/addresses.sh
 echo "BASIC_SHIP_CONTRACT_ADDRESS=$BASIC_SHIP_CONTRACT_ADDRESS" >> $ASSETS_DIRECTORY/addresses.sh
+echo "STANDARD_CELL_CLASS_HASH=$STANDARD_CELL_CLASS_HASH" >> $ASSETS_DIRECTORY/addresses.sh
 echo "RAND_CONTRACT_ADDRESS=$RAND_CONTRACT_ADDRESS" >> $ASSETS_DIRECTORY/addresses.sh
 echo "GAME_TRANSACTION_HASH=$GAME_TRANSACTION_HASH" >> $ASSETS_DIRECTORY/addresses.sh
+
+# Start battle
+echo "Playing game"
+play_game
+
+echo "Creating dump"
+create_dump
+echo "Dump as been updated!"
 
 echo "Done!"
