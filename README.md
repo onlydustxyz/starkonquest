@@ -44,9 +44,6 @@ Tournament logic is also implemented, allowing dozens of players to fight in mul
 
 ```bash
 protostar install
-python -m venv env
-source env/bin/activate
-pip install -r requirements.txt
 ```
 
 ### ⛏️ Compile
