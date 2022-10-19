@@ -3,29 +3,14 @@ name: Formatting
 on: push
 
 jobs:
-  cairo:
+  formatting:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
         with:
           python-version: "3.9"
-          cache: "pip"
       - name: Install dependencies
-        run: | # Install latest version from https://pypi.org/simple/cairo-lang/ (as done in nile)
-          pip install cairo-lang==0.9.1
+        run: pip install cairo-lang==0.10.0
       - name: Check files formatting
-        run: cairo-format -c contracts/**/*.cairo
-  python:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-        with:
-          python-version: "3.9"
-          cache: "pip"
-      - name: Install dependencies
-        run: |
-          pip install black
-      - name: Check files formatting
-        run: black --check scripts
+        run: find contracts/ -name "*.cairo" -print0 | xargs -0 cairo-format -c
