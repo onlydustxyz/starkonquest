@@ -18,6 +18,7 @@ from contracts.tournament.library import (
 )
 from contracts.account.library import account, Account
 from contracts.interfaces.iaccount import IAccount
+from contracts.test.standard_cell import StandardCell
 
 // ---------
 // CONSTANTS
@@ -75,6 +76,12 @@ struct DeployedContracts {
 // -----
 
 @external
+func __setup__{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    StandardCell.declare();
+    return ();
+}
+
+@external
 func test_construct_tournament_with_invalid_ship_count{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }() {
@@ -89,6 +96,7 @@ func test_construct_tournament_with_invalid_ship_count{
         reward_token_address=ONLY_DUST_TOKEN_ADDRESS,
         boarding_pass_token_address=BOARDING_TOKEN_ADDRESS,
         rand_contract_address=RAND_ADDRESS,
+        cell_class_hash=0,
         battle_contract_address=BATTLE_ADDRESS,
         account_contract_address=ACCOUNT_TOKEN_ADDRESS,
         ship_count_per_battle=ship_count_per_battle,
@@ -886,6 +894,8 @@ namespace test_internal {
             max_dust=2,
             );
 
+        let cell_class_hash = StandardCell.class_hash();
+
         tournament.constructor(
             signers.admin,
             context.tournament_id,
@@ -893,6 +903,7 @@ namespace test_internal {
             mocks.only_dust_token_address,
             mocks.boarding_pass_token_address,
             mocks.rand_address,
+            cell_class_hash,
             mocks.battle_address,
             mocks.account_token_address,
             context.ships_per_battle,
@@ -1047,6 +1058,7 @@ namespace test_integration {
 
         // Replace mocks with deployed contract addresses here and deploy the tournament contract
         %{
+            cell_class_hash = declare('./contracts/cells/standard_cell.cairo').class_hash
             ids.tournament_contract_address = deploy_contract(
             "./contracts/tournament/tournament.cairo",
             [   # owner, tournament_id, tournament_name
@@ -1054,6 +1066,7 @@ namespace test_integration {
                 ids.reward_token_address,
                 ids.BOARDING_TOKEN_ADDRESS,
                 ids.RAND_ADDRESS,
+                cell_class_hash,
                 ids.BATTLE_ADDRESS,
                 ids.account_address,
                 # ship_count_per_battle, required_total_ship_count, grid_size, turn_count, max_dust

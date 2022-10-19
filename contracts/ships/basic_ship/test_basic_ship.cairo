@@ -7,22 +7,32 @@ from contracts.ships.basic_ship.library import BasicShip
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.alloc import alloc
 from contracts.test.grid_helper import grid_helper
+from contracts.test.standard_cell import StandardCell
 
 func new_dust_cell() -> (cell: Cell) {
-    let cell = Cell(dust_count=1, dust=Dust(Vector2(1, 0)), ship_id=0);
+    let cell_class_hash = StandardCell.class_hash();
+    let cell = Cell(cell_class_hash, dust_count=1, dust=Dust(Vector2(1, 0)), ship_id=0);
     return (cell,);
 }
 
 func new_ship_cell(ship_id: felt) -> (cell: Cell) {
-    let cell = Cell(dust_count=0, dust=Dust(Vector2(0, 0)), ship_id=ship_id);
+    let cell_class_hash = StandardCell.class_hash();
+    let cell = Cell(cell_class_hash, dust_count=0, dust=Dust(Vector2(0, 0)), ship_id=ship_id);
     return (cell,);
+}
+
+@view
+func __setup__{syscall_ptr: felt*, range_check_ptr}() {
+    StandardCell.declare();
+    return ();
 }
 
 @external
 func test_no_move_if_no_dust{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
     alloc_locals;
 
-    let (local grid: Grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid: Grid) = grid_access.create(cell_class_hash, 10);
 
     %{ expect_revert(error_message="I am lost in space") %}
     let (cell_array: Cell*) = alloc();
@@ -42,7 +52,8 @@ func test_move_towards_single_dust_above{
     alloc_locals;
     const SHIP_ID = 1;
 
-    let (local grid: Grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid: Grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         let (dust_cell: Cell) = new_dust_cell();
         grid_access.set_cell_at(5, 0, dust_cell);
@@ -70,7 +81,8 @@ func test_move_towards_single_dust_below{
     alloc_locals;
     const SHIP_ID = 1;
 
-    let (local grid: Grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid: Grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         let (dust_cell: Cell) = new_dust_cell();
         grid_access.set_cell_at(5, 5, dust_cell);
@@ -97,7 +109,8 @@ func test_move_towards_single_dust_on_the_left{
     alloc_locals;
     const SHIP_ID = 1;
 
-    let (local grid: Grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid: Grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         let (dust_cell: Cell) = new_dust_cell();
         grid_access.set_cell_at(1, 3, dust_cell);
@@ -124,7 +137,8 @@ func test_move_towards_single_dust_on_the_right{
     alloc_locals;
     const SHIP_ID = 1;
 
-    let (local grid: Grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid: Grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         let (dust_cell: Cell) = new_dust_cell();
         grid_access.set_cell_at(7, 3, dust_cell);
@@ -151,7 +165,8 @@ func test_move_towards_single_dust_on_top_left{
     alloc_locals;
     const SHIP_ID = 1;
 
-    let (local grid: Grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid: Grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         let (dust_cell: Cell) = new_dust_cell();
         grid_access.set_cell_at(0, 0, dust_cell);
@@ -178,7 +193,8 @@ func test_move_towards_single_dust_on_top_right{
     alloc_locals;
     const SHIP_ID = 1;
 
-    let (local grid: Grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid: Grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         let (dust_cell: Cell) = new_dust_cell();
         grid_access.set_cell_at(7, 0, dust_cell);
@@ -205,7 +221,8 @@ func test_move_towards_single_dust_on_bottom_left{
     alloc_locals;
     const SHIP_ID = 1;
 
-    let (local grid: Grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid: Grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         let (dust_cell: Cell) = new_dust_cell();
         grid_access.set_cell_at(0, 7, dust_cell);
@@ -232,7 +249,8 @@ func test_move_towards_single_dust_on_bottom_right{
     alloc_locals;
     const SHIP_ID = 1;
 
-    let (local grid: Grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid: Grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         let (dust_cell: Cell) = new_dust_cell();
         grid_access.set_cell_at(9, 7, dust_cell);
@@ -259,7 +277,8 @@ func test_move_towards_nearest_dust{
     alloc_locals;
     const SHIP_ID = 1;
 
-    let (local grid: Grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid: Grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         let (dust_cell: Cell) = new_dust_cell();
         grid_access.set_cell_at(1, 0, dust_cell);

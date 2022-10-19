@@ -21,7 +21,7 @@ struct Cell {
 // ------------------
 @contract_interface
 namespace ICell {
-    func create() -> (cell: Cell) {
+    func create(cell_class_hash: felt) -> (cell: Cell) {
     }
 
     func add_ship(cell: Cell, ship_id: felt) -> (cell: Cell) {
@@ -63,7 +63,7 @@ namespace ICell {
 // ------------------
 namespace cell_access {
     func create{syscall_ptr: felt*, range_check_ptr}(cell_class_hash) -> (cell: Cell) {
-        let (cell) = ICell.library_call_create(cell_class_hash);
+        let (cell) = ICell.library_call_create(cell_class_hash, cell_class_hash);
         return (cell,);
     }
 

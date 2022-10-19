@@ -6,26 +6,33 @@ from contracts.libraries.square_grid import grid_access, Grid
 from contracts.interfaces.icell import cell_access, Dust
 from contracts.test.grid_helper import grid_helper
 from starkware.cairo.common.alloc import alloc
+from contracts.test.standard_cell import StandardCell
 
-func add_dust_at{range_check_ptr, grid: Grid}(x: felt, y: felt, dust: Dust) {
+func add_dust_at{syscall_ptr: felt*, range_check_ptr, grid: Grid}(x: felt, y: felt, dust: Dust) {
+    alloc_locals;
+
     let position = Vector2(x=x, y=y);
     grid_access.add_dust_position(position);
 
-    let (cell) = cell_access.create();
+    let cell_class_hash = StandardCell.class_hash();
+    let (cell) = cell_access.create(cell_class_hash);
     cell_access.add_dust{cell=cell}(dust);
     grid_access.set_cell_at(x, y, cell);
 
     return ();
 }
 
-func assert_dust_at{range_check_ptr, grid: Grid}(x: felt, y: felt, dust: Dust) {
+func assert_dust_at{syscall_ptr: felt*, range_check_ptr, grid: Grid}(x: felt, y: felt, dust: Dust) {
     let (cell) = grid_access.get_cell_at(x, y);
     assert cell.dust = dust;
     return ();
 }
 
-func add_ship_at{range_check_ptr, grid: Grid}(x: felt, y: felt, ship_id: felt) {
-    let (cell) = cell_access.create();
+func add_ship_at{syscall_ptr: felt*, range_check_ptr, grid: Grid}(x: felt, y: felt, ship_id: felt) {
+    alloc_locals;
+
+    let cell_class_hash = StandardCell.class_hash();
+    let (cell) = cell_access.create(cell_class_hash);
     cell_access.add_ship{cell=cell}(ship_id);
     grid_access.set_cell_at(x, y, cell);
 
@@ -35,9 +42,17 @@ func add_ship_at{range_check_ptr, grid: Grid}(x: felt, y: felt, ship_id: felt) {
     return ();
 }
 
-func assert_ship_at{range_check_ptr, grid: Grid}(x: felt, y: felt, ship_id: felt) {
+func assert_ship_at{syscall_ptr: felt*, range_check_ptr, grid: Grid}(
+    x: felt, y: felt, ship_id: felt
+) {
     let (cell) = grid_access.get_cell_at(x, y);
     assert cell.ship_id = ship_id;
+    return ();
+}
+
+@view
+func __setup__{syscall_ptr: felt*, range_check_ptr}() {
+    StandardCell.declare();
     return ();
 }
 
@@ -50,7 +65,8 @@ func test_move_dusts{syscall_ptr: felt*, range_check_ptr}() {
     let dust3 = Dust(Vector2(-1, -1));  // bottom right, going up left
     let dust4 = Dust(Vector2(-1, 1));  // bottom left, going up right
 
-    let (grid) = grid_access.create(4);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 4);
     with grid {
         add_dust_at(0, 0, dust1);
         add_dust_at(0, 3, dust2);
@@ -86,7 +102,8 @@ func test_grid_move_dust_beyond_borders{syscall_ptr: felt*, range_check_ptr}() {
     let new_dust3 = Dust(Vector2(-1, -1));  // now going up left
     let new_dust4 = Dust(Vector2(-1, 1));  // now going up right
 
-    let (grid) = grid_access.create(4);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 4);
     with grid {
         add_dust_at(0, 0, dust1);
         add_dust_at(0, 3, dust2);
@@ -116,7 +133,8 @@ func test_move_ship_nominal{syscall_ptr: felt*, range_check_ptr}() {
     let (local ship_addresses) = alloc();
     assert ship_addresses[0] = ship_contract;
 
-    let (grid) = grid_access.create(4);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 4);
     with grid {
         add_ship_at(0, 0, ship);
 
@@ -146,7 +164,8 @@ func test_move_ship_collision_in_current_grid{syscall_ptr: felt*, range_check_pt
     assert ship_addresses[0] = ship1_contract;
     assert ship_addresses[1] = ship2_contract;
 
-    let (grid) = grid_access.create(3);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 3);
     with grid {
         add_ship_at(0, 0, ship1);
         add_ship_at(0, 1, ship2);
@@ -184,7 +203,8 @@ func test_move_ship_collision_in_next_grid{syscall_ptr: felt*, range_check_ptr}(
     assert ship_addresses[0] = ship1_contract;
     assert ship_addresses[1] = ship2_contract;
 
-    let (grid) = grid_access.create(4);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 4);
     with grid {
         add_ship_at(0, 1, ship1);
         add_ship_at(1, 0, ship2);
@@ -221,7 +241,8 @@ func test_move_ship_should_revert_if_out_of_bound{syscall_ptr: felt*, range_chec
     let (local ship_addresses) = alloc();
     assert ship_addresses[0] = ship_contract;
 
-    let (grid) = grid_access.create(4);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 4);
     with grid {
         add_ship_at(0, 0, ship);
 

@@ -3,14 +3,15 @@
 from contracts.libraries.square_grid import Grid, grid_access
 from contracts.interfaces.icell import Cell, cell_access
 from contracts.models.common import Vector2
+from contracts.test.standard_cell import StandardCell
 
-func assert_cell_at{range_check_ptr, grid: Grid}(x: felt, y: felt, cell: Cell) {
+func assert_cell_at{syscall_ptr: felt*, range_check_ptr, grid: Grid}(x: felt, y: felt, cell: Cell) {
     let (current_cell) = grid_access.get_cell_at(x, y);
     assert current_cell = cell;
     return ();
 }
 
-func assert_crossing_border{grid: Grid}(
+func assert_crossing_border{syscall_ptr: felt*, range_check_ptr, grid: Grid}(
     position: Vector2, direction: Vector2, crossing_border: Vector2
 ) {
     let (value) = grid_access.is_crossing_border(position, direction);
@@ -20,12 +21,19 @@ func assert_crossing_border{grid: Grid}(
     return ();
 }
 
+@view
+func __setup__{syscall_ptr: felt*, range_check_ptr}() {
+    StandardCell.declare();
+    return ();
+}
+
 @external
-func test_grid_create{range_check_ptr}() {
+func test_grid_create{syscall_ptr: felt*, range_check_ptr}() {
     alloc_locals;
 
-    let (local grid) = grid_access.create(2);
-    let (empty_cell) = cell_access.create();
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid) = grid_access.create(cell_class_hash, 2);
+    let (empty_cell) = cell_access.create(cell_class_hash);
 
     assert grid.width = 2;
     assert grid.cell_count = 4;
@@ -41,14 +49,15 @@ func test_grid_create{range_check_ptr}() {
 }
 
 @external
-func test_grid_update{range_check_ptr}() {
+func test_grid_update{syscall_ptr: felt*, range_check_ptr}() {
     alloc_locals;
 
-    let (local grid) = grid_access.create(2);
+    let cell_class_hash = StandardCell.class_hash();
+    let (local grid) = grid_access.create(cell_class_hash, 2);
 
     with grid {
-        let (empty_cell) = cell_access.create();
-        let (cell_with_ship) = cell_access.create();
+        let (empty_cell) = cell_access.create(cell_class_hash);
+        let (cell_with_ship) = cell_access.create(cell_class_hash);
         cell_access.add_ship{cell=cell_with_ship}(23);
 
         assert_cell_at(0, 1, empty_cell);
@@ -61,9 +70,12 @@ func test_grid_update{range_check_ptr}() {
 }
 
 @external
-func test_grid_set_cell_should_revert_if_out_of_bound{range_check_ptr}() {
-    let (grid) = grid_access.create(2);
-    let (cell) = cell_access.create();
+func test_grid_set_cell_should_revert_if_out_of_bound{syscall_ptr: felt*, range_check_ptr}() {
+    alloc_locals;
+
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 2);
+    let (cell) = cell_access.create(cell_class_hash);
     with grid {
         %{ expect_revert(error_message="Out of bound") %}
         grid_access.set_cell_at(0, 3, cell);
@@ -73,31 +85,40 @@ func test_grid_set_cell_should_revert_if_out_of_bound{range_check_ptr}() {
 }
 
 @external
-func test_grid_get_current_cell_should_revert_if_out_of_bound{range_check_ptr}() {
-    let (grid) = grid_access.create(2);
-    with grid {
-        %{ expect_revert(error_message="Out of bound") %}
-        grid_access.get_cell_at(0, 3);
-    }
-
-    return ();
-}
-
-@external
-func test_grid_get_next_cell_should_revert_if_out_of_bound{range_check_ptr}() {
-    let (grid) = grid_access.create(2);
-    with grid {
-        %{ expect_revert(error_message="Out of bound") %}
-        grid_access.get_cell_at(0, 3);
-    }
-
-    return ();
-}
-
-@external
-func test_generate_random_position_on_border{range_check_ptr}() {
+func test_grid_get_current_cell_should_revert_if_out_of_bound{syscall_ptr: felt*, range_check_ptr}(
+    ) {
     alloc_locals;
-    let (grid) = grid_access.create(10);
+
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 2);
+    with grid {
+        %{ expect_revert(error_message="Out of bound") %}
+        grid_access.get_cell_at(0, 3);
+    }
+
+    return ();
+}
+
+@external
+func test_grid_get_next_cell_should_revert_if_out_of_bound{syscall_ptr: felt*, range_check_ptr}() {
+    alloc_locals;
+
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 2);
+    with grid {
+        %{ expect_revert(error_message="Out of bound") %}
+        grid_access.get_cell_at(0, 3);
+    }
+
+    return ();
+}
+
+@external
+func test_generate_random_position_on_border{syscall_ptr: felt*, range_check_ptr}() {
+    alloc_locals;
+
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 10);
     local r1;
     local r2;
     local r3;
@@ -116,9 +137,11 @@ func test_generate_random_position_on_border{range_check_ptr}() {
 }
 
 @external
-func test_grid_crossing_border{range_check_ptr}() {
+func test_grid_crossing_border{syscall_ptr: felt*, range_check_ptr}() {
     alloc_locals;
-    let (grid) = grid_access.create(10);
+
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         assert_crossing_border(Vector2(0, 0), Vector2(-1, -1), Vector2(1, 1));
         assert_crossing_border(Vector2(0, 0), Vector2(1, 1), Vector2(0, 0));
@@ -143,8 +166,9 @@ func test_grid_crossing_border{range_check_ptr}() {
 }
 
 @external
-func test_grid_iterator{range_check_ptr}() {
-    let (grid) = grid_access.create(2);
+func test_grid_iterator{syscall_ptr: felt*, range_check_ptr}() {
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 2);
 
     with grid {
         let (grid_iterator) = grid_access.start();
@@ -180,8 +204,11 @@ func test_grid_iterator{range_check_ptr}() {
 }
 
 @external
-func test_update_ship_position{range_check_ptr}() {
-    let (grid) = grid_access.create(8);
+func test_update_ship_position{syscall_ptr: felt*, range_check_ptr}() {
+    alloc_locals;
+
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 8);
 
     with grid {
         let pos1 = Vector2(0, 1);
@@ -199,13 +226,14 @@ func test_update_ship_position{range_check_ptr}() {
 }
 
 @external
-func test_speed{range_check_ptr}() {
+func test_speed{syscall_ptr: felt*, range_check_ptr}() {
     alloc_locals;
     %{
         import time
         t1=time.time()
     %}
-    let (grid) = grid_access.create(20);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 20);
     %{
         t2=time.time()
         print(f"Create 20*20 grid in {t2-t1}s")
@@ -216,7 +244,7 @@ func test_speed{range_check_ptr}() {
         t1=time.time()
     %}
     with grid {
-        let (cell_with_ship) = cell_access.create();
+        let (cell_with_ship) = cell_access.create(cell_class_hash);
         cell_access.add_ship{cell=cell_with_ship}(23);
         grid_access.set_cell_at(0, 0, cell_with_ship);
         grid_access.set_cell_at(0, 1, cell_with_ship);

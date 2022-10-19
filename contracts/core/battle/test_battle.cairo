@@ -8,31 +8,36 @@ from contracts.test.grid_helper import grid_helper
 
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bool import TRUE, FALSE
+from contracts.test.standard_cell import StandardCell
 
 const RAND_CONTRACT = 11111;
 
-func assert_ship_at{range_check_ptr, grid: Grid}(x: felt, y: felt, ship_id: felt) {
+func assert_ship_at{syscall_ptr: felt*, range_check_ptr, grid: Grid}(
+    x: felt, y: felt, ship_id: felt
+) {
     let (cell) = grid_access.get_cell_at(x, y);
     let (value) = cell_access.get_ship{cell=cell}();
     assert value = ship_id;
     return ();
 }
 
-func assert_dust_count_at{range_check_ptr, grid: Grid}(x: felt, y: felt, dust_count: felt) {
+func assert_dust_count_at{syscall_ptr: felt*, range_check_ptr, grid: Grid}(
+    x: felt, y: felt, dust_count: felt
+) {
     let (cell) = grid_access.get_cell_at(x, y);
     let (value) = cell_access.get_dust_count{cell=cell}();
     assert value = dust_count;
     return ();
 }
 
-func assert_dust_at{range_check_ptr, grid: Grid}(x: felt, y: felt, dust: Dust) {
+func assert_dust_at{syscall_ptr: felt*, range_check_ptr, grid: Grid}(x: felt, y: felt, dust: Dust) {
     let (cell) = grid_access.get_cell_at(x, y);
     let (value) = cell_access.get_dust{cell=cell}();
     assert value = dust;
     return ();
 }
 
-func add_dust_at{range_check_ptr, grid: Grid}(x: felt, y: felt, dust: Dust) {
+func add_dust_at{syscall_ptr: felt*, range_check_ptr, grid: Grid}(x: felt, y: felt, dust: Dust) {
     alloc_locals;
     let (local cell) = grid_access.get_cell_at(x, y);
     let position = Vector2(x=x, y=y);
@@ -43,7 +48,7 @@ func add_dust_at{range_check_ptr, grid: Grid}(x: felt, y: felt, dust: Dust) {
     return ();
 }
 
-func add_ship_at{range_check_ptr, grid: Grid}(x: felt, y: felt, ship_id: felt) {
+func add_ship_at{syscall_ptr: felt*, range_check_ptr, grid: Grid}(x: felt, y: felt, ship_id: felt) {
     alloc_locals;
 
     let (cell) = grid_access.get_cell_at(x, y);
@@ -63,6 +68,12 @@ func create_context_with_no_ship(ship_count: felt) -> (context: Context) {
     return battle.create_context(RAND_CONTRACT, MAX_TURN_COUNT, MAX_DUST_COUNT, ship_count);
 }
 
+@view
+func __setup__{syscall_ptr: felt*, range_check_ptr}() {
+    StandardCell.declare();
+    return ();
+}
+
 @external
 func test_add_ships{syscall_ptr: felt*, range_check_ptr}() {
     alloc_locals;
@@ -73,7 +84,8 @@ func test_add_ships{syscall_ptr: felt*, range_check_ptr}() {
     assert ships[1].address = 'ship2';
     assert ships[1].position = Vector2(1, 1);
 
-    let (grid) = grid_access.create(2);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 2);
     let (context) = create_context_with_no_ship(2);
 
     with grid, context {
@@ -105,7 +117,8 @@ func test_add_ships_should_revert_if_cell_occupied{syscall_ptr: felt*, range_che
     assert ships[1].address = 'ship2';
     assert ships[1].position = Vector2(0, 0);
 
-    let (grid) = grid_access.create(2);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 2);
     let (context) = create_context_with_no_ship(2);
 
     with grid, context {
@@ -120,7 +133,8 @@ func test_add_ships_should_revert_if_cell_occupied{syscall_ptr: felt*, range_che
 func test_spawn_dust{syscall_ptr: felt*, range_check_ptr}() {
     alloc_locals;
 
-    let (grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         add_ship_at(0, 0, 1);
 
@@ -153,7 +167,8 @@ func test_spawn_dust{syscall_ptr: felt*, range_check_ptr}() {
 func test_spawn_no_dust_if_max_dust_count_reached{syscall_ptr: felt*, range_check_ptr}() {
     alloc_locals;
 
-    let (grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         add_ship_at(0, 0, 1);
 
@@ -183,7 +198,8 @@ func test_spawn_no_dust_if_max_dust_count_reached{syscall_ptr: felt*, range_chec
 func test_spawn_no_dust_if_cell_occupied{syscall_ptr: felt*, range_check_ptr}() {
     alloc_locals;
 
-    let (grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 10);
     with grid {
         add_ship_at(0, 5, 1);
 
@@ -220,7 +236,8 @@ func test_battle_dust_collision{syscall_ptr: felt*, range_check_ptr}() {
     let dust3 = Dust(Vector2(-1, -1));
     let dust4 = Dust(Vector2(-1, 1));
 
-    let (grid) = grid_access.create(3);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 3);
 
     with grid {
         add_dust_at(1, 1, dust1);
@@ -256,7 +273,8 @@ func test_battle_ship_absorb_dust{syscall_ptr: felt*, range_check_ptr}() {
 
     let dust = Dust(Vector2(1, 1));
     let ship = 1;
-    let (grid) = grid_access.create(3);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 3);
     let (context) = create_context_with_no_ship(2);
     let (scores) = battle.create_scores_array(2);
 
@@ -299,7 +317,8 @@ func test_full_turn{syscall_ptr: felt*, range_check_ptr}() {
     assert ships[1].address = ship2;
     assert ships[1].position = Vector2(2, 3);
 
-    let (grid) = grid_access.create(5);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 5);
     let (context) = create_context_with_no_ship(2);
     let (scores) = battle.create_scores_array(2);
     let dust_count = 3;
@@ -359,7 +378,8 @@ func test_full_battle{syscall_ptr: felt*, range_check_ptr}() {
     assert ships[1].address = ship2;
     assert ships[1].position = Vector2(4, 8);
 
-    let (grid) = grid_access.create(10);
+    let cell_class_hash = StandardCell.class_hash();
+    let (grid) = grid_access.create(cell_class_hash, 10);
     let (context) = create_context_with_no_ship(2);
     let (scores) = battle.create_scores_array(2);
 
@@ -427,8 +447,9 @@ func test_play_game{syscall_ptr: felt*, range_check_ptr}() {
     const TURN_COUNT = 7;
     const MAX_DUST = 5;
 
+    let cell_class_hash = StandardCell.class_hash();
     let (scores_len: felt, scores: felt*) = battle.play_game(
-        RAND_CONTRACT, SIZE, TURN_COUNT, MAX_DUST, 2, ships
+        RAND_CONTRACT, cell_class_hash, SIZE, TURN_COUNT, MAX_DUST, 2, ships
     );
 
     // TODO score_changed.emit(battle_contract_address, ship_id, scores[ship_id] + 1)

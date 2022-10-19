@@ -61,6 +61,11 @@ func boarding_pass_token_address_() -> (res: felt) {
 func rand_contract_address_() -> (res: felt) {
 }
 
+// Default cell class hash
+@storage_var
+func cell_class_hash_() -> (res: felt) {
+}
+
 // Battle contract address
 @storage_var
 func battle_contract_address_() -> (res: felt) {
@@ -356,6 +361,7 @@ namespace tournament {
         reward_token_address: felt,
         boarding_pass_token_address: felt,
         rand_contract_address: felt,
+        cell_class_hash: felt,
         battle_contract_address: felt,
         account_contract_address: felt,
         ship_count_per_battle: felt,
@@ -380,6 +386,7 @@ namespace tournament {
         reward_token_address_.write(reward_token_address);
         boarding_pass_token_address_.write(boarding_pass_token_address);
         rand_contract_address_.write(rand_contract_address);
+        cell_class_hash_.write(cell_class_hash);
         battle_contract_address_.write(battle_contract_address);
         account_contract_address_.write(account_contract_address);
         ship_count_per_battle_.write(ship_count_per_battle);
@@ -635,6 +642,7 @@ namespace internal {
         alloc_locals;
         let (battle_contract) = battle_contract_address_.read();
         let (rand_contract) = rand_contract_address_.read();
+        let (cell_class_hash) = cell_class_hash_.read();
         let (grid_size) = grid_size_.read();
         let (turn_count) = turn_count_.read();
         let (max_dust) = max_dust_.read();
@@ -642,7 +650,14 @@ namespace internal {
 
         // Call battle contract to play the entire battle
         let (scores_len: felt, scores: felt*) = IBattle.play_game(
-            battle_contract, rand_contract, grid_size, turn_count, max_dust, ships_len, ships
+            battle_contract,
+            rand_contract,
+            cell_class_hash,
+            grid_size,
+            turn_count,
+            max_dust,
+            ships_len,
+            ships,
         );
 
         // Get the winner
