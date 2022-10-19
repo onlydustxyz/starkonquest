@@ -39,3 +39,7 @@ starkonquest_boarding_pass = [
 account = [
     "./contracts/account/account.cairo",
 ]
+# Cells
+standard_cell = [
+    "./contracts/cells/standard_cell.cairo",
+]
