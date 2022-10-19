@@ -5,6 +5,9 @@ services:
     image: shardlabs/starknet-devnet:0.3.1${ARM_TAG:-}-seed0
     ports:
       - 5050:5050
+    volumes:
+      - ./assets:/tmp
+    command: --load-path /tmp/dump.pkl
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:5050/is_alive || exit 1
       interval: 5s

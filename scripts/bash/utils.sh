@@ -1,9 +1,10 @@
 DEVNET_URL=http://127.0.0.1:5050
 ACCOUNT_NAME=starkonquest-local
-ACCOUNT_DIRECTORY=./.starknet_accounts
+ACCOUNT_DIRECTORY=./assets/.starknet_accounts
+ASSETS_DIRECTORY=./assets
 CLASS_HASH_LABEL="Contract class hash"
 CONTRACT_ADDRESS_LABEL="Contract address"
-
+TRANSACTION_HASH_LABEL="Transaction hash"
 
 function starknet_local() {
 	starknet \
@@ -38,4 +39,8 @@ function deploy_class() {
 	CLASS_HASH=$1
 
 	starknet_local deploy --class_hash $1
+}
+
+function create_dump() {
+	curl -X POST $DEVNET_URL/dump -d '{ "path": "/tmp/dump.pkl" }' -H "Content-Type: application/json"
 }

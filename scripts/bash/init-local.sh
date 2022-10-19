@@ -41,7 +41,8 @@ echo ""
 
 # Start battle
 echo "Playing game"
-starknet_local invoke \
+function play_game() {
+	starknet_local invoke \
 	--abi ./build/battle_abi.json \
 	--address $BATTLE_CONTRACT_ADDRESS \
 	--function play_game \
@@ -53,5 +54,21 @@ starknet_local invoke \
 		2 \
 		$BASIC_SHIP_CONTRACT_ADDRESS 1 1 \
 		$BASIC_SHIP_CONTRACT_ADDRESS 7 7
+}
 
-echo "Game is ready !"
+GAME_TRANSACTION_HASH=$(play_game | grep "$TRANSACTION_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
+echo "Game is ready at $GAME_TRANSACTION_HASH"
+
+echo "Creating dump"
+create_dump
+echo "Dump as been updated!"
+
+echo "Loading variables to $ASSETS_DIRECTORY/addresses.sh"
+rm -f $ASSETS_DIRECTORY/addresses.sh
+touch $ASSETS_DIRECTORY/addresses.sh
+echo "BATTLE_CONTRACT_ADDRESS=$BATTLE_CONTRACT_ADDRESS" >> $ASSETS_DIRECTORY/addresses.sh
+echo "BASIC_SHIP_CONTRACT_ADDRESS=$BASIC_SHIP_CONTRACT_ADDRESS" >> $ASSETS_DIRECTORY/addresses.sh
+echo "RAND_CONTRACT_ADDRESS=$RAND_CONTRACT_ADDRESS" >> $ASSETS_DIRECTORY/addresses.sh
+echo "GAME_TRANSACTION_HASH=$GAME_TRANSACTION_HASH" >> $ASSETS_DIRECTORY/addresses.sh
+
+echo "Done!"
