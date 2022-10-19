@@ -1,9 +1,10 @@
 source ./.env
 
+STARKONQUEST_DIR=$(git rev-parse --show-toplevel)
 DEVNET_URL=http://127.0.0.1:5050
 ACCOUNT_NAME=starkonquest-local
-ACCOUNT_DIRECTORY=./assets/.starknet_accounts
-ASSETS_DIRECTORY=./assets
+ACCOUNT_DIRECTORY=$STARKONQUEST_DIR/assets/.starknet_accounts
+ASSETS_DIRECTORY=$STARKONQUEST_DIR/assets
 CLASS_HASH_LABEL="Contract class hash"
 CONTRACT_ADDRESS_LABEL="Contract address"
 TRANSACTION_HASH_LABEL="Transaction hash"
@@ -49,7 +50,7 @@ function create_dump() {
 
 function play_game() {
 	starknet_local invoke \
-	--abi ./build/battle_abi.json \
+	--abi $STARKONQUEST_DIR/build/battle_abi.json \
 	--address $BATTLE_CONTRACT_ADDRESS \
 	--function play_game \
 	--inputs \

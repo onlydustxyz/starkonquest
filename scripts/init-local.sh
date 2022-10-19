@@ -14,7 +14,7 @@ echo ""
 
 # Deploy Ship contract
 echo "Deploy Ship Contract..."
-BASIC_SHIP_CLASS_HASH=$(declare_contract ./build/basic_ship.json | grep "$CLASS_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
+BASIC_SHIP_CLASS_HASH=$(declare_contract $STARKONQUEST_DIR/build/basic_ship.json | grep "$CLASS_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
 echo "Ship class hash declared at $BASIC_SHIP_CLASS_HASH"
 BASIC_SHIP_CONTRACT_ADDRESS=$(deploy_class $BASIC_SHIP_CLASS_HASH | grep "$CONTRACT_ADDRESS_LABEL" | grep -o '0x[a-f0-9]\+$')
 echo "Ship contract deployed at $BASIC_SHIP_CONTRACT_ADDRESS"
@@ -23,7 +23,7 @@ echo ""
 
 # Deploy Battle contract
 echo "Deploy Battle Contract..."
-BATTLE_CLASS_HASH=$(declare_contract ./build/battle.json | grep "$CLASS_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
+BATTLE_CLASS_HASH=$(declare_contract $STARKONQUEST_DIR/build/battle.json | grep "$CLASS_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
 echo "Battle class hash declared at $BATTLE_CLASS_HASH"
 BATTLE_CONTRACT_ADDRESS=$(deploy_class $BATTLE_CLASS_HASH | grep "$CONTRACT_ADDRESS_LABEL" | grep -o '0x[a-f0-9]\+$')
 echo "Battle contract deployed at $BATTLE_CONTRACT_ADDRESS"
@@ -32,7 +32,7 @@ echo ""
 
 # Deploy Random function contract
 echo "Deploy Random Contract..."
-RANDOM_CLASS_HASH=$(declare_contract ./build/random.json | grep "$CLASS_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
+RANDOM_CLASS_HASH=$(declare_contract $STARKONQUEST_DIR/build/random.json | grep "$CLASS_HASH_LABEL" | grep -o '0x[a-f0-9]\+$')
 echo "Random class hash declared at $RANDOM_CLASS_HASH"
 RAND_CONTRACT_ADDRESS=$(deploy_class $RANDOM_CLASS_HASH | grep "$CONTRACT_ADDRESS_LABEL" | grep -o '0x[a-f0-9]\+$')
 echo "Random contract deployed at $RAND_CONTRACT_ADDRESS"
