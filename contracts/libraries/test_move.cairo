@@ -3,7 +3,7 @@
 from contracts.libraries.move import move_strategy
 from contracts.models.common import Vector2
 from contracts.libraries.square_grid import grid_access, Grid
-from contracts.libraries.cell import cell_access, Dust
+from contracts.interfaces.icell import cell_access, Dust
 from contracts.test.grid_helper import grid_helper
 from starkware.cairo.common.alloc import alloc
 

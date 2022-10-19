@@ -1,6 +1,6 @@
 %lang starknet
 
-from contracts.libraries.cell import Cell, Dust, cell_access
+from contracts.interfaces.icell import Cell, Dust, cell_access
 from contracts.models.common import Vector2
 
 func assert_dust_count{cell: Cell}(dust_count: felt) {

@@ -5,7 +5,7 @@ from starkware.starknet.common.syscalls import get_contract_address, get_caller_
 from starkware.cairo.common.alloc import alloc
 from contracts.ships.random_move_ship.library import RandomMoveShip
 from contracts.models.common import Vector2
-from contracts.libraries.cell import Cell, Dust
+from contracts.interfaces.icell import Cell, Dust
 
 const RANDOM_CONTRACT_ADDRESS = 0x123;
 

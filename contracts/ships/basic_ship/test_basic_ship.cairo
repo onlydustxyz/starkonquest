@@ -2,7 +2,7 @@
 
 from contracts.models.common import Vector2
 from contracts.libraries.square_grid import grid_access, Grid
-from contracts.libraries.cell import cell_access, Cell, Dust
+from contracts.interfaces.icell import cell_access, Cell, Dust
 from contracts.ships.basic_ship.library import BasicShip
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.alloc import alloc

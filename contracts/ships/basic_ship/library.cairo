@@ -4,7 +4,7 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import unsigned_div_rem, assert_nn, sqrt, assert_le
 from starkware.cairo.common.math_cmp import is_le, is_nn
 from contracts.models.common import Vector2
-from contracts.libraries.cell import Cell
+from contracts.interfaces.icell import Cell
 
 namespace BasicShip {
     // ---------

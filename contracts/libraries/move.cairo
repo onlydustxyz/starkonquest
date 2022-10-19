@@ -2,7 +2,7 @@
 
 from contracts.models.common import Vector2
 from contracts.libraries.square_grid import grid_access, Grid
-from contracts.libraries.cell import cell_access, Cell, Dust
+from contracts.interfaces.icell import cell_access, Cell, Dust
 from contracts.interfaces.iship import IShip
 from contracts.test.grid_helper import grid_helper
 
@@ -190,9 +190,9 @@ namespace move_strategy {
             return (new_position=new_position_candidate);
         }
 
-        func ship_can_collide{range_check_ptr, grid: Grid}(new_position: Vector2) -> (
-            collision: felt
-        ) {
+        func ship_can_collide{syscall_ptr: felt*, range_check_ptr, grid: Grid}(
+            new_position: Vector2
+        ) -> (collision: felt) {
             alloc_locals;
             // ! We check ship collision on both current and next cells
             // ! as if there is a collition, the ship will not move

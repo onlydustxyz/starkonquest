@@ -2,7 +2,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from contracts.models.common import Vector2
-from contracts.libraries.cell import Cell
+from contracts.interfaces.icell import Cell
 from contracts.ships.static_ship.library import StaticShip
 
 // ---------

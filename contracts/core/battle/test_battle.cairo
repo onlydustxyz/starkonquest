@@ -2,7 +2,7 @@
 
 from contracts.core.battle.library import battle
 from contracts.libraries.square_grid import grid_access, Grid
-from contracts.libraries.cell import cell_access, Dust
+from contracts.interfaces.icell import cell_access, Dust
 from contracts.models.common import Context, ShipInit, Vector2
 from contracts.test.grid_helper import grid_helper
 

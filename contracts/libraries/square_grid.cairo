@@ -11,7 +11,7 @@ from starkware.cairo.common.math import assert_nn_le
 
 from contracts.models.common import Vector2
 from contracts.libraries.math_utils import math_utils
-from contracts.libraries.cell import Cell, cell_access
+from contracts.interfaces.icell import Cell, cell_access
 
 // ------------------
 // STRUCTS
@@ -38,7 +38,9 @@ namespace grid_access {
     //   - width: The number of rows/columns
     // returns:
     //   - grid: The created grid
-    func create{range_check_ptr}(width: felt) -> (grid: Grid) {
+    func create{syscall_ptr: felt*, range_check_ptr}(cell_class_hash: felt, width: felt) -> (
+        grid: Grid
+    ) {
         alloc_locals;
 
         local grid: Grid;
@@ -54,7 +56,7 @@ namespace grid_access {
         assert grid.dusts_positions_len = 0;
         assert grid.dusts_positions = dusts_positions;
 
-        let (local empty_cell) = cell_access.create();
+        let (local empty_cell) = cell_access.create(cell_class_hash);
         let (__fp__, _) = get_fp_and_pc();
 
         let (local my_dict_start) = default_dict_new(default_value=0);
@@ -246,7 +248,9 @@ namespace grid_access {
         );
     }
 
-    func add_dust_position{range_check_ptr, grid: Grid}(dust_position: Vector2) {
+    func add_dust_position{syscall_ptr: felt*, range_check_ptr, grid: Grid}(
+        dust_position: Vector2
+    ) {
         alloc_locals;
         let (local cell) = grid_access.get_cell_at(dust_position.x, dust_position.y);
         let (has_dust) = cell_access.has_dust{cell=cell}();
@@ -271,9 +275,9 @@ namespace grid_access {
 
         return ();
     }
-    func update_dust_position_at_index{range_check_ptr, grid: Grid, dust_merged_count: felt}(
-        index: felt, new_dust_position: Vector2
-    ) {
+    func update_dust_position_at_index{
+        syscall_ptr: felt*, range_check_ptr, grid: Grid, dust_merged_count: felt
+    }(index: felt, new_dust_position: Vector2) {
         alloc_locals;
         assert_nn_le(index, grid.dusts_positions_len - 1);
         let (local cell) = grid_access.get_cell_at(new_dust_position.x, new_dust_position.y);

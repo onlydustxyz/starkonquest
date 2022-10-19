@@ -1,7 +1,7 @@
 %lang starknet
 
 from contracts.libraries.square_grid import Grid, grid_access
-from contracts.libraries.cell import Cell
+from contracts.interfaces.icell import Cell
 from starkware.cairo.common.alloc import alloc
 
 namespace grid_helper {

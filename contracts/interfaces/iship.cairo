@@ -1,7 +1,7 @@
 %lang starknet
 
 from contracts.models.common import Vector2
-from contracts.libraries.cell import Cell
+from contracts.interfaces.icell import Cell
 
 @contract_interface
 namespace IShip {
