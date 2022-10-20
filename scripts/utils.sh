@@ -33,9 +33,9 @@ function create_account() {
 }
 
 function declare_contract() {
-	API_PATH=$1
+	COMPILED_CONTRACT_PATH=$1
 
-	starknet_local declare --contract $API_PATH
+	starknet_local declare --contract $COMPILED_CONTRACT_PATH
 }
 
 function deploy_class() {
