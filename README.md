@@ -25,7 +25,7 @@ grid, so ships can block each others.
 
 Tournament logic is also implemented, allowing dozens of players to fight in multiple battles until only one winner remains.
 
-## Usage LOL
+## Usage
 
 > ## ⚠️ WARNING! ⚠️
 >
